@@ -24,6 +24,9 @@ import { applyFieldErrors, isProblem, pointerToField, problemMessage } from "@/l
 import { useApiMutation } from "@/lib/use-api-mutation";
 
 import { blankConfig, toForm, toPayload } from "./config";
+import { DraftedStep } from "./drafter/drafted-step";
+import { useWizardDrafter } from "./drafter/use-wizard-drafter";
+import { Wand } from "./drafter/wand";
 import {
   SECTIONS,
   agentFormSchema,
@@ -128,6 +131,8 @@ function Wizard({
   const config = useWatch({ control: form.control, name: "config" });
   const handle = useWatch({ control: form.control, name: "handle" });
   const check = useServerValidation(config, step !== "start");
+  const drafter = useWizardDrafter(form, registry);
+  const { busy } = drafter;
 
   const create = useApiMutation(
     {
@@ -161,7 +166,9 @@ function Wizard({
   const next = async () => {
     const section = SECTIONS.find((s) => s.id === step);
     if (section && !(await form.trigger([...section.fields]))) return;
-    setStep(STEPS[index + 1].id);
+    const to = STEPS[index + 1].id;
+    setStep(to);
+    drafter.reach(to);
   };
   const submit = form.handleSubmit(
     (v) =>
@@ -183,7 +190,7 @@ function Wizard({
         description="Saving creates version 1. You can amend it later; every amendment is a new version."
       />
       <div className="grid gap-10 lg:grid-cols-[13rem_1fr]">
-        <StepNav steps={STEPS} current={step} onStep={setStep} />
+        <StepNav steps={STEPS} current={step} onStep={setStep} disabled={busy} />
         <form onSubmit={(e) => e.preventDefault()} className="min-w-0">
           {step === "start" && (
             <StartStep
@@ -191,7 +198,21 @@ function Wizard({
               onBlank={() => setStep("basic")}
             />
           )}
-          {step !== "start" && step !== "review" && SECTION_VIEWS[step]({ registry })}
+          {step !== "start" && step !== "review" && (
+            <DraftedStep drafter={drafter} step={step}>
+              {SECTION_VIEWS[step]({
+                registry,
+                disabled: drafter.prompt.streaming,
+                assist: (
+                  <Wand
+                    draft={drafter.prompt}
+                    enabled={registry.platform.drafter_enabled}
+                    prefill={form.getValues("description")}
+                  />
+                ),
+              })}
+            </DraftedStep>
+          )}
           {step === "review" && (
             <div className="space-y-8">
               <OrchestrationDiagram
@@ -213,7 +234,7 @@ function Wizard({
           )}
           {step !== "start" && (
             <div className="border-border mt-8 flex items-center justify-between border-t pt-4">
-              <Button variant="ghost" onClick={() => setStep(STEPS[index - 1].id)}>
+              <Button variant="ghost" disabled={busy} onClick={() => setStep(STEPS[index - 1].id)}>
                 Back
               </Button>
               <div className="flex items-center gap-4">
@@ -224,7 +245,9 @@ function Wizard({
                 ) : (
                   <>
                     <ServerCheckBadge check={check} />
-                    <Button onClick={() => void next()}>Next</Button>
+                    <Button onClick={() => void next()} disabled={busy}>
+                      Next
+                    </Button>
                   </>
                 )}
               </div>

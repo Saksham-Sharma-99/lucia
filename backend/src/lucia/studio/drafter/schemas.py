@@ -36,6 +36,7 @@ class DraftContext(Strict):
     follow_up: FollowUp | None = None
     recurrence: Recurrence | None = None
     end_conditions: EndConditions | None = None
+    max_turns_per_episode: int | None = Field(default=None, ge=1, le=50)
 
 
 class PromptDraftRequest(Strict):

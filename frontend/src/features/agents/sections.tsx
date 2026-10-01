@@ -1,4 +1,5 @@
 import { InfoIcon, PlusIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { Controller, get, useFormContext, useWatch, type FieldPathByValue } from "react-hook-form";
 
 import {
@@ -34,6 +35,8 @@ export type AgentForm = {
 };
 
 type SectionProps = { registry: Registry; disabled?: boolean };
+/** `assist` sits above the prompt box (the AI wand in the editors). */
+type PromptSectionProps = SectionProps & { assist?: ReactNode };
 const URGENCIES = ["P0", "P1", "P2"] as const;
 const URGENCY_HINT = { P0: "urgent", P1: "today", P2: "can wait" };
 
@@ -130,7 +133,7 @@ export function CapabilitiesSection({ registry, disabled }: SectionProps) {
   );
 }
 
-export function PromptSection({ registry, disabled }: SectionProps) {
+export function PromptSection({ registry, disabled, assist }: PromptSectionProps) {
   const { register, control } = useFormContext<AgentForm>();
   const prompt = useWatch({ control, name: "config.system_prompt" }) ?? "";
   const promptError = useError("config.system_prompt");
@@ -141,6 +144,7 @@ export function PromptSection({ registry, disabled }: SectionProps) {
         title="System prompt"
         description="The agent's standing instructions. Plain language works best."
       >
+        {assist}
         <Field data-invalid={!!promptError}>
           <Textarea
             aria-label="System prompt"

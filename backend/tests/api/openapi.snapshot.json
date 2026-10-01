@@ -1040,6 +1040,19 @@
               }
             ]
           },
+          "max_turns_per_episode": {
+            "anyOf": [
+              {
+                "maximum": 50.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Turns Per Episode"
+          },
           "policy_pack": {
             "anyOf": [
               {

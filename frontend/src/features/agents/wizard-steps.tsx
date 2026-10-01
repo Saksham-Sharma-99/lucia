@@ -6,15 +6,20 @@ import { Avatar } from "@/components/shared/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-/** The wizard's step rail. Steps up to the current one can be revisited; later ones can't. */
+/**
+ * The wizard's step rail. Steps up to the current one can be revisited; later ones can't, and
+ * none can while `disabled` (e.g. the AI is drafting).
+ */
 export function StepNav<S extends string>({
   steps,
   current,
   onStep,
+  disabled = false,
 }: {
   steps: { id: S; label: string }[];
   current: S;
   onStep: (s: S) => void;
+  disabled?: boolean;
 }) {
   const index = steps.findIndex((s) => s.id === current);
   return (
@@ -24,7 +29,7 @@ export function StepNav<S extends string>({
           <li key={s.id}>
             <button
               type="button"
-              disabled={i > index}
+              disabled={disabled || i > index}
               aria-current={s.id === current ? "step" : undefined}
               onClick={() => onStep(s.id)}
               className={cn(

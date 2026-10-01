@@ -83,7 +83,7 @@ describe("new agent wizard", () => {
     await app.user.click(await screen.findByRole("button", { name: "Create agent" }));
     await screen.findByText("Too vague");
     expect(step(/Prompt and models/).getAttribute("aria-current")).toBe("step");
-    for (let i = 0; i < 3; i++) await app.user.click(screen.getByRole("button", { name: "Next" }));
+    for (let i = 0; i < 4; i++) await app.user.click(screen.getByRole("button", { name: "Next" }));
     await app.user.click(await screen.findByRole("button", { name: "Create agent" }));
     await waitFor(() => expect(path(app.router)).toBe("/agents/chaser"));
   });

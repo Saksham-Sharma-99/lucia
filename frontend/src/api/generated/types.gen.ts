@@ -559,6 +559,10 @@ export type DraftContext = {
     follow_up?: FollowUp | null;
     recurrence?: Recurrence | null;
     end_conditions?: EndConditions | null;
+    /**
+     * Max Turns Per Episode
+     */
+    max_turns_per_episode?: number | null;
 };
 
 /**
