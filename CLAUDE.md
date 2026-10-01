@@ -24,6 +24,17 @@ Rules:
 - After any API change, run `make gen-client` (with `make dev-api` running) and commit the regenerated client.
 - Local infra: `make db-up`. Postgres is on localhost:5433, Redis on 6379.
 
+## API and Swagger
+
+The OpenAPI schema at `/openapi.json` (Swagger UI at `/docs`) is the API contract. The frontend client is generated from it. Keep it accurate:
+
+- Every route lives under `/api/v1` and has exactly one tag. Create routers with `lucia.api.tags.api_router(resource, prefix, audience=..., public=...)`, which also adds the session dependency and the problem+json error docs:
+  - `internal:<resource>` for APIs used only by the agent builder (Studio). This is the default.
+  - `external:<resource>` for APIs exposed to Workspace. Use it only when told an API is external.
+  - Add a new tag to `TAG_DESCRIPTIONS` in `lucia/api/tags.py`.
+- Every route has a `summary`, a camelCase `operation_id` (it becomes the TS function name), typed request and response models, and `responses=PROBLEM_RESPONSES` for problem+json errors.
+- `tests/api/test_openapi.py` enforces these rules and snapshots the schema. After a deliberate API change, run `UPDATE_SNAPSHOTS=1 make test`, then `make gen-client`, and commit the snapshot and the regenerated client together.
+
 ## Code conventions
 
 Python (backend/src/lucia):

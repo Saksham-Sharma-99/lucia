@@ -2,3 +2,5 @@ dist
 pnpm-lock.yaml
 src/api/generated
 src/routeTree.gen.ts
+test-results
+playwright-report

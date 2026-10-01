@@ -4,5 +4,6 @@ import { defineConfig } from "@hey-api/openapi-ts";
 export default defineConfig({
   input: process.env.OPENAPI_URL ?? "http://localhost:8000/openapi.json",
   output: { path: "src/api/generated" },
-  plugins: ["@hey-api/client-fetch", "@tanstack/react-query"],
+  // baseUrl: false keeps the generation URL out of the client; main.tsx sets it at runtime.
+  plugins: [{ name: "@hey-api/client-fetch", baseUrl: false }, "@tanstack/react-query"],
 });

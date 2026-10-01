@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup env db-up db-down db-reset migrate migration dev dev-api dev-worker dev-beat dev-web \
+.PHONY: help setup env db-up db-down db-reset migrate migration seed e2e dev dev-api dev-worker dev-beat dev-web \
         lint fmt typecheck test gen-client ci
 
 BE := cd backend &&
@@ -16,6 +16,10 @@ setup: env ## Install deps and git hooks
 env: ## Create .env files from examples if missing
 	@test -f backend/.env || cp backend/.env.example backend/.env
 	@test -f frontend/.env || cp frontend/.env.example frontend/.env
+	@grep -q '^SECRET_KEY=.\+' backend/.env || { \
+		key=$$(python3 -c 'import base64,os;print(base64.urlsafe_b64encode(os.urandom(32)).decode())'); \
+		grep -v '^SECRET_KEY=' backend/.env > backend/.env.tmp; echo "SECRET_KEY=$$key" >> backend/.env.tmp; \
+		mv backend/.env.tmp backend/.env; echo "Generated SECRET_KEY in backend/.env"; }
 
 db-up: ## Start Postgres and Redis
 	docker compose up -d --wait
@@ -28,6 +32,9 @@ db-reset: ## Drop volumes and start fresh
 
 migrate: ## Apply migrations
 	$(BE) uv run alembic upgrade head
+
+seed: ## Seed users, firms, templates and @orchestrator (idempotent)
+	$(BE) uv run python -m lucia.seeds
 
 migration: ## Create a migration: make migration m="add agents"
 	$(BE) uv run alembic revision --autogenerate -m "$(m)"
@@ -59,8 +66,12 @@ typecheck: ## Type-check both apps
 	$(BE) uv run pyright
 	$(FE) pnpm typecheck
 
-test: ## Run tests (needs make db-up)
+test: ## Run backend and frontend tests (needs make db-up)
 	$(BE) uv run pytest
+	$(FE) pnpm test
+
+e2e: ## Browser smoke test against a running `make dev` (E2E_PASSWORD=<seed password>); cleans up its data
+	$(FE) pnpm e2e
 
 gen-client: ## Regenerate the TS API client (needs make dev-api running)
 	$(FE) pnpm gen:api

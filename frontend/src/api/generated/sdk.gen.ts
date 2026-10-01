@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetHealthData, GetHealthResponses } from './types.gen';
+import type { ActivateFirmData, ActivateFirmErrors, ActivateFirmResponses, ArchiveAgentData, ArchiveAgentErrors, ArchiveAgentResponses, ArchiveAgentVersionData, ArchiveAgentVersionErrors, ArchiveAgentVersionResponses, CreateAgentData, CreateAgentErrors, CreateAgentResponses, CreateAgentVersionData, CreateAgentVersionErrors, CreateAgentVersionResponses, CreateConnectionData, CreateConnectionErrors, CreateConnectionResponses, CreateConsentLinkData, CreateConsentLinkErrors, CreateConsentLinkResponses, CreateFirmData, CreateFirmErrors, CreateFirmResponses, CreateMappingData, CreateMappingErrors, CreateMappingResponses, DeactivateFirmData, DeactivateFirmErrors, DeactivateFirmResponses, DeleteConnectionData, DeleteConnectionErrors, DeleteConnectionResponses, DiffAgentVersionsData, DiffAgentVersionsErrors, DiffAgentVersionsResponses, DuplicateAgentData, DuplicateAgentErrors, DuplicateAgentResponses, EnableConnectionInboundData, EnableConnectionInboundErrors, EnableConnectionInboundResponses, GetAgentData, GetAgentErrors, GetAgentResponses, GetAgentVersionData, GetAgentVersionErrors, GetAgentVersionResponses, GetConnectionData, GetConnectionErrors, GetConnectionResponses, GetFirmData, GetFirmErrors, GetFirmResponses, GetHealthData, GetHealthResponses, GetMappingChecklistData, GetMappingChecklistErrors, GetMappingChecklistResponses, GetMappingData, GetMappingErrors, GetMappingResolvedData, GetMappingResolvedErrors, GetMappingResolvedResponses, GetMappingResponses, GetMeData, GetMeErrors, GetMeResponses, GetPlatformStatusData, GetPlatformStatusErrors, GetPlatformStatusResponses, GmailHookData, GmailHookErrors, GmailHookResponses, GoogleOauthCallbackData, GoogleOauthCallbackErrors, GoogleOauthCallbackResponses, ListAgentsData, ListAgentsErrors, ListAgentsResponses, ListAgentVersionsData, ListAgentVersionsErrors, ListAgentVersionsResponses, ListConnectionsData, ListConnectionsErrors, ListConnectionsResponses, ListFirmsData, ListFirmsErrors, ListFirmsResponses, ListMappingsData, ListMappingsErrors, ListMappingsResponses, ListRegistryConnectorsData, ListRegistryConnectorsErrors, ListRegistryConnectorsResponses, ListRegistryData, ListRegistryErrors, ListRegistryResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutErrors, LogoutResponses, SlackHookData, SlackHookErrors, SlackHookResponses, SlackOauthCallbackData, SlackOauthCallbackErrors, SlackOauthCallbackResponses, SwitchMappingVersionData, SwitchMappingVersionErrors, SwitchMappingVersionResponses, TestConnectionData, TestConnectionErrors, TestConnectionResponses, UnarchiveAgentData, UnarchiveAgentErrors, UnarchiveAgentResponses, UnarchiveAgentVersionData, UnarchiveAgentVersionErrors, UnarchiveAgentVersionResponses, UpdateAgentData, UpdateAgentErrors, UpdateAgentResponses, UpdateConnectionData, UpdateConnectionErrors, UpdateConnectionResponses, UpdateFirmData, UpdateFirmErrors, UpdateFirmResponses, UpdateMappingData, UpdateMappingErrors, UpdateMappingResponses, ValidateAgentConfigData, ValidateAgentConfigErrors, ValidateAgentConfigResponses, VapiHookData, VapiHookErrors, VapiHookResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -19,6 +19,336 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 };
 
 /**
- * Health
+ * Postgres and Redis health
  */
-export const getHealth = <ThrowOnError extends boolean = false>(options?: Options<GetHealthData, ThrowOnError>): RequestResult<GetHealthResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetHealthResponses, unknown, ThrowOnError>({ url: '/api/health', ...options });
+export const getHealth = <ThrowOnError extends boolean = false>(options?: Options<GetHealthData, ThrowOnError>): RequestResult<GetHealthResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetHealthResponses, unknown, ThrowOnError>({ url: '/api/v1/health', ...options });
+
+/**
+ * Log in with username and password
+ */
+export const login = <ThrowOnError extends boolean = false>(options: Options<LoginData, ThrowOnError>): RequestResult<LoginResponses, LoginErrors, ThrowOnError> => (options.client ?? client).post<LoginResponses, LoginErrors, ThrowOnError>({
+    url: '/api/v1/auth/login',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Log out and clear the session cookie
+ */
+export const logout = <ThrowOnError extends boolean = false>(options?: Options<LogoutData, ThrowOnError>): RequestResult<LogoutResponses, LogoutErrors, ThrowOnError> => (options?.client ?? client).post<LogoutResponses, LogoutErrors, ThrowOnError>({ url: '/api/v1/auth/logout', ...options });
+
+/**
+ * The logged-in user
+ */
+export const getMe = <ThrowOnError extends boolean = false>(options?: Options<GetMeData, ThrowOnError>): RequestResult<GetMeResponses, GetMeErrors, ThrowOnError> => (options?.client ?? client).get<GetMeResponses, GetMeErrors, ThrowOnError>({ url: '/api/v1/auth/me', ...options });
+
+/**
+ * List firms
+ */
+export const listFirms = <ThrowOnError extends boolean = false>(options?: Options<ListFirmsData, ThrowOnError>): RequestResult<ListFirmsResponses, ListFirmsErrors, ThrowOnError> => (options?.client ?? client).get<ListFirmsResponses, ListFirmsErrors, ThrowOnError>({ url: '/api/v1/firms', ...options });
+
+/**
+ * Create a firm (and its inactive @orchestrator mapping)
+ */
+export const createFirm = <ThrowOnError extends boolean = false>(options: Options<CreateFirmData, ThrowOnError>): RequestResult<CreateFirmResponses, CreateFirmErrors, ThrowOnError> => (options.client ?? client).post<CreateFirmResponses, CreateFirmErrors, ThrowOnError>({
+    url: '/api/v1/firms',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get a firm with counts
+ */
+export const getFirm = <ThrowOnError extends boolean = false>(options: Options<GetFirmData, ThrowOnError>): RequestResult<GetFirmResponses, GetFirmErrors, ThrowOnError> => (options.client ?? client).get<GetFirmResponses, GetFirmErrors, ThrowOnError>({ url: '/api/v1/firms/{firm_id}', ...options });
+
+/**
+ * Update a firm
+ */
+export const updateFirm = <ThrowOnError extends boolean = false>(options: Options<UpdateFirmData, ThrowOnError>): RequestResult<UpdateFirmResponses, UpdateFirmErrors, ThrowOnError> => (options.client ?? client).patch<UpdateFirmResponses, UpdateFirmErrors, ThrowOnError>({
+    url: '/api/v1/firms/{firm_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Deactivate a firm and its mappings
+ */
+export const deactivateFirm = <ThrowOnError extends boolean = false>(options: Options<DeactivateFirmData, ThrowOnError>): RequestResult<DeactivateFirmResponses, DeactivateFirmErrors, ThrowOnError> => (options.client ?? client).post<DeactivateFirmResponses, DeactivateFirmErrors, ThrowOnError>({ url: '/api/v1/firms/{firm_id}/deactivate', ...options });
+
+/**
+ * Activate a firm
+ */
+export const activateFirm = <ThrowOnError extends boolean = false>(options: Options<ActivateFirmData, ThrowOnError>): RequestResult<ActivateFirmResponses, ActivateFirmErrors, ThrowOnError> => (options.client ?? client).post<ActivateFirmResponses, ActivateFirmErrors, ThrowOnError>({ url: '/api/v1/firms/{firm_id}/activate', ...options });
+
+/**
+ * List registry entries
+ */
+export const listRegistry = <ThrowOnError extends boolean = false>(options?: Options<ListRegistryData, ThrowOnError>): RequestResult<ListRegistryResponses, ListRegistryErrors, ThrowOnError> => (options?.client ?? client).get<ListRegistryResponses, ListRegistryErrors, ThrowOnError>({ url: '/api/v1/registry', ...options });
+
+/**
+ * Connectors with their tools
+ */
+export const listRegistryConnectors = <ThrowOnError extends boolean = false>(options?: Options<ListRegistryConnectorsData, ThrowOnError>): RequestResult<ListRegistryConnectorsResponses, ListRegistryConnectorsErrors, ThrowOnError> => (options?.client ?? client).get<ListRegistryConnectorsResponses, ListRegistryConnectorsErrors, ThrowOnError>({ url: '/api/v1/registry/connectors', ...options });
+
+/**
+ * List agents
+ */
+export const listAgents = <ThrowOnError extends boolean = false>(options?: Options<ListAgentsData, ThrowOnError>): RequestResult<ListAgentsResponses, ListAgentsErrors, ThrowOnError> => (options?.client ?? client).get<ListAgentsResponses, ListAgentsErrors, ThrowOnError>({ url: '/api/v1/agents', ...options });
+
+/**
+ * Create an agent and its v1
+ */
+export const createAgent = <ThrowOnError extends boolean = false>(options: Options<CreateAgentData, ThrowOnError>): RequestResult<CreateAgentResponses, CreateAgentErrors, ThrowOnError> => (options.client ?? client).post<CreateAgentResponses, CreateAgentErrors, ThrowOnError>({
+    url: '/api/v1/agents',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Validate a version config against the registry
+ */
+export const validateAgentConfig = <ThrowOnError extends boolean = false>(options: Options<ValidateAgentConfigData, ThrowOnError>): RequestResult<ValidateAgentConfigResponses, ValidateAgentConfigErrors, ThrowOnError> => (options.client ?? client).post<ValidateAgentConfigResponses, ValidateAgentConfigErrors, ThrowOnError>({
+    url: '/api/v1/agents/validate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get an agent with its versions
+ */
+export const getAgent = <ThrowOnError extends boolean = false>(options: Options<GetAgentData, ThrowOnError>): RequestResult<GetAgentResponses, GetAgentErrors, ThrowOnError> => (options.client ?? client).get<GetAgentResponses, GetAgentErrors, ThrowOnError>({ url: '/api/v1/agents/{handle}', ...options });
+
+/**
+ * Update agent metadata (no new version)
+ */
+export const updateAgent = <ThrowOnError extends boolean = false>(options: Options<UpdateAgentData, ThrowOnError>): RequestResult<UpdateAgentResponses, UpdateAgentErrors, ThrowOnError> => (options.client ?? client).patch<UpdateAgentResponses, UpdateAgentErrors, ThrowOnError>({
+    url: '/api/v1/agents/{handle}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Archive every version and deactivate its mappings
+ */
+export const archiveAgent = <ThrowOnError extends boolean = false>(options: Options<ArchiveAgentData, ThrowOnError>): RequestResult<ArchiveAgentResponses, ArchiveAgentErrors, ThrowOnError> => (options.client ?? client).post<ArchiveAgentResponses, ArchiveAgentErrors, ThrowOnError>({ url: '/api/v1/agents/{handle}/archive', ...options });
+
+/**
+ * Reactivate the latest version
+ */
+export const unarchiveAgent = <ThrowOnError extends boolean = false>(options: Options<UnarchiveAgentData, ThrowOnError>): RequestResult<UnarchiveAgentResponses, UnarchiveAgentErrors, ThrowOnError> => (options.client ?? client).post<UnarchiveAgentResponses, UnarchiveAgentErrors, ThrowOnError>({ url: '/api/v1/agents/{handle}/unarchive', ...options });
+
+/**
+ * Copy an agent's latest active version into a new agent
+ */
+export const duplicateAgent = <ThrowOnError extends boolean = false>(options: Options<DuplicateAgentData, ThrowOnError>): RequestResult<DuplicateAgentResponses, DuplicateAgentErrors, ThrowOnError> => (options.client ?? client).post<DuplicateAgentResponses, DuplicateAgentErrors, ThrowOnError>({
+    url: '/api/v1/agents/{handle}/duplicate',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List an agent's versions
+ */
+export const listAgentVersions = <ThrowOnError extends boolean = false>(options: Options<ListAgentVersionsData, ThrowOnError>): RequestResult<ListAgentVersionsResponses, ListAgentVersionsErrors, ThrowOnError> => (options.client ?? client).get<ListAgentVersionsResponses, ListAgentVersionsErrors, ThrowOnError>({ url: '/api/v1/agents/{handle}/versions', ...options });
+
+/**
+ * Amend: save a new immutable version
+ */
+export const createAgentVersion = <ThrowOnError extends boolean = false>(options: Options<CreateAgentVersionData, ThrowOnError>): RequestResult<CreateAgentVersionResponses, CreateAgentVersionErrors, ThrowOnError> => (options.client ?? client).post<CreateAgentVersionResponses, CreateAgentVersionErrors, ThrowOnError>({
+    url: '/api/v1/agents/{handle}/versions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get one version with its config
+ */
+export const getAgentVersion = <ThrowOnError extends boolean = false>(options: Options<GetAgentVersionData, ThrowOnError>): RequestResult<GetAgentVersionResponses, GetAgentVersionErrors, ThrowOnError> => (options.client ?? client).get<GetAgentVersionResponses, GetAgentVersionErrors, ThrowOnError>({ url: '/api/v1/agents/{handle}/versions/{n}', ...options });
+
+/**
+ * Archive a version
+ */
+export const archiveAgentVersion = <ThrowOnError extends boolean = false>(options: Options<ArchiveAgentVersionData, ThrowOnError>): RequestResult<ArchiveAgentVersionResponses, ArchiveAgentVersionErrors, ThrowOnError> => (options.client ?? client).post<ArchiveAgentVersionResponses, ArchiveAgentVersionErrors, ThrowOnError>({ url: '/api/v1/agents/{handle}/versions/{n}/archive', ...options });
+
+/**
+ * Reactivate a version
+ */
+export const unarchiveAgentVersion = <ThrowOnError extends boolean = false>(options: Options<UnarchiveAgentVersionData, ThrowOnError>): RequestResult<UnarchiveAgentVersionResponses, UnarchiveAgentVersionErrors, ThrowOnError> => (options.client ?? client).post<UnarchiveAgentVersionResponses, UnarchiveAgentVersionErrors, ThrowOnError>({ url: '/api/v1/agents/{handle}/versions/{n}/unarchive', ...options });
+
+/**
+ * Structural diff of two versions
+ */
+export const diffAgentVersions = <ThrowOnError extends boolean = false>(options: Options<DiffAgentVersionsData, ThrowOnError>): RequestResult<DiffAgentVersionsResponses, DiffAgentVersionsErrors, ThrowOnError> => (options.client ?? client).get<DiffAgentVersionsResponses, DiffAgentVersionsErrors, ThrowOnError>({ url: '/api/v1/agents/{handle}/versions/{a}/diff/{b}', ...options });
+
+/**
+ * List a firm's connections (never returns secrets)
+ */
+export const listConnections = <ThrowOnError extends boolean = false>(options: Options<ListConnectionsData, ThrowOnError>): RequestResult<ListConnectionsResponses, ListConnectionsErrors, ThrowOnError> => (options.client ?? client).get<ListConnectionsResponses, ListConnectionsErrors, ThrowOnError>({ url: '/api/v1/firms/{firm_id}/connections', ...options });
+
+/**
+ * Add a connection (Vapi is provisioned immediately)
+ */
+export const createConnection = <ThrowOnError extends boolean = false>(options: Options<CreateConnectionData, ThrowOnError>): RequestResult<CreateConnectionResponses, CreateConnectionErrors, ThrowOnError> => (options.client ?? client).post<CreateConnectionResponses, CreateConnectionErrors, ThrowOnError>({
+    url: '/api/v1/firms/{firm_id}/connections',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete a connection no mapping uses
+ */
+export const deleteConnection = <ThrowOnError extends boolean = false>(options: Options<DeleteConnectionData, ThrowOnError>): RequestResult<DeleteConnectionResponses, DeleteConnectionErrors, ThrowOnError> => (options.client ?? client).delete<DeleteConnectionResponses, DeleteConnectionErrors, ThrowOnError>({ url: '/api/v1/connections/{conn_id}', ...options });
+
+/**
+ * Get a connection
+ */
+export const getConnection = <ThrowOnError extends boolean = false>(options: Options<GetConnectionData, ThrowOnError>): RequestResult<GetConnectionResponses, GetConnectionErrors, ThrowOnError> => (options.client ?? client).get<GetConnectionResponses, GetConnectionErrors, ThrowOnError>({ url: '/api/v1/connections/{conn_id}', ...options });
+
+/**
+ * Update label, non-secret config or replace secrets
+ */
+export const updateConnection = <ThrowOnError extends boolean = false>(options: Options<UpdateConnectionData, ThrowOnError>): RequestResult<UpdateConnectionResponses, UpdateConnectionErrors, ThrowOnError> => (options.client ?? client).patch<UpdateConnectionResponses, UpdateConnectionErrors, ThrowOnError>({
+    url: '/api/v1/connections/{conn_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Generate a consent/install link (invalidates earlier links)
+ */
+export const createConsentLink = <ThrowOnError extends boolean = false>(options: Options<CreateConsentLinkData, ThrowOnError>): RequestResult<CreateConsentLinkResponses, CreateConsentLinkErrors, ThrowOnError> => (options.client ?? client).post<CreateConsentLinkResponses, CreateConsentLinkErrors, ThrowOnError>({ url: '/api/v1/connections/{conn_id}/consent-link', ...options });
+
+/**
+ * Test auth, or one tool with an explicit target
+ */
+export const testConnection = <ThrowOnError extends boolean = false>(options: Options<TestConnectionData, ThrowOnError>): RequestResult<TestConnectionResponses, TestConnectionErrors, ThrowOnError> => (options.client ?? client).post<TestConnectionResponses, TestConnectionErrors, ThrowOnError>({
+    url: '/api/v1/connections/{conn_id}/test',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Enable inbound events and return the webhook URL
+ */
+export const enableConnectionInbound = <ThrowOnError extends boolean = false>(options: Options<EnableConnectionInboundData, ThrowOnError>): RequestResult<EnableConnectionInboundResponses, EnableConnectionInboundErrors, ThrowOnError> => (options.client ?? client).post<EnableConnectionInboundResponses, EnableConnectionInboundErrors, ThrowOnError>({ url: '/api/v1/connections/{conn_id}/inbound/enable', ...options });
+
+/**
+ * Google consent callback
+ */
+export const googleOauthCallback = <ThrowOnError extends boolean = false>(options?: Options<GoogleOauthCallbackData, ThrowOnError>): RequestResult<GoogleOauthCallbackResponses, GoogleOauthCallbackErrors, ThrowOnError> => (options?.client ?? client).get<GoogleOauthCallbackResponses, GoogleOauthCallbackErrors, ThrowOnError>({ url: '/api/v1/oauth/google/callback', ...options });
+
+/**
+ * Slack install callback
+ */
+export const slackOauthCallback = <ThrowOnError extends boolean = false>(options?: Options<SlackOauthCallbackData, ThrowOnError>): RequestResult<SlackOauthCallbackResponses, SlackOauthCallbackErrors, ThrowOnError> => (options?.client ?? client).get<SlackOauthCallbackResponses, SlackOauthCallbackErrors, ThrowOnError>({ url: '/api/v1/oauth/slack/callback', ...options });
+
+/**
+ * Slack Events API
+ */
+export const slackHook = <ThrowOnError extends boolean = false>(options?: Options<SlackHookData, ThrowOnError>): RequestResult<SlackHookResponses, SlackHookErrors, ThrowOnError> => (options?.client ?? client).post<SlackHookResponses, SlackHookErrors, ThrowOnError>({ url: '/api/v1/hooks/slack', ...options });
+
+/**
+ * Gmail Pub/Sub push
+ */
+export const gmailHook = <ThrowOnError extends boolean = false>(options?: Options<GmailHookData, ThrowOnError>): RequestResult<GmailHookResponses, GmailHookErrors, ThrowOnError> => (options?.client ?? client).post<GmailHookResponses, GmailHookErrors, ThrowOnError>({ url: '/api/v1/hooks/gmail', ...options });
+
+/**
+ * Vapi server messages
+ */
+export const vapiHook = <ThrowOnError extends boolean = false>(options?: Options<VapiHookData, ThrowOnError>): RequestResult<VapiHookResponses, VapiHookErrors, ThrowOnError> => (options?.client ?? client).post<VapiHookResponses, VapiHookErrors, ThrowOnError>({ url: '/api/v1/hooks/vapi', ...options });
+
+/**
+ * List firm mappings
+ */
+export const listMappings = <ThrowOnError extends boolean = false>(options?: Options<ListMappingsData, ThrowOnError>): RequestResult<ListMappingsResponses, ListMappingsErrors, ThrowOnError> => (options?.client ?? client).get<ListMappingsResponses, ListMappingsErrors, ThrowOnError>({ url: '/api/v1/mappings', ...options });
+
+/**
+ * Map an agent version to a firm
+ */
+export const createMapping = <ThrowOnError extends boolean = false>(options: Options<CreateMappingData, ThrowOnError>): RequestResult<CreateMappingResponses, CreateMappingErrors, ThrowOnError> => (options.client ?? client).post<CreateMappingResponses, CreateMappingErrors, ThrowOnError>({
+    url: '/api/v1/mappings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Activation checklist for a firm, version and identities
+ */
+export const getMappingChecklist = <ThrowOnError extends boolean = false>(options: Options<GetMappingChecklistData, ThrowOnError>): RequestResult<GetMappingChecklistResponses, GetMappingChecklistErrors, ThrowOnError> => (options.client ?? client).get<GetMappingChecklistResponses, GetMappingChecklistErrors, ThrowOnError>({ url: '/api/v1/mappings/checklist', ...options });
+
+/**
+ * Get a mapping
+ */
+export const getMapping = <ThrowOnError extends boolean = false>(options: Options<GetMappingData, ThrowOnError>): RequestResult<GetMappingResponses, GetMappingErrors, ThrowOnError> => (options.client ?? client).get<GetMappingResponses, GetMappingErrors, ThrowOnError>({ url: '/api/v1/mappings/{mapping_id}', ...options });
+
+/**
+ * Update a mapping
+ */
+export const updateMapping = <ThrowOnError extends boolean = false>(options: Options<UpdateMappingData, ThrowOnError>): RequestResult<UpdateMappingResponses, UpdateMappingErrors, ThrowOnError> => (options.client ?? client).patch<UpdateMappingResponses, UpdateMappingErrors, ThrowOnError>({
+    url: '/api/v1/mappings/{mapping_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * What a mapping runs under: policies, cadence, alert routing, firm hours
+ */
+export const getMappingResolved = <ThrowOnError extends boolean = false>(options: Options<GetMappingResolvedData, ThrowOnError>): RequestResult<GetMappingResolvedResponses, GetMappingResolvedErrors, ThrowOnError> => (options.client ?? client).get<GetMappingResolvedResponses, GetMappingResolvedErrors, ThrowOnError>({ url: '/api/v1/mappings/{mapping_id}/resolved', ...options });
+
+/**
+ * Move a mapping to another version (creates a superseding row)
+ *
+ * The old row becomes inactive. The new row is active only if the old one was active and the new version's checklist passes; otherwise it is created inactive and its `checklist_missing` says what to bind before activating.
+ */
+export const switchMappingVersion = <ThrowOnError extends boolean = false>(options: Options<SwitchMappingVersionData, ThrowOnError>): RequestResult<SwitchMappingVersionResponses, SwitchMappingVersionErrors, ThrowOnError> => (options.client ?? client).post<SwitchMappingVersionResponses, SwitchMappingVersionErrors, ThrowOnError>({
+    url: '/api/v1/mappings/{mapping_id}/switch-version',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Which platform app registrations are set
+ */
+export const getPlatformStatus = <ThrowOnError extends boolean = false>(options?: Options<GetPlatformStatusData, ThrowOnError>): RequestResult<GetPlatformStatusResponses, GetPlatformStatusErrors, ThrowOnError> => (options?.client ?? client).get<GetPlatformStatusResponses, GetPlatformStatusErrors, ThrowOnError>({ url: '/api/v1/platform/status', ...options });

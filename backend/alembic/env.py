@@ -6,6 +6,7 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+import lucia.db.models  # noqa: F401  (registers tables on Base.metadata)
 from lucia.core.config import get_settings
 from lucia.db.base import Base
 
@@ -17,11 +18,21 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
+# Indexes created in raw SQL (not expressible in the ORM) that autogenerate must ignore.
+MANUAL_INDEXES = {"agents_search_trgm_idx"}
+
+
+def include_object(
+    obj: object, name: str | None, type_: str, reflected: bool, compare_to: object
+) -> bool:
+    return not (type_ == "index" and name in MANUAL_INDEXES)
+
 
 def run_migrations_offline() -> None:
     context.configure(
         url=config.get_main_option("sqlalchemy.url"),
         target_metadata=target_metadata,
+        include_object=include_object,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
     )
@@ -30,7 +41,9 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection, target_metadata=target_metadata, include_object=include_object
+    )
     with context.begin_transaction():
         context.run_migrations()
 

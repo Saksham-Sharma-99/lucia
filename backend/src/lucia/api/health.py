@@ -6,10 +6,11 @@ from redis.asyncio import Redis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from lucia.api.tags import tag
 from lucia.core.config import get_settings
 from lucia.db.session import get_session
 
-router = APIRouter(tags=["health"])
+router = APIRouter(tags=[tag("internal", "health")])
 
 Status = Literal["ok", "error"]
 
@@ -39,7 +40,7 @@ async def _check_redis() -> Status:
     return "ok"
 
 
-@router.get("/health", operation_id="getHealth")
+@router.get("/health", summary="Postgres and Redis health", operation_id="getHealth")
 async def health(session: Annotated[AsyncSession, Depends(get_session)]) -> HealthResponse:
     postgres = await _check_postgres(session)
     redis = await _check_redis()
