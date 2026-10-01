@@ -63,12 +63,44 @@ Prerequisites: [uv](https://docs.astral.sh/uv/), Node 22 with pnpm 9, Docker, an
 make setup        # uv sync, pnpm install, .env files from examples, git hooks
 make db-up        # Postgres on localhost:5433, Redis on localhost:6379
 make migrate      # apply migrations
+make seed         # users, two firms, template agents, @orchestrator (prints generated passwords)
 make dev          # API :8000, Celery worker + beat, web :5173
 ```
 
-Open http://localhost:5173. The Studio home page shows the API health, read through the generated client. The API docs are at http://localhost:8000/docs.
+Open http://localhost:5173. The API is served under `/api/v1`; Swagger UI is at http://localhost:8000/docs.
+
+`make seed` creates the users `saksham` and `rishabh`. Set `SEED_PASSWORD` in `backend/.env` before the first seed to choose their password; otherwise it generates one per user and prints it once.
 
 Postgres is published on host port 5433 because a natively installed Postgres often already holds 5432.
+
+## Connecting integrations
+
+App registrations are global and live in `backend/.env`. Each firm then connects its own mailbox, Slack workspace or phone number from the Firm → Connections page. `GET /api/v1/platform/status` shows which registrations are set.
+
+OAuth redirects and webhooks need a public URL. In development:
+
+1. Run `ngrok http 8000` and put the https URL in `PUBLIC_BASE_URL`.
+2. **Slack:** create an app at api.slack.com/apps.
+   - Bot scopes: `app_mentions:read`, `chat:write`, `channels:history`, `groups:history`, `files:write`.
+   - Redirect URL: `$PUBLIC_BASE_URL/api/v1/oauth/slack/callback`.
+   - Event Subscriptions URL: `$PUBLIC_BASE_URL/api/v1/hooks/slack`, subscribed to `app_mention`.
+   - Copy the client id, client secret and signing secret into `SLACK_*`.
+3. **Gmail:** create a Web OAuth client in Google Cloud.
+   - Redirect URI: `$PUBLIC_BASE_URL/api/v1/oauth/google/callback`.
+   - Enable the Gmail API.
+   - Create a Pub/Sub topic, grant `gmail-api-push@system.gserviceaccount.com` publish on it, and add a push subscription to `$PUBLIC_BASE_URL/api/v1/hooks/gmail?token=<GOOGLE_PUBSUB_VERIFICATION_TOKEN>`.
+4. **Vapi:**
+   - Set `VAPI_API_KEY`.
+   - Set `VAPI_WEBHOOK_SECRET` to any random string. Lucia sends it as `x-vapi-secret` on the assistants it creates.
+   - Set `TWILIO_*` if firms use the platform Twilio account.
+
+Manual checklist (real APIs, not covered by `make test`):
+- [ ] Install Slack from a consent link
+- [ ] Run the auth test, then a `send_message` test
+- [ ] Mention the bot, then retest `listen_mention`
+- [ ] Gmail consent, then a `send_email` test
+- [ ] Enable inbound, email the mailbox, then retest `list_inbox`
+- [ ] Add a Vapi number, then place a test call
 
 ## Everyday commands
 
@@ -76,7 +108,8 @@ Postgres is published on host port 5433 because a natively installed Postgres of
 | --- | --- |
 | `make lint` / `make fmt` | ruff + eslint + prettier |
 | `make typecheck` | pyright + tsc |
-| `make test` | pytest against the `lucia_test` database |
+| `make test` | pytest against the `lucia_test` database (`UPDATE_SNAPSHOTS=1` accepts an OpenAPI change) |
+| `make seed` | idempotent seed data |
 | `make migration m="..."` | new Alembic migration (autogenerate) |
 | `make gen-client` | regenerate the TS client after API changes (API must be running) |
 | `make ci` | everything CI runs, locally |

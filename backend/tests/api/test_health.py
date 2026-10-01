@@ -4,7 +4,7 @@ from lucia.worker.celery_app import celery_app
 
 
 async def test_health_reports_postgres_and_redis(client: AsyncClient) -> None:
-    response = await client.get("/api/health")
+    response = await client.get("/api/v1/health")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "postgres": "ok", "redis": "ok"}
