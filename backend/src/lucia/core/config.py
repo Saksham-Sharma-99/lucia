@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
 
+    # Studio's AI drafter (wand + section drafts). Disabled while the key is empty.
+    openai_api_key: str = ""
+    drafter_model: str = "gpt-5.6-luna"
+
     allowed_models: Annotated[list[str], NoDecode] = ["gpt-5.6", "gpt-5.6-sol", "gpt-5.6-luna"]
     seed_password: str = ""
 

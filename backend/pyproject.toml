@@ -16,6 +16,7 @@ dependencies = [
     "httpx>=0.28.1",
     "itsdangerous>=2.2.0",
     "jsonschema>=4.26.0",
+    "openai-agents>=0.22.3",
     "pydantic-settings>=2.15.0",
     "redis>=6.4.0",
     "sqlalchemy[asyncio]>=2.1.1",
@@ -38,7 +39,7 @@ dev = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-src = ["src", "tests"]
+src = ["src", "tests", "evals"]
 
 [tool.ruff.lint]
 # RUF012: pydantic and SQLAlchemy class attributes are not shared mutable state.
@@ -46,7 +47,7 @@ ignore = ["RUF012"]
 select = ["E", "F", "I", "B", "UP", "SIM", "ASYNC", "RUF"]
 
 [tool.pyright]
-include = ["src", "tests"]
+include = ["src", "tests", "evals"]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
 reportMissingTypeStubs = false

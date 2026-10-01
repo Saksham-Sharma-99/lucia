@@ -1,5 +1,6 @@
 """An in-memory view of the registry used by validators."""
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -7,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from lucia.db.models import RegistryEntry
+from lucia.registry.sync import catalog_rows
 
 
 @dataclass
@@ -20,7 +22,7 @@ class RegistrySnapshot:
         return self.policy_rules[rule].params_schema
 
 
-async def load_snapshot(session: AsyncSession) -> RegistrySnapshot:
+def _snapshot(entries: Iterable[RegistryEntry]) -> RegistrySnapshot:
     snap = RegistrySnapshot()
     buckets = {
         "connector": snap.connectors,
@@ -28,8 +30,17 @@ async def load_snapshot(session: AsyncSession) -> RegistrySnapshot:
         "policy_rule": snap.policy_rules,
         "channel": snap.channels,
     }
-    for entry in (await session.scalars(select(RegistryEntry))).all():
+    for entry in entries:
         bucket = buckets.get(entry.kind)
         if bucket is not None:
             bucket[entry.name] = entry
     return snap
+
+
+async def load_snapshot(session: AsyncSession) -> RegistrySnapshot:
+    return _snapshot((await session.scalars(select(RegistryEntry))).all())
+
+
+def catalog_snapshot() -> RegistrySnapshot:
+    """The code-declared registry without a database (unit tests, drafter evals)."""
+    return _snapshot(RegistryEntry(**row) for row in catalog_rows())

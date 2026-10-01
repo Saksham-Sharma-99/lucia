@@ -14,6 +14,7 @@ class PlatformStatus(BaseModel):
     twilio: bool
     public_base_url: str
     allowed_models: list[str]
+    drafter_enabled: bool
 
 
 @router.get(
@@ -28,4 +29,5 @@ async def platform_status() -> PlatformStatus:
         twilio=bool(s.twilio_account_sid and s.twilio_auth_token),
         public_base_url=s.public_base_url,
         allowed_models=s.allowed_models,
+        drafter_enabled=bool(s.openai_api_key),
     )

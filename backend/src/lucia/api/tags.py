@@ -20,6 +20,7 @@ TAG_DESCRIPTIONS: dict[str, str] = {
     "internal:firms": "Firms (tenants) and their settings.",
     "internal:registry": "Code-declared connectors, tools, policy rules, channels, evidence kinds.",
     "internal:agents": "Agents and their immutable versions.",
+    "internal:drafts": "AI drafts of an agent's prompt and config sections (nothing is saved).",
     "internal:connections": "A firm's connector installations, consent links and tests.",
     "internal:oauth": "OAuth callbacks for Gmail and Slack consent links (public).",
     "internal:hooks": "Inbound provider webhooks; record the last event only (public).",

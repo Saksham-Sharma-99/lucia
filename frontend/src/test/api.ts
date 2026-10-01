@@ -183,6 +183,7 @@ export const PLATFORM: PlatformStatus = {
   twilio: true,
   public_base_url: "https://lucia.test",
   allowed_models: ["m-big", "m-small"],
+  drafter_enabled: false,
 };
 
 const ENTRIES: RegistryEntryOut[] = [

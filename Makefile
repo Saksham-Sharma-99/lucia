@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 .PHONY: help setup env db-up db-down db-reset migrate migration seed e2e dev dev-api dev-worker dev-beat dev-web \
-        lint fmt typecheck test gen-client ci
+        lint fmt typecheck test eval-drafter gen-client ci
 
 BE := cd backend &&
 FE := cd frontend &&
@@ -72,6 +72,9 @@ test: ## Run backend and frontend tests (needs make db-up)
 
 e2e: ## Browser smoke test against a running `make dev` (E2E_PASSWORD=<seed password>); cleans up its data
 	$(FE) pnpm e2e
+
+eval-drafter: ## Drafter evals against the real model (needs OPENAI_API_KEY; costs tokens)
+	$(BE) uv run python -m evals.drafter.run
 
 gen-client: ## Regenerate the TS API client (needs make dev-api running)
 	$(FE) pnpm gen:api

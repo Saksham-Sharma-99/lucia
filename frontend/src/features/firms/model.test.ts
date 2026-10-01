@@ -29,6 +29,7 @@ describe("isConfigured", () => {
     twilio: true,
     public_base_url: "",
     allowed_models: [],
+    drafter_enabled: false,
   } satisfies PlatformStatus;
   it("follows the platform flag for known connectors", () => {
     expect(isConfigured(platform, "slack")).toBe(true);
