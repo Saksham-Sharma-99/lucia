@@ -111,10 +111,10 @@ OAuth redirects and webhooks need a public URL. In development:
    - Redirect URI: `$PUBLIC_BASE_URL/api/v1/oauth/google/callback`.
    - Enable the Gmail API.
    - Create a Pub/Sub topic, grant `gmail-api-push@system.gserviceaccount.com` publish on it, and add a push subscription to `$PUBLIC_BASE_URL/api/v1/hooks/gmail?token=<GOOGLE_PUBSUB_VERIFICATION_TOKEN>`.
-4. **Vapi:**
+4. **Vapi (outbound calls only):**
    - Set `VAPI_API_KEY`.
-   - Set `VAPI_WEBHOOK_SECRET` to any random string. Lucia sends it as `x-vapi-secret` on the assistants it creates.
-   - Set `TWILIO_*` if firms use the platform Twilio account.
+   - Optionally set `VAPI_WEBHOOK_SECRET`. When it's set, each call sends it as `x-vapi-secret` and the webhook checks it. When it's empty, the webhook is open.
+   - Import each firm's number into Vapi (from Twilio, Telnyx or Vonage; Vapi's free numbers can't place calls), then add a Vapi connection with the number's Vapi id.
 
 Manual checklist (real APIs, not covered by `make test`):
 

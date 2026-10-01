@@ -78,7 +78,7 @@ type Setup = {
   labelPlaceholder: string;
   labelHint: string;
   /** What a builder does to produce an inbound event for the inbound tests. */
-  inboundAsk: (c: ConnectionOut) => string;
+  inboundAsk?: (c: ConnectionOut) => string;
 };
 
 /** Everything connector-specific the connections screens need, in one place. */
@@ -101,8 +101,7 @@ export const SETUP = {
   vapi: {
     platformKey: "vapi",
     labelPlaceholder: "Main line",
-    labelHint: "Defaults to the phone number.",
-    inboundAsk: (c) => `Call ${String(c.config.phone_number ?? "the number")}, then recheck.`,
+    labelHint: "Defaults to the connector name. Calls are outbound only.",
   },
 } satisfies Record<"gmail" | "slack" | "vapi", Setup>;
 export type SetupConnector = keyof typeof SETUP;

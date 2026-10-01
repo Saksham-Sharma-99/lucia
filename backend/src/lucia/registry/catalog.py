@@ -81,16 +81,12 @@ CONNECTORS = [
     Connector(
         "vapi",
         "Vapi voice",
-        "Place and receive phone calls through a firm's number.",
+        "Place phone calls from a firm's number in the platform's Vapi account.",
         "form",
         params_schema={
             "type": "object",
-            "required": ["phone_number"],
-            "properties": {
-                "phone_number": {"type": "string", "pattern": r"^\+[1-9]\d{6,14}$"},
-                "twilio_account_sid": {"type": "string"},
-                "twilio_auth_token": {"type": "string", "writeOnly": True},
-            },
+            "required": ["phone_number_id"],
+            "properties": {"phone_number_id": {"type": "string", "minLength": 1}},
         },
     ),
     Connector("fax", "Fax", "Send faxes to providers. Not available yet.", "none", available=False),
@@ -161,9 +157,10 @@ TOOLS = [
         "vapi",
         "receive_call",
         "Receive call",
-        "Answer calls to the firm's number.",
+        "Answer calls to the firm's number. Not available yet.",
         "inbound",
         "read",
+        available=False,
     ),
     Tool(
         "fax",

@@ -33,8 +33,6 @@ class Settings(BaseSettings):
     google_pubsub_verification_token: str = ""
     vapi_api_key: str = ""
     vapi_webhook_secret: str = ""
-    twilio_account_sid: str = ""
-    twilio_auth_token: str = ""
 
     # Studio's AI drafter (wand + section drafts). Disabled while the key is empty.
     openai_api_key: str = ""

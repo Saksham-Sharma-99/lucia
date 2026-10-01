@@ -42,14 +42,17 @@ migration: ## Create a migration: make migration m="add agents"
 dev: ## Run API, worker, beat and web together (Ctrl-C stops all)
 	$(MAKE) -j4 dev-api dev-worker dev-beat dev-web
 
-dev-api: ## FastAPI on :8000
-	$(BE) uv run uvicorn lucia.main:app --reload --port 8000
+dev-api: ## FastAPI on :8000 (restarts on code or .env changes)
+	$(BE) uv run uvicorn lucia.main:app --reload --reload-include .env --port 8000
 
-dev-worker: ## Celery worker (threads pool: prefork breaks on macOS spawn)
-	$(BE) uv run celery -A lucia.worker.celery_app worker --pool=threads --concurrency=8 --loglevel=INFO
+# Celery has no reload of its own; watchfiles (shipped with uvicorn[standard]) restarts it.
+WATCH := uv run watchfiles --filter default
 
-dev-beat: ## Celery beat
-	$(BE) uv run celery -A lucia.worker.celery_app beat --loglevel=INFO
+dev-worker: ## Celery worker, restarts on code or .env changes (threads pool: prefork breaks on macOS spawn)
+	$(BE) $(WATCH) "celery -A lucia.worker.celery_app worker --pool=threads --concurrency=8 --loglevel=INFO" src .env
+
+dev-beat: ## Celery beat, restarts on code or .env changes
+	$(BE) $(WATCH) "celery -A lucia.worker.celery_app beat --loglevel=INFO" src .env
 
 dev-web: ## Vite on :5173 (proxies /api to :8000)
 	$(FE) pnpm dev

@@ -20,7 +20,8 @@ SLACK_TOKEN = {
     "bot_user_id": "U1",
     "team": {"id": "T1", "name": "Acme"},
 }
-VAPI_BODY = {"connector": "vapi", "label": "Main line", "config": {"phone_number": "+14155550123"}}
+VAPI_BODY = {"connector": "vapi", "label": "Main line", "config": {"phone_number_id": "pn_1"}}
+VAPI_NUMBER = "https://api.vapi.ai/phone-number/pn_1"
 
 
 def _state(url: str) -> str:
@@ -51,7 +52,7 @@ async def slack(db: AsyncSession, firm: Json) -> ConnectorConnection:
 
 @pytest.fixture
 async def vapi_conn(db: AsyncSession, firm: Json) -> ConnectorConnection:
-    return await connected(db, firm["id"], "vapi", {"assistant_id": "a1", "phone_number_id": "p1"})
+    return await connected(db, firm["id"], "vapi", {"phone_number_id": "p1"})
 
 
 async def _test(client: AsyncClient, c: ConnectorConnection, **body: object) -> httpx.Response:
@@ -289,53 +290,48 @@ async def test_consent_link_needs_platform_app(
 
 
 @respx.mock
-async def test_vapi_provisioning_with_own_twilio(authed: AsyncClient, firm: Json) -> None:
-    assistant = respx.post("https://api.vapi.ai/assistant").respond(json={"id": "asst_1"})
-    respx.post("https://api.vapi.ai/phone-number").respond(json={"id": "pn_1"})
-    resp = await authed.post(
-        f"/api/v1/firms/{firm['id']}/connections",
-        json={
-            **VAPI_BODY,
-            "secrets": {"twilio_account_sid": "AC123", "twilio_auth_token": "tok-5678"},
-        },
+async def test_vapi_connects_an_existing_number(authed: AsyncClient, firm: Json) -> None:
+    respx.get(VAPI_NUMBER).respond(
+        json={"id": "pn_1", "provider": "twilio", "number": "+14155550123"}
     )
+    resp = await authed.post(f"/api/v1/firms/{firm['id']}/connections", json=VAPI_BODY)
     body = resp.json()
     assert resp.status_code == 201 and body["status"] == "connected"
-    assert body["config"] == {
-        "assistant_id": "asst_1",
-        "phone_number_id": "pn_1",
-        "phone_number": "+14155550123",
-    }
-    assert body["secret_hints"]["twilio_auth_token"] == "••••5678"
-    server = json.loads(assistant.calls.last.request.content)["server"]
-    assert server["url"] == "https://lucia.test/api/v1/hooks/vapi"
-    assert server["headers"] == {"x-vapi-secret": get_settings().vapi_webhook_secret}
+    assert body["config"] == {"phone_number_id": "pn_1", "phone_number": "+14155550123"}
+    assert body["secret_hints"] == {}
+
+
+@pytest.mark.parametrize(
+    "config", [{}, {"phone_number_id": "  "}, {"phone_number": "+14155550123"}]
+)
+async def test_vapi_needs_a_number_id(authed: AsyncClient, firm: Json, config: Json) -> None:
+    resp = await authed.post(
+        f"/api/v1/firms/{firm['id']}/connections", json={**VAPI_BODY, "config": config}
+    )
+    assert resp.status_code == 422
+    assert resp.json()["errors"][0]["path"] == "/config/phone_number_id"
 
 
 @respx.mock
-async def test_vapi_falls_back_to_platform_twilio(authed: AsyncClient, firm: Json) -> None:
-    respx.post("https://api.vapi.ai/assistant").respond(json={"id": "asst_1"})
-    number = respx.post("https://api.vapi.ai/phone-number").respond(json={"id": "pn_1"})
-    resp = (await authed.post(f"/api/v1/firms/{firm['id']}/connections", json=VAPI_BODY)).json()
-    assert resp["secret_hints"] == {}
-    sent = json.loads(number.calls.last.request.content)
-    assert sent["twilioAccountSid"] == get_settings().twilio_account_sid
+async def test_vapi_unknown_number_is_422(authed: AsyncClient, firm: Json) -> None:
+    respx.get(VAPI_NUMBER).respond(404, json={"message": "Not Found"})
+    resp = await authed.post(f"/api/v1/firms/{firm['id']}/connections", json=VAPI_BODY)
+    assert resp.status_code == 422
+    assert "Vapi error 404: Not Found" in resp.json()["errors"][0]["message"]
 
 
-@pytest.mark.parametrize("phone", ["555", "14155550123", "+0123456789", ""])
-async def test_vapi_rejects_non_e164_numbers(authed: AsyncClient, firm: Json, phone: str) -> None:
+@respx.mock
+async def test_vapi_rejects_free_vapi_numbers(authed: AsyncClient, firm: Json) -> None:
+    respx.get(VAPI_NUMBER).respond(json={"id": "pn_1", "provider": "vapi", "number": "+1"})
+    resp = await authed.post(f"/api/v1/firms/{firm['id']}/connections", json=VAPI_BODY)
+    assert resp.status_code == 422 and "can't place calls" in resp.json()["errors"][0]["message"]
+
+
+async def test_vapi_takes_no_secrets(authed: AsyncClient, firm: Json) -> None:
     resp = await authed.post(
         f"/api/v1/firms/{firm['id']}/connections",
-        json={**VAPI_BODY, "config": {"phone_number": phone}},
+        json={**VAPI_BODY, "secrets": {"twilio_auth_token": "tok"}},
     )
-    assert resp.status_code == 422 and resp.json()["errors"][0]["path"] == "/config/phone_number"
-
-
-async def test_vapi_without_twilio_is_422(
-    authed: AsyncClient, firm: Json, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(get_settings(), "twilio_auth_token", "")
-    resp = await authed.post(f"/api/v1/firms/{firm['id']}/connections", json=VAPI_BODY)
     assert resp.status_code == 422 and resp.json()["errors"][0]["path"] == "/secrets"
 
 
@@ -349,10 +345,10 @@ async def test_vapi_without_platform_key_is_409(
 
 
 @respx.mock
-async def test_vapi_provider_error_is_502(authed: AsyncClient, firm: Json) -> None:
-    respx.post("https://api.vapi.ai/assistant").respond(401, json={"message": "bad key"})
+async def test_vapi_network_error_is_502(authed: AsyncClient, firm: Json) -> None:
+    respx.get(VAPI_NUMBER).mock(side_effect=httpx.ConnectError("down"))
     resp = await authed.post(f"/api/v1/firms/{firm['id']}/connections", json=VAPI_BODY)
-    assert resp.status_code == 502 and resp.json()["detail"] == "Vapi error 401: bad key"
+    assert resp.status_code == 502 and "ConnectError" in resp.json()["detail"]
 
 
 # --- tests (auth and per tool) -----------------------------------------------------------
@@ -489,11 +485,10 @@ async def test_inbound_tool_fails_on_stale_or_foreign_event(
 
 @respx.mock
 async def test_vapi_auth_test(authed: AsyncClient, vapi_conn: ConnectorConnection) -> None:
-    respx.get("https://api.vapi.ai/assistant/a1").respond(json={"id": "a1"})
     respx.get("https://api.vapi.ai/phone-number/p1").respond(json={"number": "+14155550123"})
     assert (await _test(authed, vapi_conn)).json() == {
         "ok": True,
-        "detail": "Assistant and number +14155550123 are ready",
+        "detail": "Number +14155550123 is ready",
     }
 
 
@@ -503,8 +498,41 @@ async def test_vapi_place_call(authed: AsyncClient, vapi_conn: ConnectorConnecti
     resp = await _test(authed, vapi_conn, tool="vapi.place_call", input={"to": "+14155550199"})
     assert resp.json() == {"ok": True, "detail": "Call call_1 queued to +14155550199"}
     sent = json.loads(call.calls.last.request.content)
-    assert sent["assistantOverrides"]["maxDurationSeconds"] == 20
-    assert sent["customer"] == {"number": "+14155550199"}
+    assert sent["phoneNumberId"] == "p1" and sent["customer"] == {"number": "+14155550199"}
+    assistant = sent["assistant"]
+    assert assistant["maxDurationSeconds"] == 20
+    assert assistant["metadata"] == {
+        "firm_id": str(vapi_conn.firm_id),
+        "connection_id": str(vapi_conn.id),
+    }
+    assert assistant["server"] == {
+        "url": "https://lucia.test/api/v1/hooks/vapi",
+        "headers": {"x-vapi-secret": get_settings().vapi_webhook_secret},
+    }
+
+
+@respx.mock
+async def test_vapi_call_without_a_platform_secret_sends_no_header(
+    authed: AsyncClient, vapi_conn: ConnectorConnection, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(get_settings(), "vapi_webhook_secret", "")
+    call = respx.post("https://api.vapi.ai/call").respond(json={"id": "call_1"})
+    await _test(authed, vapi_conn, tool="vapi.place_call", input={"to": "+14155550199"})
+    assert json.loads(call.calls.last.request.content)["assistant"]["server"]["headers"] == {}
+
+
+async def test_vapi_receive_call_is_not_testable(
+    authed: AsyncClient, vapi_conn: ConnectorConnection
+) -> None:
+    resp = await _test(authed, vapi_conn, tool="vapi.receive_call")
+    assert resp.status_code == 422 and resp.json()["errors"][0]["code"] == "unknown_tool"
+
+
+async def test_vapi_inbound_enable_is_409(
+    authed: AsyncClient, vapi_conn: ConnectorConnection
+) -> None:
+    resp = await authed.post(f"/api/v1/connections/{vapi_conn.id}/inbound/enable")
+    assert resp.status_code == 409 and "only place calls" in resp.json()["detail"]
 
 
 async def test_vapi_call_rejects_non_e164_target(

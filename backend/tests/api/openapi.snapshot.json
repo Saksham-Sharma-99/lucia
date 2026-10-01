@@ -2333,10 +2333,6 @@
             "title": "Slack",
             "type": "boolean"
           },
-          "twilio": {
-            "title": "Twilio",
-            "type": "boolean"
-          },
           "vapi": {
             "title": "Vapi",
             "type": "boolean"
@@ -2346,7 +2342,6 @@
           "slack",
           "google",
           "vapi",
-          "twilio",
           "public_base_url",
           "allowed_models",
           "drafter_enabled"

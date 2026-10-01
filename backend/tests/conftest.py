@@ -25,8 +25,6 @@ for key in (
     "GOOGLE_PUBSUB_VERIFICATION_TOKEN",
     "VAPI_API_KEY",
     "VAPI_WEBHOOK_SECRET",
-    "TWILIO_ACCOUNT_SID",
-    "TWILIO_AUTH_TOKEN",
 ):
     os.environ[key] = f"test-{key.lower().replace('_', '-')}"
 

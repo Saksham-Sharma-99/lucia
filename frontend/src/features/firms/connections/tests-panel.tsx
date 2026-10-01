@@ -16,7 +16,7 @@ import { relativeTime } from "@/lib/format";
 import { STALE } from "@/lib/invalidate";
 import { useApiMutation } from "@/lib/use-api-mutation";
 
-import { SETUP, TEST_TARGET, type SetupConnector } from "../model";
+import { SETUP, TEST_TARGET, isSetupConnector } from "../model";
 
 type Run = (tool?: string, input?: Record<string, string>) => void;
 
@@ -145,6 +145,7 @@ function InboundTest({
     success: (r) => r.detail,
     error: "Couldn't enable inbound",
   });
+  const setup = isSetupConnector(c.connector) ? SETUP[c.connector] : undefined;
   // Gmail only pushes events once Lucia has asked it to watch the mailbox.
   const needsWatch = c.connector === "gmail" && !c.config.watch_expiration;
   return (
@@ -180,7 +181,7 @@ function InboundTest({
         )}
       </div>
       <p className="text-muted-foreground text-xs">
-        {SETUP[c.connector as SetupConnector]?.inboundAsk(c)}
+        {setup && "inboundAsk" in setup && setup.inboundAsk(c)}
       </p>
     </div>
   );

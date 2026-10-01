@@ -180,7 +180,6 @@ export const PLATFORM: PlatformStatus = {
   slack: true,
   google: true,
   vapi: true,
-  twilio: true,
   public_base_url: "https://lucia.test",
   allowed_models: ["m-big", "m-small"],
   drafter_enabled: false,
