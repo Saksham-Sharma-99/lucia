@@ -108,3 +108,8 @@ async def test_unarchive_active_agent_is_idempotent(authed: AsyncClient) -> None
     await create_agent(authed)
     resp = (await authed.post("/api/v1/agents/chaser/unarchive")).json()
     assert resp["status"] == "active" and [v["status"] for v in resp["versions"]] == ["active"]
+
+
+async def test_versions_name_their_author(authed: AsyncClient) -> None:
+    agent = await create_agent(authed)
+    assert agent["versions"][0]["created_by_name"] == "Tester"

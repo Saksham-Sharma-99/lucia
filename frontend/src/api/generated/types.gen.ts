@@ -375,6 +375,10 @@ export type ConnectionOut = {
      */
     webhook_url?: string;
     /**
+     * Used By
+     */
+    used_by?: Array<string>;
+    /**
      * Created At
      */
     created_at: string;
@@ -875,6 +879,28 @@ export type MappingCreate = {
 };
 
 /**
+ * MappingHistoryItem
+ */
+export type MappingHistoryItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Status
+     */
+    status: 'active' | 'inactive';
+    /**
+     * Mapped At
+     */
+    mapped_at: string;
+};
+
+/**
  * MappingOut
  */
 export type MappingOut = {
@@ -926,6 +952,10 @@ export type MappingOut = {
      */
     mapped_at: string;
     /**
+     * Firm Name
+     */
+    firm_name: string;
+    /**
      * Agent Handle
      */
     agent_handle: string;
@@ -970,6 +1000,38 @@ export type MappingPatch = {
      * Kill Switch
      */
     kill_switch?: boolean | null;
+};
+
+/**
+ * MappingResolved
+ *
+ * What the mapping runs under, and where each part comes from. Computed, never stored.
+ */
+export type MappingResolved = {
+    /**
+     * Policies
+     */
+    policies: Array<ResolvedPolicy>;
+    cadence: ResolvedCadence;
+    /**
+     * Alert Routing
+     */
+    alert_routing: Array<ResolvedRoute>;
+    /**
+     * Timezone
+     */
+    timezone: string;
+    /**
+     * Business Hours
+     */
+    business_hours: {
+        [key: string]: Window | null;
+    };
+    quiet_hours: Window | null;
+    /**
+     * History
+     */
+    history: Array<MappingHistoryItem>;
 };
 
 /**
@@ -1101,6 +1163,10 @@ export type PlatformStatus = {
      * Public Base Url
      */
     public_base_url: string;
+    /**
+     * Allowed Models
+     */
+    allowed_models: Array<string>;
 };
 
 /**
@@ -1119,6 +1185,26 @@ export type PolicyRuleRef = {
     params?: {
         [key: string]: unknown;
     };
+};
+
+/**
+ * PolicySource
+ */
+export type PolicySource = {
+    /**
+     * Source
+     */
+    source: 'version' | 'firm' | 'mapping';
+    /**
+     * Params
+     */
+    params: {
+        [key: string]: unknown;
+    };
+    /**
+     * Applies
+     */
+    applies: boolean;
 };
 
 /**
@@ -1211,6 +1297,82 @@ export type RegistryEntryOut = {
      * Channel Tool
      */
     readonly channel_tool: string | null;
+};
+
+/**
+ * ResolvedCadence
+ */
+export type ResolvedCadence = {
+    /**
+     * Version Min Wait Hours
+     */
+    version_min_wait_hours: number;
+    /**
+     * Override Min Wait Hours
+     */
+    override_min_wait_hours: number | null;
+    /**
+     * Min Wait Hours
+     */
+    min_wait_hours: number;
+};
+
+/**
+ * ResolvedPolicy
+ */
+export type ResolvedPolicy = {
+    /**
+     * Rule
+     */
+    rule: string;
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Required
+     */
+    required: boolean;
+    /**
+     * Sources
+     */
+    sources: Array<PolicySource>;
+};
+
+/**
+ * ResolvedRoute
+ *
+ * Alert channels for one urgency: the mapping wins, then the firm, then the agent.
+ */
+export type ResolvedRoute = {
+    /**
+     * Urgency
+     */
+    urgency: 'P0' | 'P1' | 'P2';
+    /**
+     * Channels
+     */
+    channels: Array<string>;
+    /**
+     * Source
+     */
+    source: 'version' | 'firm' | 'mapping' | null;
+    /**
+     * Version
+     */
+    version: Array<string> | null;
+    /**
+     * Firm
+     */
+    firm: Array<string> | null;
+    /**
+     * Mapping
+     */
+    mapping: Array<string> | null;
 };
 
 /**
@@ -1382,6 +1544,10 @@ export type VersionDetail = {
      */
     created_by: string;
     /**
+     * Created By Name
+     */
+    created_by_name: string;
+    /**
      * Created At
      */
     created_at: string;
@@ -1424,6 +1590,10 @@ export type VersionSummary = {
      * Created By
      */
     created_by: string;
+    /**
+     * Created By Name
+     */
+    created_by_name: string;
     /**
      * Created At
      */
@@ -3521,6 +3691,48 @@ export type UpdateMappingResponses = {
 };
 
 export type UpdateMappingResponse = UpdateMappingResponses[keyof UpdateMappingResponses];
+
+export type GetMappingResolvedData = {
+    body?: never;
+    path: {
+        /**
+         * Mapping Id
+         */
+        mapping_id: string;
+    };
+    query?: never;
+    url: '/api/v1/mappings/{mapping_id}/resolved';
+};
+
+export type GetMappingResolvedErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type GetMappingResolvedError = GetMappingResolvedErrors[keyof GetMappingResolvedErrors];
+
+export type GetMappingResolvedResponses = {
+    /**
+     * Successful Response
+     */
+    200: MappingResolved;
+};
+
+export type GetMappingResolvedResponse = GetMappingResolvedResponses[keyof GetMappingResolvedResponses];
 
 export type SwitchMappingVersionData = {
     body: SwitchVersion;

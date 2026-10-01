@@ -9,68 +9,289 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AgentsIndexRouteImport } from './routes/agents/index'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AppRegistryRouteImport } from './routes/_app/registry'
+import { Route as AppAgentsIndexRouteImport } from './routes/_app/agents/index'
+import { Route as AppAgentsNewRouteImport } from './routes/_app/agents/new'
+import { Route as AppFirmMappingsIndexRouteImport } from './routes/_app/firm-mappings/index'
+import { Route as AppFirmMappingsMappingIdRouteImport } from './routes/_app/firm-mappings/$mappingId'
+import { Route as AppFirmsIndexRouteImport } from './routes/_app/firms/index'
+import { Route as AppFirmsFirmIdRouteImport } from './routes/_app/firms/$firmId'
+import { Route as AppAgentsHandleIndexRouteImport } from './routes/_app/agents/$handle/index'
+import { Route as AppAgentsHandleAmendRouteImport } from './routes/_app/agents/$handle/amend'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AgentsIndexRoute = AgentsIndexRouteImport.update({
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRegistryRoute = AppRegistryRouteImport.update({
+  id: '/registry',
+  path: '/registry',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgentsIndexRoute = AppAgentsIndexRouteImport.update({
   id: '/agents/',
   path: '/agents/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgentsNewRoute = AppAgentsNewRouteImport.update({
+  id: '/agents/new',
+  path: '/agents/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFirmMappingsIndexRoute = AppFirmMappingsIndexRouteImport.update({
+  id: '/firm-mappings/',
+  path: '/firm-mappings/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFirmMappingsMappingIdRoute =
+  AppFirmMappingsMappingIdRouteImport.update({
+    id: '/firm-mappings/$mappingId',
+    path: '/firm-mappings/$mappingId',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppFirmsIndexRoute = AppFirmsIndexRouteImport.update({
+  id: '/firms/',
+  path: '/firms/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFirmsFirmIdRoute = AppFirmsFirmIdRouteImport.update({
+  id: '/firms/$firmId',
+  path: '/firms/$firmId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgentsHandleIndexRoute = AppAgentsHandleIndexRouteImport.update({
+  id: '/agents/$handle/',
+  path: '/agents/$handle/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgentsHandleAmendRoute = AppAgentsHandleAmendRouteImport.update({
+  id: '/agents/$handle/amend',
+  path: '/agents/$handle/amend',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/agents/': typeof AgentsIndexRoute
+  '/': typeof AppIndexRoute
+  '/login': typeof LoginRoute
+  '/registry': typeof AppRegistryRoute
+  '/agents/new': typeof AppAgentsNewRoute
+  '/firm-mappings/$mappingId': typeof AppFirmMappingsMappingIdRoute
+  '/firms/$firmId': typeof AppFirmsFirmIdRoute
+  '/agents/': typeof AppAgentsIndexRoute
+  '/firm-mappings/': typeof AppFirmMappingsIndexRoute
+  '/firms/': typeof AppFirmsIndexRoute
+  '/agents/$handle/amend': typeof AppAgentsHandleAmendRoute
+  '/agents/$handle/': typeof AppAgentsHandleIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/agents': typeof AgentsIndexRoute
+  '/login': typeof LoginRoute
+  '/registry': typeof AppRegistryRoute
+  '/': typeof AppIndexRoute
+  '/agents/new': typeof AppAgentsNewRoute
+  '/firm-mappings/$mappingId': typeof AppFirmMappingsMappingIdRoute
+  '/firms/$firmId': typeof AppFirmsFirmIdRoute
+  '/agents': typeof AppAgentsIndexRoute
+  '/firm-mappings': typeof AppFirmMappingsIndexRoute
+  '/firms': typeof AppFirmsIndexRoute
+  '/agents/$handle/amend': typeof AppAgentsHandleAmendRoute
+  '/agents/$handle': typeof AppAgentsHandleIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/agents/': typeof AgentsIndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_app/registry': typeof AppRegistryRoute
+  '/_app/': typeof AppIndexRoute
+  '/_app/agents/new': typeof AppAgentsNewRoute
+  '/_app/firm-mappings/$mappingId': typeof AppFirmMappingsMappingIdRoute
+  '/_app/firms/$firmId': typeof AppFirmsFirmIdRoute
+  '/_app/agents/': typeof AppAgentsIndexRoute
+  '/_app/firm-mappings/': typeof AppFirmMappingsIndexRoute
+  '/_app/firms/': typeof AppFirmsIndexRoute
+  '/_app/agents/$handle/amend': typeof AppAgentsHandleAmendRoute
+  '/_app/agents/$handle/': typeof AppAgentsHandleIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/agents/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/registry'
+    | '/agents/new'
+    | '/firm-mappings/$mappingId'
+    | '/firms/$firmId'
+    | '/agents/'
+    | '/firm-mappings/'
+    | '/firms/'
+    | '/agents/$handle/amend'
+    | '/agents/$handle/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/agents'
-  id: '__root__' | '/' | '/agents/'
+  to:
+    | '/login'
+    | '/registry'
+    | '/'
+    | '/agents/new'
+    | '/firm-mappings/$mappingId'
+    | '/firms/$firmId'
+    | '/agents'
+    | '/firm-mappings'
+    | '/firms'
+    | '/agents/$handle/amend'
+    | '/agents/$handle'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/login'
+    | '/_app/registry'
+    | '/_app/'
+    | '/_app/agents/new'
+    | '/_app/firm-mappings/$mappingId'
+    | '/_app/firms/$firmId'
+    | '/_app/agents/'
+    | '/_app/firm-mappings/'
+    | '/_app/firms/'
+    | '/_app/agents/$handle/amend'
+    | '/_app/agents/$handle/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AgentsIndexRoute: typeof AgentsIndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
+    '/_app': {
+      id: '/_app'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/agents/': {
-      id: '/agents/'
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/': {
+      id: '/_app/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/registry': {
+      id: '/_app/registry'
+      path: '/registry'
+      fullPath: '/registry'
+      preLoaderRoute: typeof AppRegistryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/agents/': {
+      id: '/_app/agents/'
       path: '/agents'
       fullPath: '/agents/'
-      preLoaderRoute: typeof AgentsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppAgentsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/agents/new': {
+      id: '/_app/agents/new'
+      path: '/agents/new'
+      fullPath: '/agents/new'
+      preLoaderRoute: typeof AppAgentsNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/firm-mappings/': {
+      id: '/_app/firm-mappings/'
+      path: '/firm-mappings'
+      fullPath: '/firm-mappings/'
+      preLoaderRoute: typeof AppFirmMappingsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/firm-mappings/$mappingId': {
+      id: '/_app/firm-mappings/$mappingId'
+      path: '/firm-mappings/$mappingId'
+      fullPath: '/firm-mappings/$mappingId'
+      preLoaderRoute: typeof AppFirmMappingsMappingIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/firms/': {
+      id: '/_app/firms/'
+      path: '/firms'
+      fullPath: '/firms/'
+      preLoaderRoute: typeof AppFirmsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/firms/$firmId': {
+      id: '/_app/firms/$firmId'
+      path: '/firms/$firmId'
+      fullPath: '/firms/$firmId'
+      preLoaderRoute: typeof AppFirmsFirmIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/agents/$handle/': {
+      id: '/_app/agents/$handle/'
+      path: '/agents/$handle'
+      fullPath: '/agents/$handle/'
+      preLoaderRoute: typeof AppAgentsHandleIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/agents/$handle/amend': {
+      id: '/_app/agents/$handle/amend'
+      path: '/agents/$handle/amend'
+      fullPath: '/agents/$handle/amend'
+      preLoaderRoute: typeof AppAgentsHandleAmendRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
 
+interface AppRouteChildren {
+  AppRegistryRoute: typeof AppRegistryRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppAgentsNewRoute: typeof AppAgentsNewRoute
+  AppFirmMappingsMappingIdRoute: typeof AppFirmMappingsMappingIdRoute
+  AppFirmsFirmIdRoute: typeof AppFirmsFirmIdRoute
+  AppAgentsIndexRoute: typeof AppAgentsIndexRoute
+  AppFirmMappingsIndexRoute: typeof AppFirmMappingsIndexRoute
+  AppFirmsIndexRoute: typeof AppFirmsIndexRoute
+  AppAgentsHandleAmendRoute: typeof AppAgentsHandleAmendRoute
+  AppAgentsHandleIndexRoute: typeof AppAgentsHandleIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppRegistryRoute: AppRegistryRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppAgentsNewRoute: AppAgentsNewRoute,
+  AppFirmMappingsMappingIdRoute: AppFirmMappingsMappingIdRoute,
+  AppFirmsFirmIdRoute: AppFirmsFirmIdRoute,
+  AppAgentsIndexRoute: AppAgentsIndexRoute,
+  AppFirmMappingsIndexRoute: AppFirmMappingsIndexRoute,
+  AppFirmsIndexRoute: AppFirmsIndexRoute,
+  AppAgentsHandleAmendRoute: AppAgentsHandleAmendRoute,
+  AppAgentsHandleIndexRoute: AppAgentsHandleIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AgentsIndexRoute: AgentsIndexRoute,
+  AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

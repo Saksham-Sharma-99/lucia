@@ -20,7 +20,13 @@ from lucia.connectors.base import (
 from lucia.core.errors import FieldError, ProblemError, conflict, invalid
 from lucia.core.security import decrypt_json, encrypt_json, secret_hint, sign_state, unsign_state
 from lucia.core.time import utcnow
-from lucia.db.models import CompiledAgentFirmMapping, ConnectorConnection, Firm, RegistryEntry
+from lucia.db.models import (
+    Agent,
+    CompiledAgentFirmMapping,
+    ConnectorConnection,
+    Firm,
+    RegistryEntry,
+)
 from lucia.db.queries import get_or_404
 
 C = ConnectorConnection
@@ -36,13 +42,30 @@ def safe_message(exc: Exception) -> str:
     return f"Network error talking to the provider ({type(exc).__name__})"
 
 
-def connection_out(c: C) -> s.ConnectionOut:
-    return s.ConnectionOut.model_validate(c).model_copy(
-        update={
-            "has_consent_link": c.consent_nonce is not None,
-            "webhook_url": hook_url(c.connector),
-        }
-    )
+async def to_out(session: AsyncSession, conns: list[C]) -> list[s.ConnectionOut]:
+    """Connection DTOs, each with the agents whose mappings bind it (one query for all)."""
+    M = CompiledAgentFirmMapping
+    used_by: dict[str, list[str]] = {}
+    if conns:
+        rows = await session.execute(
+            select(M.identities, Agent.handle)
+            .join(Agent, Agent.id == M.agent_id)
+            .where(M.firm_id.in_({c.firm_id for c in conns}))
+            .order_by(Agent.handle)
+        )
+        for identities, handle in rows:
+            for conn_id in identities.values():
+                used_by.setdefault(conn_id, []).append(handle)
+    return [
+        s.ConnectionOut.model_validate(c).model_copy(
+            update={
+                "has_consent_link": c.consent_nonce is not None,
+                "webhook_url": hook_url(c.connector),
+                "used_by": sorted(set(used_by.get(str(c.id), []))),
+            }
+        )
+        for c in conns
+    ]
 
 
 def set_secrets(c: C, values: dict[str, str]) -> None:

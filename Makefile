@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help setup env db-up db-down db-reset migrate migration seed dev dev-api dev-worker dev-beat dev-web \
+.PHONY: help setup env db-up db-down db-reset migrate migration seed e2e dev dev-api dev-worker dev-beat dev-web \
         lint fmt typecheck test gen-client ci
 
 BE := cd backend &&
@@ -66,8 +66,12 @@ typecheck: ## Type-check both apps
 	$(BE) uv run pyright
 	$(FE) pnpm typecheck
 
-test: ## Run tests (needs make db-up)
+test: ## Run backend and frontend tests (needs make db-up)
 	$(BE) uv run pytest
+	$(FE) pnpm test
+
+e2e: ## Browser smoke test against a running `make dev` (E2E_PASSWORD=<seed password>); cleans up its data
+	$(FE) pnpm e2e
 
 gen-client: ## Regenerate the TS API client (needs make dev-api running)
 	$(FE) pnpm gen:api

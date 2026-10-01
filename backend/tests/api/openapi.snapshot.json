@@ -678,6 +678,14 @@
             "title": "Updated At",
             "type": "string"
           },
+          "used_by": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Used By",
+            "type": "array"
+          },
           "webhook_url": {
             "default": "",
             "title": "Webhook Url",
@@ -1656,6 +1664,40 @@
         "title": "MappingCreate",
         "type": "object"
       },
+      "MappingHistoryItem": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "mapped_at": {
+            "format": "date-time",
+            "title": "Mapped At",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "status",
+          "mapped_at"
+        ],
+        "title": "MappingHistoryItem",
+        "type": "object"
+      },
       "MappingOut": {
         "properties": {
           "ab_weight": {
@@ -1691,6 +1733,10 @@
           "firm_id": {
             "format": "uuid",
             "title": "Firm Id",
+            "type": "string"
+          },
+          "firm_name": {
+            "title": "Firm Name",
             "type": "string"
           },
           "id": {
@@ -1761,6 +1807,7 @@
           "supersedes_mapping_id",
           "mapped_by",
           "mapped_at",
+          "firm_name",
           "agent_handle",
           "agent_name",
           "version",
@@ -1839,6 +1886,85 @@
           }
         },
         "title": "MappingPatch",
+        "type": "object"
+      },
+      "MappingResolved": {
+        "description": "What the mapping runs under, and where each part comes from. Computed, never stored.",
+        "properties": {
+          "alert_routing": {
+            "items": {
+              "$ref": "#/components/schemas/ResolvedRoute"
+            },
+            "title": "Alert Routing",
+            "type": "array"
+          },
+          "business_hours": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Window"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "propertyNames": {
+              "enum": [
+                "mon",
+                "tue",
+                "wed",
+                "thu",
+                "fri",
+                "sat",
+                "sun"
+              ]
+            },
+            "title": "Business Hours",
+            "type": "object"
+          },
+          "cadence": {
+            "$ref": "#/components/schemas/ResolvedCadence"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/MappingHistoryItem"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "policies": {
+            "items": {
+              "$ref": "#/components/schemas/ResolvedPolicy"
+            },
+            "title": "Policies",
+            "type": "array"
+          },
+          "quiet_hours": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Window"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "policies",
+          "cadence",
+          "alert_routing",
+          "timezone",
+          "business_hours",
+          "quiet_hours",
+          "history"
+        ],
+        "title": "MappingResolved",
         "type": "object"
       },
       "Models": {
@@ -2022,6 +2148,13 @@
       },
       "PlatformStatus": {
         "properties": {
+          "allowed_models": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Models",
+            "type": "array"
+          },
           "google": {
             "title": "Google",
             "type": "boolean"
@@ -2048,7 +2181,8 @@
           "google",
           "vapi",
           "twilio",
-          "public_base_url"
+          "public_base_url",
+          "allowed_models"
         ],
         "title": "PlatformStatus",
         "type": "object"
@@ -2072,6 +2206,35 @@
           "rule"
         ],
         "title": "PolicyRuleRef",
+        "type": "object"
+      },
+      "PolicySource": {
+        "properties": {
+          "applies": {
+            "title": "Applies",
+            "type": "boolean"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          },
+          "source": {
+            "enum": [
+              "version",
+              "firm",
+              "mapping"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "params",
+          "applies"
+        ],
+        "title": "PolicySource",
         "type": "object"
       },
       "Problem": {
@@ -2235,6 +2398,161 @@
           "channel_tool"
         ],
         "title": "RegistryEntryOut",
+        "type": "object"
+      },
+      "ResolvedCadence": {
+        "properties": {
+          "min_wait_hours": {
+            "title": "Min Wait Hours",
+            "type": "integer"
+          },
+          "override_min_wait_hours": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Min Wait Hours"
+          },
+          "version_min_wait_hours": {
+            "title": "Version Min Wait Hours",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version_min_wait_hours",
+          "override_min_wait_hours",
+          "min_wait_hours"
+        ],
+        "title": "ResolvedCadence",
+        "type": "object"
+      },
+      "ResolvedPolicy": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          },
+          "rule": {
+            "title": "Rule",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/PolicySource"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rule",
+          "display_name",
+          "description",
+          "required",
+          "sources"
+        ],
+        "title": "ResolvedPolicy",
+        "type": "object"
+      },
+      "ResolvedRoute": {
+        "description": "Alert channels for one urgency: the mapping wins, then the firm, then the agent.",
+        "properties": {
+          "channels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Channels",
+            "type": "array"
+          },
+          "firm": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Firm"
+          },
+          "mapping": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mapping"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "version",
+                  "firm",
+                  "mapping"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "urgency": {
+            "enum": [
+              "P0",
+              "P1",
+              "P2"
+            ],
+            "title": "Urgency",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "urgency",
+          "channels",
+          "source",
+          "version",
+          "firm",
+          "mapping"
+        ],
+        "title": "ResolvedRoute",
         "type": "object"
       },
       "SwitchVersion": {
@@ -2503,6 +2821,10 @@
             "title": "Created By",
             "type": "string"
           },
+          "created_by_name": {
+            "title": "Created By Name",
+            "type": "string"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -2543,6 +2865,7 @@
           "changelog",
           "parent_version",
           "created_by",
+          "created_by_name",
           "created_at",
           "config_hash",
           "mapping_count",
@@ -2571,6 +2894,10 @@
             "title": "Created By",
             "type": "string"
           },
+          "created_by_name": {
+            "title": "Created By Name",
+            "type": "string"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -2611,6 +2938,7 @@
           "changelog",
           "parent_version",
           "created_by",
+          "created_by_name",
           "created_at",
           "config_hash",
           "mapping_count"
@@ -5801,6 +6129,79 @@
           }
         },
         "summary": "Update a mapping",
+        "tags": [
+          "internal:mappings"
+        ]
+      }
+    },
+    "/api/v1/mappings/{mapping_id}/resolved": {
+      "get": {
+        "operationId": "getMappingResolved",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mapping_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Mapping Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingResolved"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation failed"
+          }
+        },
+        "summary": "What a mapping runs under: policies, cadence, alert routing, firm hours",
         "tags": [
           "internal:mappings"
         ]

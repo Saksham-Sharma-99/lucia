@@ -33,6 +33,8 @@ class ConnectionOut(Read):
     last_inbound_at: datetime | None
     last_inbound_type: str | None
     webhook_url: str = ""
+    # Handles of agents whose mappings bind this connection; it can't be deleted while non-empty.
+    used_by: list[str] = []
     created_at: datetime
     updated_at: datetime
 

@@ -128,6 +128,7 @@ async def test_create_inactive_reports_missing_bindings(authed: AsyncClient, ctx
         1,
     )
     assert (body["agent_handle"], body["version"], body["ab_weight"]) == ("chaser", 1, 100)
+    assert body["firm_name"] == "Acme Law"
 
 
 async def test_create_and_activate(authed: AsyncClient, ctx: Ctx) -> None:
@@ -413,3 +414,48 @@ async def test_deactivating_firm_deactivates_mappings(authed: AsyncClient, ctx: 
     m = (await _create(authed, ctx, activate=True)).json()
     await authed.post(f"/api/v1/firms/{ctx.firm['id']}/deactivate")
     assert (await authed.get(f"/api/v1/mappings/{m['id']}")).json()["status"] == "inactive"
+
+
+async def test_resolved_combines_version_firm_and_overrides(authed: AsyncClient, ctx: Ctx) -> None:
+    floor = {"rule": "per_subject_contact_cap", "params": {"n": 2}}
+    settings = {"alert_routing": {"P1": ["slack_thread"]}, "policy_floor": [floor]}
+    resp = await authed.patch(f"/api/v1/firms/{ctx.firm['id']}", json={"settings": settings})
+    assert resp.status_code == 200, resp.text
+    overrides = {"cadence": {"min_wait_hours": 72}, "alert_routing": {"P0": ["email"]}}
+    mapping = (await _create(authed, ctx, overrides=overrides)).json()
+
+    got = (await authed.get(f"/api/v1/mappings/{mapping['id']}/resolved")).json()
+
+    cap = next(p for p in got["policies"] if p["rule"] == "per_subject_contact_cap")
+    assert [(x["source"], x["params"]) for x in cap["sources"]] == [
+        ("version", {"n": 3}),
+        ("firm", {"n": 2}),
+    ]
+    assert got["cadence"] == {
+        "version_min_wait_hours": 48,
+        "override_min_wait_hours": 72,
+        "min_wait_hours": 72,
+    }
+    routes = {r["urgency"]: (r["source"], r["channels"]) for r in got["alert_routing"]}
+    assert routes == {
+        "P0": ("mapping", ["email"]),
+        "P1": ("firm", ["slack_thread"]),
+        "P2": ("version", ["digest"]),
+    }
+    assert got["timezone"] == "America/New_York"
+    assert got["quiet_hours"] == {"start": "20:00", "end": "08:00"}
+    assert got["history"] == []
+
+
+async def test_resolved_history_follows_version_switches(authed: AsyncClient, ctx: Ctx) -> None:
+    first = (await _create(authed, ctx, activate=True)).json()
+    second = (await _switch(authed, first, (await _v2(authed))["id"])).json()
+    got = (await authed.get(f"/api/v1/mappings/{second['id']}/resolved")).json()
+    assert [(h["id"], h["version"], h["status"]) for h in got["history"]] == [
+        (first["id"], 1, "inactive")
+    ]
+
+
+async def test_resolved_of_an_unknown_mapping_is_404(authed: AsyncClient) -> None:
+    resp = await authed.get(f"/api/v1/mappings/{uuid.uuid4()}/resolved")
+    assert resp.status_code == 404

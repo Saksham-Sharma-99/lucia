@@ -118,12 +118,16 @@ def _check_follow_up(cfg: VersionConfig) -> list[FieldError]:
     return errors
 
 
-def _check_min_pack(cfg: VersionConfig, snap: RegistrySnapshot) -> list[FieldError]:
-    external = any(
+def needs_min_pack(cfg: VersionConfig, snap: RegistrySnapshot) -> bool:
+    """An agent that can contact people outside the firm must carry the platform's minimum rule."""
+    return any(
         (t := snap.tools.get(name)) is not None and t.risk_tier == "external_comm"
         for name in _selected_tools(cfg)
     )
-    if external and all(ref.rule != MIN_PACK_RULE for ref in cfg.policy_pack):
+
+
+def _check_min_pack(cfg: VersionConfig, snap: RegistrySnapshot) -> list[FieldError]:
+    if needs_min_pack(cfg, snap) and all(ref.rule != MIN_PACK_RULE for ref in cfg.policy_pack):
         return [
             _err(
                 "/policy_pack",

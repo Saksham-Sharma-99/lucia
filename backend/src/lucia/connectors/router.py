@@ -26,7 +26,7 @@ async def _get(session: DbSession, conn_id: uuid.UUID) -> ConnectorConnection:
     operation_id="listConnections",
 )
 async def list_connections(firm_id: uuid.UUID, session: DbSession) -> list[s.ConnectionOut]:
-    return [service.connection_out(c) for c in await service.list_for_firm(session, firm_id)]
+    return await service.to_out(session, await service.list_for_firm(session, firm_id))
 
 
 @router.post(
@@ -39,12 +39,12 @@ async def list_connections(firm_id: uuid.UUID, session: DbSession) -> list[s.Con
 async def create_connection(
     firm_id: uuid.UUID, body: s.ConnectionCreate, session: DbSession
 ) -> s.ConnectionOut:
-    return service.connection_out(await service.create(session, firm_id, body))
+    return (await service.to_out(session, [await service.create(session, firm_id, body)]))[0]
 
 
 @router.get("/connections/{conn_id}", summary="Get a connection", operation_id="getConnection")
 async def get_connection(conn_id: uuid.UUID, session: DbSession) -> s.ConnectionOut:
-    return service.connection_out(await _get(session, conn_id))
+    return (await service.to_out(session, [await _get(session, conn_id)]))[0]
 
 
 @router.patch(
@@ -56,7 +56,7 @@ async def patch_connection(
     conn_id: uuid.UUID, body: s.ConnectionPatch, session: DbSession
 ) -> s.ConnectionOut:
     c = await service.patch(session, await _get(session, conn_id), body)
-    return service.connection_out(c)
+    return (await service.to_out(session, [c]))[0]
 
 
 @router.delete(

@@ -28,4 +28,5 @@ async def test_platform_status(authed: AsyncClient) -> None:
         "vapi": True,
         "twilio": True,
         "public_base_url": "https://lucia.test",
+        "allowed_models": ["gpt-5.6", "gpt-5.6-sol", "gpt-5.6-luna"],
     }

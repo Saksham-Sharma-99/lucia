@@ -6,7 +6,15 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "src/api/generated", "src/routeTree.gen.ts"] },
+  {
+    ignores: [
+      "dist",
+      "src/api/generated",
+      "src/routeTree.gen.ts",
+      "test-results",
+      "playwright-report",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended, prettier],
     files: ["**/*.{ts,tsx}"],

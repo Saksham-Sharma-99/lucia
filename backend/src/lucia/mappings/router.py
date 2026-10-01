@@ -67,6 +67,15 @@ async def get_mapping(mapping_id: uuid.UUID, session: DbSession) -> s.MappingOut
     return await _out(session, await _get(session, mapping_id))
 
 
+@router.get(
+    "/{mapping_id}/resolved",
+    summary="What a mapping runs under: policies, cadence, alert routing, firm hours",
+    operation_id="getMappingResolved",
+)
+async def get_resolved(mapping_id: uuid.UUID, session: DbSession) -> s.MappingResolved:
+    return await service.resolved(session, await _get(session, mapping_id))
+
+
 @router.patch("/{mapping_id}", summary="Update a mapping", operation_id="updateMapping")
 async def patch_mapping(
     mapping_id: uuid.UUID, body: s.MappingPatch, session: DbSession

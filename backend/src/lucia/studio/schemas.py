@@ -35,6 +35,7 @@ class VersionSummary(Read):
     changelog: str
     parent_version: int | None
     created_by: uuid.UUID
+    created_by_name: str
     created_at: datetime
     config_hash: str
     mapping_count: int

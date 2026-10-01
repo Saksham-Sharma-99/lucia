@@ -1,11 +1,12 @@
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import Field
 
 from lucia.core.schema import AlertChannel, Read, Strict, Urgency
 from lucia.db.models.mapping import MappingStatus
+from lucia.firms.schemas import Weekday, Window
 
 Identities = dict[str, uuid.UUID]  # connector name -> connection id
 Weight = Field(default=100, ge=0, le=100)
@@ -45,6 +46,7 @@ class MappingBase(Read):
 
 
 class MappingOut(MappingBase):
+    firm_name: str
     agent_handle: str
     agent_name: str
     version: int
@@ -71,3 +73,56 @@ class MappingPatch(Strict):
 
 class SwitchVersion(Strict):
     agent_prompt_id: uuid.UUID
+
+
+Source = Literal["version", "firm", "mapping"]  # where a resolved setting comes from
+
+
+class PolicySource(Read):
+    source: Source
+    params: dict[str, Any]
+    applies: bool  # false when this mapping's stricter settings replace it
+
+
+class ResolvedPolicy(Read):
+    rule: str
+    display_name: str
+    description: str
+    required: bool  # the platform minimum for agents that contact people
+    sources: list[PolicySource]
+
+
+class ResolvedRoute(Read):
+    """Alert channels for one urgency: the mapping wins, then the firm, then the agent."""
+
+    urgency: Urgency
+    channels: list[str]
+    source: Source | None
+    version: list[str] | None
+    firm: list[str] | None
+    mapping: list[str] | None
+
+
+class ResolvedCadence(Read):
+    version_min_wait_hours: int
+    override_min_wait_hours: int | None
+    min_wait_hours: int
+
+
+class MappingHistoryItem(Read):
+    id: uuid.UUID
+    version: int
+    status: MappingStatus
+    mapped_at: datetime
+
+
+class MappingResolved(Read):
+    """What the mapping runs under, and where each part comes from. Computed, never stored."""
+
+    policies: list[ResolvedPolicy]
+    cadence: ResolvedCadence
+    alert_routing: list[ResolvedRoute]
+    timezone: str
+    business_hours: dict[Weekday, Window | None]
+    quiet_hours: Window | None
+    history: list[MappingHistoryItem]  # the mappings this one replaced, newest first

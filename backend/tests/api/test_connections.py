@@ -166,6 +166,8 @@ async def test_delete_blocked_while_a_mapping_binds_it(
         },
     )
     assert (await authed.delete(f"/api/v1/connections/{gmail.id}")).status_code == 409
+    listed = (await authed.get(f"/api/v1/firms/{firm['id']}/connections")).json()
+    assert listed[0]["used_by"] == ["chaser"]
 
 
 # --- consent links and OAuth callbacks ---------------------------------------------------

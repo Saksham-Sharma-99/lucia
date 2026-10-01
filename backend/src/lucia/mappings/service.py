@@ -16,6 +16,7 @@ from lucia.db.models import (
 )
 from lucia.db.models.mapping import ONE_ACTIVE_INDEX, MappingStatus
 from lucia.db.queries import apply_patch, get_or_404, unique_or
+from lucia.mappings import resolve
 from lucia.mappings import schemas as s
 from lucia.mappings.checklist import build_checklist
 from lucia.mappings.tighten import check_overrides
@@ -180,7 +181,7 @@ async def switch_version(session: AsyncSession, old: M, body: s.SwitchVersion, u
 
 
 async def to_out(session: AsyncSession, mappings: list[M]) -> list[s.MappingOut]:
-    """Mapping DTOs with agent, version and checklist summary, in at most two queries."""
+    """Mapping DTOs with firm, agent, version and checklist summary, in at most three queries."""
     if not mappings:
         return []
     rows = {
@@ -191,6 +192,9 @@ async def to_out(session: AsyncSession, mappings: list[M]) -> list[s.MappingOut]
             .where(V.id.in_({m.agent_prompt_id for m in mappings}))
         )
     }
+    firm_ids = {m.firm_id for m in mappings}
+    firm_rows = await session.execute(select(Firm.id, Firm.name).where(Firm.id.in_(firm_ids)))
+    firms = {fid: name for fid, name in firm_rows}
     conns = await _connections(session, {i for m in mappings for i in m.identities.values()})
     out: list[s.MappingOut] = []
     for m in mappings:
@@ -199,6 +203,7 @@ async def to_out(session: AsyncSession, mappings: list[M]) -> list[s.MappingOut]
         out.append(
             s.MappingOut(
                 **s.MappingBase.model_validate(m).model_dump(),
+                firm_name=firms[m.firm_id],
                 agent_handle=r.handle,
                 agent_name=r.name,
                 version=r.version,
@@ -222,3 +227,45 @@ async def list_mappings(
             stmt = stmt.where(col == value)
     rows, total = await fetch_page(session, stmt, paging)
     return Page.of(await to_out(session, rows), total, paging)
+
+
+async def resolved(session: AsyncSession, mapping: M) -> s.MappingResolved:
+    version = await session.get_one(V, mapping.agent_prompt_id)
+    firm = await session.get_one(Firm, mapping.firm_id)
+    settings = firm.settings
+    overrides = mapping.overrides
+    snap = await load_snapshot(session)
+    return s.MappingResolved(
+        policies=resolve.policies(
+            version.config, settings.get("policy_floor", []), overrides, snap
+        ),
+        cadence=resolve.cadence(version.config, overrides),
+        alert_routing=resolve.alert_routing(
+            version.config, settings.get("alert_routing", {}), overrides
+        ),
+        timezone=firm.timezone,
+        business_hours=settings.get("business_hours", {}),
+        quiet_hours=settings.get("quiet_hours"),
+        history=await _history(session, mapping),
+    )
+
+
+async def _history(session: AsyncSession, mapping: M) -> list[s.MappingHistoryItem]:
+    """Walk the switch-version chain back from this mapping (a handful of rows at most)."""
+    out: list[s.MappingHistoryItem] = []
+    previous = mapping.supersedes_mapping_id
+    while previous is not None:
+        row = (
+            await session.execute(
+                select(M.id, M.status, M.mapped_at, M.supersedes_mapping_id, V.version)
+                .join(V, V.id == M.agent_prompt_id)
+                .where(M.id == previous)
+            )
+        ).one()
+        out.append(
+            s.MappingHistoryItem(
+                id=row.id, version=row.version, status=row.status, mapped_at=row.mapped_at
+            )
+        )
+        previous = row.supersedes_mapping_id
+    return out

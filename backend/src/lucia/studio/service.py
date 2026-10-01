@@ -97,18 +97,20 @@ async def get_agent(session: AsyncSession, handle: str, *, lock: bool = False) -
 async def _versions(
     session: AsyncSession, agent_id: uuid.UUID, version: int | None = None
 ) -> list[s.VersionSummary]:
-    """Version summaries, newest first, with parent number and active mapping count."""
+    """Version summaries, newest first, with parent number, author and active mapping count."""
     parent = V.__table__.alias("parent")
     stmt = (
         select(
             *V.__table__.c,
             parent.c.version.label("parent_version"),
+            AppUser.display_name.label("created_by_name"),
             select(func.count())
             .where(M.agent_prompt_id == V.id, M.status == "active")
             .scalar_subquery()
             .label("mapping_count"),
         )
         .outerjoin(parent, parent.c.id == V.parent_version_id)
+        .join(AppUser, AppUser.id == V.created_by)
         .where(V.agent_id == agent_id)
         .order_by(V.version.desc())
     )

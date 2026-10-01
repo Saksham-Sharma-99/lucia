@@ -3,14 +3,19 @@ import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { client } from "@/api/generated/client.gen";
+import { configureApi } from "@/lib/api";
 import { queryClient } from "@/lib/query-client";
 import { routeTree } from "./routeTree.gen";
 import "./index.css";
 
-client.setConfig({ baseUrl: import.meta.env.VITE_API_URL ?? "" });
+configureApi();
 
-const router = createRouter({ routeTree, context: { queryClient } });
+const router = createRouter({
+  routeTree,
+  context: { queryClient },
+  defaultPreload: "intent",
+  scrollRestoration: true,
+});
 
 declare module "@tanstack/react-router" {
   interface Register {
