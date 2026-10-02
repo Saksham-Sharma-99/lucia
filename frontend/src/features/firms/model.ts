@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import type { ConnectionOut, PlatformStatus } from "@/api/generated/types.gen";
 
-export const FIRM_TABS = ["overview", "settings", "connections"] as const;
+export const FIRM_TABS = ["overview", "settings", "connections", "subjects", "contacts"] as const;
 export type FirmTab = (typeof FIRM_TABS)[number];
 
 export const DAYS = [

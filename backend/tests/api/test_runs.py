@@ -1,12 +1,15 @@
+import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
 
 import pytest
-from httpx import AsyncClient
+import respx
+from httpx import AsyncClient, Response
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from lucia.connectors import vapi as vapi_api
 from lucia.core.clock import FrozenClock
 from lucia.db.models import AgentRun, Episode, JournalSummary, RunStepLog, StepResult, Subject
 from lucia.harness.journal import append
@@ -200,3 +203,61 @@ async def test_remarks_are_required(
     _, run = await _run(db)
     resp = await authed.post(f"/api/v1/runs/{run.id}/takeover", json={"remarks": remarks})
     assert resp.status_code == 422
+
+
+async def _call_step(db: AsyncSession, run: AgentRun, **kw: Any) -> Any:
+    return await add_step(
+        db,
+        run,
+        kind="tool",
+        tool=kw.pop("tool", "vapi.place_call"),
+        status="SUCCEEDED",
+        idempotency_key=f"call-{kw.get('external_ref')}",
+        epoch=1,
+        **kw,
+    )
+
+
+@respx.mock
+async def test_call_recording_is_a_fresh_signed_link(
+    authed: AsyncClient, db: AsyncSession, clock: FrozenClock
+) -> None:
+    _, run = await _run(db)
+    step = await _call_step(db, run, external_ref="call-1")
+    await db.commit()
+    signed = "https://storage.vapi.ai/call-1-mono.wav?sig=abc"
+    respx.get(f"{vapi_api.API}/call/call-1/mono-recording").mock(
+        return_value=Response(302, headers={"Location": signed})
+    )
+    resp = await authed.get(f"/api/v1/runs/{run.id}/steps/{step.id}/recording")
+    assert resp.status_code == 200 and resp.json() == {"url": signed}
+
+
+@respx.mock
+async def test_call_recording_not_found(
+    authed: AsyncClient, db: AsyncSession, clock: FrozenClock
+) -> None:
+    _, run = await _run(db)
+    no_call = await _call_step(db, run, tool="slack.send_message", external_ref="m1")
+    unplaced = await _call_step(db, run, external_ref=None)
+    gone = await _call_step(db, run, external_ref="call-2")
+    await db.commit()
+    respx.get(f"{vapi_api.API}/call/call-2/mono-recording").mock(return_value=Response(404))
+    for step in (no_call, unplaced, gone):
+        resp = await authed.get(f"/api/v1/runs/{run.id}/steps/{step.id}/recording")
+        assert resp.status_code == 404, step.tool
+    assert (
+        await authed.get(f"/api/v1/runs/{run.id}/steps/{uuid.uuid4()}/recording")
+    ).status_code == 404
+
+
+@respx.mock
+async def test_call_recording_when_vapi_is_down(
+    authed: AsyncClient, db: AsyncSession, clock: FrozenClock
+) -> None:
+    _, run = await _run(db)
+    step = await _call_step(db, run, external_ref="call-1")
+    await db.commit()
+    respx.get(f"{vapi_api.API}/call/call-1/mono-recording").mock(return_value=Response(503))
+    resp = await authed.get(f"/api/v1/runs/{run.id}/steps/{step.id}/recording")
+    assert resp.status_code == 502

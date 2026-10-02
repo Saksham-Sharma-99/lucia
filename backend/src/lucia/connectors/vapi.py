@@ -138,6 +138,24 @@ async def get_call(call_id: str) -> dict[str, Any]:
     return await _api("GET", f"/call/{call_id}")
 
 
+async def recording_url(call_id: str) -> str:
+    """A short-lived signed link to the call's mono recording: Vapi answers 302 (recordings
+    are access-controlled, so the link is fetched when someone wants to listen)."""
+    try:
+        async with http() as client:
+            resp = await client.get(
+                f"{API}/call/{call_id}/mono-recording",
+                headers={"Authorization": f"Bearer {get_settings().vapi_api_key}"},
+            )
+    except httpx.HTTPError as e:
+        raise ConnectorError(f"Vapi unreachable: {type(e).__name__}") from e
+    if resp.status_code >= 500 or resp.status_code in (401, 403):
+        raise ConnectorError(f"Vapi error {resp.status_code}")
+    if not resp.is_redirect or not resp.headers.get("location"):
+        raise UnknownId(f"No recording for call {call_id}")
+    return resp.headers["location"]
+
+
 async def list_calls(phone_number_id: str, created_after: str) -> list[dict[str, Any]]:
     calls = await _api(
         "GET", "/call", params={"phoneNumberId": phone_number_id, "createdAtGt": created_after}

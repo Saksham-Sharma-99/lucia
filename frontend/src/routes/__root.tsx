@@ -6,6 +6,13 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { problemMessage } from "@/lib/problem";
 
+declare module "@tanstack/react-router" {
+  interface StaticDataRouteOption {
+    /** The page fills the screen instead of the centered content column (playground). */
+    fullBleed?: boolean;
+  }
+}
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   component: () => (
     <TooltipProvider>

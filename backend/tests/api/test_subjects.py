@@ -196,3 +196,35 @@ async def test_contact_point_search(authed: AsyncClient, firm: Json) -> None:
         await authed.get(f"/api/v1/firms/{firm['id']}/contact-points", params={"q": "mary"})
     ).json()
     assert [c["name"] for c in page["items"]] == ["St. Mary's Records"]
+
+
+async def test_subject_search_finds_a_contacts_name(authed: AsyncClient, firm: Json) -> None:
+    """The Subjects tab searches title, reference and contact name (UI_SPEC §7.1)."""
+    doe = await _subject(authed, firm)
+    await _subject(authed, firm, title="Roe v. Beta", external_ref="ROE-1")
+    await _link(authed, doe, await _contact(authed, firm))
+    base = f"/api/v1/firms/{firm['id']}/subjects"
+    found = (await authed.get(base, params={"q": "jane"})).json()
+    assert [i["title"] for i in found["items"]] == ["Doe v. Acme Trucking"]
+    assert found["total"] == 1
+
+
+async def test_contact_search_matches_email_and_phone(authed: AsyncClient, firm: Json) -> None:
+    await _contact(authed, firm)
+    base = f"/api/v1/firms/{firm['id']}/contact-points"
+    for q in ("example.com", "5550100"):
+        names = [c["name"] for c in (await authed.get(base, params={"q": q})).json()["items"]]
+        assert names == ["Jane Doe"], q
+
+
+async def test_contact_list_shows_each_contacts_roles(authed: AsyncClient, firm: Json) -> None:
+    """A contact's type is its role on each subject: shown together in the firm's list."""
+    jane = await _contact(authed, firm)
+    await _link(authed, await _subject(authed, firm), jane, role="client")
+    await _link(authed, await _subject(authed, firm, external_ref="DOE-2"), jane, role="provider")
+    await _contact(authed, firm, name="Unlinked")
+    items = (await authed.get(f"/api/v1/firms/{firm['id']}/contact-points")).json()["items"]
+    assert {i["name"]: i["roles"] for i in items} == {
+        "Jane Doe": ["client", "provider"],
+        "Unlinked": [],
+    }

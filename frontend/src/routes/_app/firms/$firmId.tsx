@@ -9,10 +9,12 @@ export const Route = createFileRoute("/_app/firms/$firmId")({
     tab: z.enum(FIRM_TABS).catch("overview").default("overview"),
     // Set by the OAuth callback redirect after a consent link is approved.
     connected: z.string().optional().catch(undefined),
+    // The open subject drawer: a subject id, or "new".
+    subject: z.string().optional().catch(undefined),
   }),
   component: function Firm() {
     const { firmId } = Route.useParams();
-    const { tab, connected } = Route.useSearch();
+    const { tab, connected, subject } = Route.useSearch();
     const navigate = Route.useNavigate();
     return (
       <FirmDetailPage
@@ -22,6 +24,11 @@ export const Route = createFileRoute("/_app/firms/$firmId")({
         connected={connected}
         onTab={(t) => void navigate({ search: { tab: t }, replace: true })}
         onConnectedSeen={() => void navigate({ search: { tab }, replace: true })}
+        subject={subject}
+        onSubject={(id) => void navigate({ search: (prev) => ({ ...prev, subject: id }) })}
+        onSubjectClose={() =>
+          void navigate({ search: (prev) => ({ ...prev, subject: undefined }) })
+        }
       />
     );
   },

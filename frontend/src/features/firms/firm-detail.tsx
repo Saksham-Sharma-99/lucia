@@ -7,6 +7,10 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import { ContactsTab } from "@/features/subjects/contacts-tab";
+import { SubjectDrawer } from "@/features/subjects/subject-drawer";
+import { SubjectsTab } from "@/features/subjects/subjects-tab";
+
 import { ConnectionsTab } from "./connections/connections-tab";
 import { FirmOverviewTab } from "./firm-overview-tab";
 import { FirmSettingsTab } from "./firm-settings-tab";
@@ -18,6 +22,9 @@ export function FirmDetailPage({
   connected,
   onTab,
   onConnectedSeen,
+  onSubject,
+  subject,
+  onSubjectClose,
 }: {
   firmId: string;
   tab: FirmTab;
@@ -25,6 +32,10 @@ export function FirmDetailPage({
   connected?: string;
   onTab: (t: FirmTab) => void;
   onConnectedSeen: () => void;
+  /** Open a subject's drawer ("new" to create one). */
+  onSubject: (subjectId: string) => void;
+  subject?: string;
+  onSubjectClose: () => void;
 }) {
   const firm = useQuery(getFirmOptions({ path: { firm_id: firmId } }));
   return (
@@ -50,6 +61,8 @@ export function FirmDetailPage({
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
               <TabsTrigger value="connections">Connections</TabsTrigger>
+              <TabsTrigger value="subjects">Subjects</TabsTrigger>
+              <TabsTrigger value="contacts">Contacts</TabsTrigger>
             </TabsList>
             <TabsContent value="overview">
               <FirmOverviewTab firm={f} />
@@ -64,7 +77,21 @@ export function FirmDetailPage({
                 onConnectedSeen={onConnectedSeen}
               />
             </TabsContent>
+            <TabsContent value="subjects">
+              <SubjectsTab firmId={f.id} onOpen={onSubject} />
+            </TabsContent>
+            <TabsContent value="contacts">
+              <ContactsTab firmId={f.id} />
+            </TabsContent>
           </Tabs>
+          {subject && (
+            <SubjectDrawer
+              firmId={f.id}
+              subjectId={subject}
+              onOpen={onSubject}
+              onClose={onSubjectClose}
+            />
+          )}
         </>
       )}
     </QueryState>

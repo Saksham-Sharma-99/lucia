@@ -33,6 +33,9 @@ globalThis.ResizeObserver ??= class {
   disconnect() {}
 } as unknown as typeof ResizeObserver;
 
-// Base UI positions popups with these; jsdom has neither.
-Element.prototype.scrollIntoView ??= () => {};
+// Base UI positions popups with these; jsdom has neither. Chrome's scrollIntoView returns a
+// Promise, so code must not hand its result to React (an effect's return is its cleanup).
+Element.prototype.scrollIntoView ??= (() => Promise.resolve()) as unknown as () => void;
 Element.prototype.hasPointerCapture ??= () => false;
+// Base UI's scroll area waits on animations; jsdom has none.
+Element.prototype.getAnimations ??= () => [];

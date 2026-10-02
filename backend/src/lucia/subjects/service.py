@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from lucia.core.audit import audit
@@ -38,8 +38,16 @@ async def list_subjects(
     stmt = select(Subject, contacts, runs).where(Subject.firm_id == firm_id)
     if q:
         like = like_pattern(q)
+        named = (
+            select(SC.id)
+            .join(ContactPoint, ContactPoint.id == SC.contact_point_id)
+            .where(SC.subject_id == Subject.id, ContactPoint.name.ilike(like, escape="\\"))
+            .exists()
+        )
         stmt = stmt.where(
-            Subject.title.ilike(like, escape="\\") | Subject.external_ref.ilike(like, escape="\\")
+            Subject.title.ilike(like, escape="\\")
+            | Subject.external_ref.ilike(like, escape="\\")
+            | named
         )
     if kind:
         stmt = stmt.where(Subject.kind == kind)
@@ -125,9 +133,36 @@ async def list_contact_points(
 ) -> Page[s.ContactPointOut]:
     stmt = select(ContactPoint).where(ContactPoint.firm_id == firm_id)
     if q:
-        stmt = stmt.where(ContactPoint.name.ilike(like_pattern(q), escape="\\"))
+        like = like_pattern(q)
+        stmt = stmt.where(
+            or_(
+                *(
+                    field.ilike(like, escape="\\")
+                    for field in (
+                        ContactPoint.name,
+                        ContactPoint.org_name,
+                        cast(ContactPoint.emails, String),  # JSON text: matches any address
+                        cast(ContactPoint.phones, String),
+                    )
+                )
+            )
+        )
     rows, total = await fetch_page(session, stmt.order_by(ContactPoint.name), paging)
-    return Page.of([s.ContactPointOut.model_validate(r) for r in rows], total, paging)
+    # A contact's type is its role on each subject it's on (one query for the page).
+    links = await session.execute(
+        select(SC.contact_point_id, SC.role)
+        .where(SC.contact_point_id.in_([r.id for r in rows]))
+        .distinct()
+        .order_by(SC.role)
+    )
+    roles: dict[uuid.UUID, list[str]] = {}
+    for cp_id, role in links.all():
+        roles.setdefault(cp_id, []).append(role)
+    items = [
+        s.ContactPointOut.model_validate(r).model_copy(update={"roles": roles.get(r.id, [])})
+        for r in rows
+    ]
+    return Page.of(items, total, paging)
 
 
 async def create_contact_point(

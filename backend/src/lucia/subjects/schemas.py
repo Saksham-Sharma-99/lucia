@@ -73,6 +73,7 @@ class ContactPointOut(Read):
     tz: str | None
     opt_out: dict[str, Any]
     org_daily_cap: int | None
+    roles: list[str] = []  # its role on each subject (in the firm's contact list)
 
 
 class SubjectContactCreate(Strict):

@@ -34,4 +34,20 @@ export const STALE = {
   ],
   firm: ["listFirms", "getFirm"],
   connection: ["listConnections", "getConnection", "getMappingChecklist", "getFirm", "listFirms"],
+  // A control or an answer moves the run, its tasks and attention, and the chats it posts to.
+  run: [
+    "listRuns",
+    "getRun",
+    "listRunTasks",
+    "listRunSteps",
+    "listRunEpisodes",
+    "listRunJournal",
+    "listRunAttention",
+    "listConversationRuns",
+    "listMessages",
+    "listNotifications",
+  ],
+  subject: ["listSubjects", "getSubject", "listSubjectKinds", "listContactPoints"],
+  conversation: ["listConversations", "getConversation", "listMessages", "listConversationRuns"],
+  notification: ["listNotifications"],
 } as const satisfies Record<string, readonly Operation[]>;

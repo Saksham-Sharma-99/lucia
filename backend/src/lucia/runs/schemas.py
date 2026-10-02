@@ -68,6 +68,10 @@ class TaskOut(Read):
     created_at: datetime
 
 
+class RecordingOut(Read):
+    url: str
+
+
 class StepOut(Read):
     id: uuid.UUID
     task_id: uuid.UUID | None

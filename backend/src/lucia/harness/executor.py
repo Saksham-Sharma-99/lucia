@@ -472,6 +472,7 @@ async def _settle_callback(session: AsyncSession, meta: dict[str, Any]) -> None:
                 **step.output,
                 "summary": meta.get("summary"),
                 "ended_reason": meta.get("ended_reason"),
+                "transcript": meta.get("transcript"),
             }
 
 

@@ -177,6 +177,7 @@ async def test_report_resumes_the_task(
     assert (
         step.status == "SUCCEEDED" and step.output["summary"] == "Jane is doing well, started PT."
     )
+    assert step.output["transcript"] == "AI: Hi Jane..."
     assert task.status == "DONE"
 
 
@@ -305,3 +306,20 @@ async def test_sent_lookup(
     await db.commit()
     respx.get(CALLS).mock(return_value=response)
     assert await VAPI.sent_lookup(db, step) == expected
+
+
+@respx.mock
+async def test_recording_url_reads_the_signed_redirect() -> None:
+    signed = "https://storage.vapi.ai/call-1-mono.wav?sig=abc"
+    respx.get(f"{CALLS}/call-1/mono-recording").mock(
+        return_value=Response(302, headers={"Location": signed})
+    )
+    assert await vapi_api.recording_url("call-1") == signed
+
+
+@pytest.mark.parametrize("status", [404, 200])
+@respx.mock
+async def test_recording_url_without_a_redirect_is_unknown(status: int) -> None:
+    respx.get(f"{CALLS}/call-1/mono-recording").mock(return_value=Response(status))
+    with pytest.raises(vapi_api.UnknownId):
+        await vapi_api.recording_url("call-1")

@@ -7,7 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from lucia.api.tags import api_router
 from lucia.auth.deps import CurrentUser, DbSession
-from lucia.core.errors import conflict, not_found
+from lucia.connectors import vapi
+from lucia.connectors.base import ConnectorError
+from lucia.core.errors import ProblemError, conflict, not_found
 from lucia.core.pagination import Page, Paging, fetch_page
 from lucia.db.models import (
     Agent,
@@ -125,6 +127,31 @@ async def list_steps(
     if plan_item_id:
         stmt = stmt.where(AgentRunStep.plan_item_id == plan_item_id)
     return [s.StepOut.model_validate(st) for st in await session.scalars(stmt)]
+
+
+@router.get(
+    "/runs/{run_id}/steps/{step_id}/recording",
+    summary="A fresh link to a call step's recording",
+    operation_id="getStepRecording",
+)
+async def get_recording(
+    run_id: uuid.UUID, step_id: uuid.UUID, session: DbSession
+) -> s.RecordingOut:
+    await get_or_404(session, AgentRun, run_id, "Run")
+    step = await session.get(AgentRunStep, step_id)
+    if (
+        step is None
+        or step.run_id != run_id
+        or step.tool != "vapi.place_call"
+        or not step.external_ref
+    ):
+        raise not_found("Recording")
+    try:
+        return s.RecordingOut(url=await vapi.recording_url(step.external_ref))
+    except vapi.UnknownId:
+        raise not_found("Recording") from None
+    except ConnectorError as e:
+        raise ProblemError(502, "Bad gateway", str(e)) from None
 
 
 @router.get("/runs/{run_id}/logs", summary="A run's redacted logs", operation_id="listRunLogs")

@@ -620,6 +620,10 @@ export type ContactPointOut = {
      * Org Daily Cap
      */
     org_daily_cap: number | null;
+    /**
+     * Roles
+     */
+    roles?: Array<string>;
 };
 
 /**
@@ -1994,6 +1998,16 @@ export type PromptFailed = {
      * Message
      */
     message: string;
+};
+
+/**
+ * RecordingOut
+ */
+export type RecordingOut = {
+    /**
+     * Url
+     */
+    url: string;
 };
 
 /**
@@ -6620,6 +6634,52 @@ export type ListRunStepsResponses = {
 };
 
 export type ListRunStepsResponse = ListRunStepsResponses[keyof ListRunStepsResponses];
+
+export type GetStepRecordingData = {
+    body?: never;
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+        /**
+         * Step Id
+         */
+        step_id: string;
+    };
+    query?: never;
+    url: '/api/v1/runs/{run_id}/steps/{step_id}/recording';
+};
+
+export type GetStepRecordingErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type GetStepRecordingError = GetStepRecordingErrors[keyof GetStepRecordingErrors];
+
+export type GetStepRecordingResponses = {
+    /**
+     * Successful Response
+     */
+    200: RecordingOut;
+};
+
+export type GetStepRecordingResponse = GetStepRecordingResponses[keyof GetStepRecordingResponses];
 
 export type ListRunLogsData = {
     body?: never;
