@@ -18,8 +18,8 @@ import { cn } from "@/lib/utils";
 
 import { statusLabel } from "./model";
 import { StatusPill } from "./status-pill";
-import { CallArtifacts, Json } from "./step-detail";
-import { roleLabel, triggerOf, type PlanItem } from "./steps-model";
+import { CallArtifacts, Json, PromptView } from "./step-detail";
+import { previousCall, roleLabel, triggerOf, type PlanItem } from "./steps-model";
 
 export type IOSection =
   "user" | "subagent-input" | "subagent-output" | `connector:${string}` | "intermediate" | "final";
@@ -221,7 +221,9 @@ function ModelCalls({
                   {s.model && ` · ${s.model}`}
                 </span>
               </header>
-              {typeof text === "string" ? (
+              {side === "input" && typeof text === "string" ? (
+                <PromptView step={s} previous={previousCall(s, steps)} />
+              ) : typeof text === "string" ? (
                 <pre className="bg-muted/50 max-h-[50vh] overflow-auto rounded-lg border p-3 font-sans text-sm whitespace-pre-wrap">
                   {text}
                 </pre>

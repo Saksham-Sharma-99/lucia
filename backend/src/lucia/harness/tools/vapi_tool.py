@@ -188,9 +188,6 @@ async def poll_stale(session: AsyncSession) -> int:
             continue
         if call.get("status", "ended") != "ended":
             continue
-        await ingest_report(
-            session,
-            {"call": call, "endedReason": call.get("endedReason"), "summary": call.get("summary")},
-            source="poll",
-        )
+        # A call carries the report's fields (endedReason, summary, transcript, artifact).
+        await ingest_report(session, {**call, "call": call}, source="poll")
     return len(steps)

@@ -5,6 +5,8 @@ import { API, HttpResponse, firm, http, page, server } from "@/test/api";
 import { renderApp, screen } from "@/test/app";
 import { episode, journal, log, planItem, run, step, task } from "@/test/runtime";
 
+const PLANNER_PROMPT = "## task\nPlan the check-in call\n\n## plan\n[]";
+
 function runWith(asked: URLSearchParams[] = []) {
   server.use(
     http.get(`${API}/firms`, () => HttpResponse.json(page([firm()]))),
@@ -36,6 +38,7 @@ function runWith(asked: URLSearchParams[] = []) {
       HttpResponse.json([
         step({
           id: "sa",
+          seq: 2,
           plan_item_id: "i1",
           kind: "subagent",
           tool: null,
@@ -50,10 +53,20 @@ function runWith(asked: URLSearchParams[] = []) {
           tool: null,
           plan_item_id: null,
           model: "gpt-5.6-sol",
-          input: { message: "Plan the check-in call" },
+          input: { message: PLANNER_PROMPT },
           output: { items: ["Draft script", "Call Jane"] },
           input_tokens: 812,
           output_tokens: 96,
+        }),
+        step({
+          id: "pl2",
+          seq: 1,
+          kind: "llm",
+          role: "planner",
+          tool: null,
+          plan_item_id: null,
+          input: { message: `${PLANNER_PROMPT}\n\n## errors in your last plan\nitem i2 uses 0` },
+          output: { items: ["Draft script", "Call Jane"] },
         }),
         step({
           id: "ex",
@@ -102,6 +115,7 @@ function runWith(asked: URLSearchParams[] = []) {
           step_id: "pl",
           message: "Planned 2 items",
         }),
+        log({ id: "l3", level: "debug", stage: "planner", step_id: "pl2", message: "Replanned" }),
       ]);
     }),
   );
@@ -142,11 +156,25 @@ describe("task logs", () => {
     runWith();
     const { app, d } = await openTab("Logs");
     await app.user.click(await d.findByRole("button", { name: /Planned 2 items/ }));
-    await d.findByText("Plan the check-in call");
+    await d.findByText(/Plan the check-in call/);
     d.getByText(/"Draft script"/);
     d.getByText(/812 in \/ 96 out/);
     await app.user.click(d.getByRole("button", { name: /Planned 2 items/ }));
-    await waitFor(() => expect(d.queryByText("Plan the check-in call")).toBeNull());
+    await waitFor(() => expect(d.queryByText(/Plan the check-in call/)).toBeNull());
+  });
+
+  it("a role's later call shows only what changed since its last one", async () => {
+    runWith();
+    const { app, d } = await openTab("Logs");
+    await app.user.click(await d.findByRole("button", { name: /Replanned/ }));
+    await d.findByText(/What changed since the previous planner call/);
+    d.getByText(/Unchanged: task, plan \(2\)/);
+    d.getByText(/## errors in your last plan\s+item i2 uses 0/);
+    expect(d.queryByText(/Plan the check-in call/)).toBeNull();
+    await app.user.click(d.getByRole("button", { name: "Show full prompt" }));
+    await d.findByText(/Plan the check-in call/);
+    await app.user.click(d.getByRole("button", { name: "Show changes only" }));
+    await waitFor(() => expect(d.queryByText(/Plan the check-in call/)).toBeNull());
   });
 
   it("a call's line shows its transcript", async () => {
@@ -198,11 +226,14 @@ describe("task inputs and outputs", () => {
     const calls = await d.findAllByRole("article");
     expect(calls.map((c) => c.getAttribute("aria-label"))).toEqual([
       "Planner",
+      "Planner",
       "Subagent",
       "Executor · fills the tool's arguments",
       "Summarizer",
     ]);
-    within(calls[2]).getByText("Fill the call arguments");
+    within(calls[3]).getByText("Fill the call arguments");
+    within(calls[1]).getByText(/## errors in your last plan/);
+    expect(within(calls[1]).queryByText(/Plan the check-in call/)).toBeNull();
     d.getByText(/then Voice \(Vapi\) · place_call/);
     await app.user.click(d.getByRole("button", { name: "Subagent output" }));
     await d.findByText(/"script": "Ask about PT"/);

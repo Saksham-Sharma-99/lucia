@@ -90,7 +90,10 @@ async def gmail_hook(
 async def vapi_hook(
     request: Request, session: DbSession, x_vapi_secret: str = Header(default="")
 ) -> HookAck:
-    _require_secret(x_vapi_secret, get_settings().vapi_webhook_secret)  # fail closed (D43)
+    # No secret configured (dev): calls are placed without one, so none is required. Production
+    # refuses to start with Vapi and no secret (core/config.py).
+    if secret := get_settings().vapi_webhook_secret:
+        _require_secret(x_vapi_secret, secret)
     message = _obj((await _json(request)).get("message"))
     if message.get("type") == "end-of-call-report":
         await ingest_report(session, message, source="webhook")

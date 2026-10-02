@@ -108,3 +108,54 @@ export function transcriptTurns(transcript: string): Turn[] {
   }
   return turns;
 }
+
+/** The latest earlier model call of the same role in the same task: what a call is compared to. */
+export const previousCall = (call: StepOut, steps: StepOut[]) =>
+  call.kind === "llm"
+    ? steps
+        .filter(
+          (s) =>
+            s.kind === "llm" &&
+            s.role === call.role &&
+            s.task_id === call.task_id &&
+            s.seq < call.seq,
+        )
+        .sort((a, b) => b.seq - a.seq)[0]
+    : undefined;
+
+export type Section = { title: string; body: string };
+
+/** A prompt's `## title` sections; text before the first heading has the title "". */
+function sections(prompt: string): Section[] {
+  const out: Section[] = [];
+  for (const line of prompt.split("\n")) {
+    if (line.startsWith("## ")) out.push({ title: line.slice(3), body: "" });
+    else if (out.length)
+      out[out.length - 1].body += `${out[out.length - 1].body ? "\n" : ""}${line}`;
+    else if (line.trim()) out.push({ title: "", body: line });
+  }
+  return out.map((s) => ({ ...s, body: s.body.trim() }));
+}
+
+/**
+ * What a prompt says that the previous call's didn't: its new and changed sections, and the
+ * titles of the ones that stayed the same. Repeated titles are matched by position.
+ */
+export function promptDiff(prompt: string, previous: string) {
+  const key = (list: Section[]) => {
+    const seen: Record<string, number> = {};
+    return list.map((s) => `${s.title}#${(seen[s.title] = (seen[s.title] ?? 0) + 1)}`);
+  };
+  const before = sections(previous);
+  const beforeKeys = key(before);
+  const now = sections(prompt);
+  const changed: Section[] = [];
+  const same: string[] = [];
+  key(now).forEach((k, i) => {
+    const old = before[beforeKeys.indexOf(k)];
+    if (old?.body === now[i].body) {
+      if (!same.includes(now[i].title)) same.push(now[i].title);
+    } else changed.push(now[i]);
+  });
+  return { changed, same };
+}

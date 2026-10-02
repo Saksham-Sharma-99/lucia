@@ -92,6 +92,25 @@ async def test_exact_reference_locks_the_subject_and_hands_off(
     assert ("harness.advance_run", (str(run.id),)) in sent
 
 
+async def test_the_chat_refreshes_after_the_run_is_committed(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The header's runs list refetches on conversation.updated; the run must exist by then."""
+    w = await make_world(db)
+    _conv, msg = await _chat(db, w, "@checkin call Jane", subject=True)
+    fake_llm.on("agent_scores", _scores(checkin=0.9))
+    fake_llm.on("brief", BRIEF)
+    events: list[tuple[str, bool]] = []
+
+    async def record(_: Any, event: str, __: Any) -> None:
+        events.append((event, not db.in_transaction()))
+
+    monkeypatch.setattr("lucia.orchestrator.pipeline.publish", record)
+    await handle_message(db, msg.id)
+    assert events[-1] == ("conversation.updated", True)
+    assert await db.scalar(select(func.count()).select_from(AgentRun)) == 1
+
+
 async def test_confident_model_pick_locks_the_subject(
     db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
 ) -> None:

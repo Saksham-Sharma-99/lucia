@@ -52,17 +52,18 @@ async def handle_message(session: AsyncSession, message_id: uuid.UUID) -> None:
             [{"type": "retry", "message_id": str(msg.id)}],
         )
         raise
-    if (conv.state.get("pending") or {}).get("message_id") == str(msg.id):
-        await session.commit()  # still open: the answer re-runs this message
-        return
-    await audit(
-        session,
-        action="orchestrator.handled",
-        entity_type="message",
-        entity_id=msg.id,
-        firm_id=conv.firm_id,
-    )
+    # A pending question stays open (its answer re-runs this message): not handled yet.
+    if (conv.state.get("pending") or {}).get("message_id") != str(msg.id):
+        await audit(
+            session,
+            action="orchestrator.handled",
+            entity_type="message",
+            entity_id=msg.id,
+            firm_id=conv.firm_id,
+        )
     await session.commit()
+    # After the commit, so the chat's runs, subject and pending question refetch fresh.
+    await publish(conv.id, "conversation.updated", {})
 
 
 async def _reply(

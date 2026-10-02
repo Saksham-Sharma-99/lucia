@@ -248,6 +248,7 @@ async def test_poll_ingests_ended_calls_and_times_out_missing_ones(
                 "status": "ended",
                 "endedReason": "voicemail",
                 "summary": "Left a voicemail",
+                "artifact": {"transcript": "AI: Hi Jane, this is a check-in call."},
                 "assistant": {"metadata": {"idem_key": step.idempotency_key}},
             },
         )
@@ -255,6 +256,8 @@ async def test_poll_ingests_ended_calls_and_times_out_missing_ones(
     assert await poll_stale(db) == 1
     ep = await db.scalar(select(Episode).where(Episode.dedup_key == "vapi:call-1"))
     assert ep is not None and ep.metadata_["source"] == "poll" and ep.metadata_["reached"] is False
+    assert ep.metadata_["summary"] == "Left a voicemail"
+    assert ep.metadata_["transcript"] == "AI: Hi Jane, this is a check-in call."
 
 
 @respx.mock

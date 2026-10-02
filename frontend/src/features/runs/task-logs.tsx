@@ -9,6 +9,7 @@ import { SearchInput } from "@/components/shared/search-input";
 import { cn } from "@/lib/utils";
 
 import { StepDetail } from "./step-detail";
+import { previousCall } from "./steps-model";
 
 const LEVELS = ["debug", "info", "warn", "error"] as const;
 const LEVEL_TONE: Record<string, string> = {
@@ -134,7 +135,7 @@ export function TaskLogs({
                 )}
                 {isOpen && step && (
                   <div className="bg-muted/20 border-t px-6 py-4">
-                    <StepDetail runId={runId} step={step} />
+                    <StepDetail runId={runId} step={step} previous={previousCall(step, steps)} />
                   </div>
                 )}
               </div>

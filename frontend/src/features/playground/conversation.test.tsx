@@ -1,10 +1,10 @@
 import { waitFor, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { API, HttpResponse, http, page, server } from "@/test/api";
 import { path, renderApp, screen } from "@/test/app";
 import { isDisabled } from "@/test/dom";
-import { conversation, message } from "@/test/runtime";
+import { conversation, linkedRun, message } from "@/test/runtime";
 import { hold, sse } from "@/test/sse";
 
 import { playgroundApi } from "@/test/playground";
@@ -139,5 +139,50 @@ describe("conversation", () => {
     gate.release();
     await p.findByText("Finding the case…");
     expect(isDisabled(p.getByRole("button", { name: "Send" }))).toBe(true);
+  });
+
+  it("lists the run in the header once the chat says it changed", async () => {
+    const gate = hold();
+    let runs: object[] = [];
+    playgroundApi();
+    server.use(
+      http.get(`${API}/conversations/c1`, () => HttpResponse.json(conversation())),
+      http.get(`${API}/conversations/c1/messages`, () => HttpResponse.json(page([message()]))),
+      http.get(`${API}/conversations/c1/runs`, () => HttpResponse.json(runs)),
+      http.get(`${API}/conversations/c1/events`, () =>
+        sse([{}], { after: gate.held, event: "conversation.updated" }),
+      ),
+    );
+    await renderApp("/playground/c1");
+    const p = within(await pane());
+    const button = await p.findByRole("button", { name: /Agent runs/ });
+    expect(isDisabled(button)).toBe(true);
+    runs = [linkedRun({ status: "COMPLETED" })];
+    gate.release();
+    await waitFor(() => expect(isDisabled(button)).toBe(false));
+  });
+
+  it("keeps a live run's status fresh in the header", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      let status = "ACTIVE";
+      chat();
+      server.use(
+        http.get(`${API}/conversations/c1/runs`, () =>
+          HttpResponse.json([linkedRun({ status, substatus: null })]),
+        ),
+      );
+      const app = await renderApp("/playground/c1");
+      const p = within(await pane());
+      await waitFor(() =>
+        expect(isDisabled(p.getByRole("button", { name: /Agent runs/ }))).toBe(false),
+      );
+      status = "COMPLETED";
+      await vi.advanceTimersByTimeAsync(3100);
+      await app.user.click(p.getByRole("button", { name: /Agent runs/ }));
+      await screen.findByText(/Completed/);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

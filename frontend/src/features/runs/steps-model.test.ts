@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { planItem, step } from "@/test/runtime";
 
-import { attemptLabel, attemptsFor, replacedBy, subagentRounds } from "./steps-model";
+import {
+  attemptLabel,
+  attemptsFor,
+  previousCall,
+  promptDiff,
+  replacedBy,
+  subagentRounds,
+} from "./steps-model";
 
 describe("steps model", () => {
   it("an item's attempts are its action steps, in order", () => {
@@ -49,5 +56,43 @@ describe("steps model", () => {
 
   it("copes with items that have no steps or output", () => {
     expect(attemptsFor(planItem(1, { step_ids: undefined }), [])).toEqual([]);
+  });
+
+  it("a model call's previous one is the latest earlier call of its role in its task", () => {
+    const llm = (id: string, role: string, seq: number, task_id = "t1") =>
+      step({ id, kind: "llm", role, seq, task_id });
+    const steps = [
+      llm("p1", "planner", 1),
+      llm("x", "executor", 2),
+      llm("p2", "planner", 3),
+      llm("other", "planner", 4, "t2"),
+      llm("p3", "planner", 5),
+    ];
+    expect(previousCall(steps[4], steps)?.id).toBe("p2");
+    expect(previousCall(steps[0], steps)).toBeUndefined();
+    expect(previousCall(steps[1], steps)).toBeUndefined();
+    expect(previousCall(steps[3], steps)).toBeUndefined();
+  });
+
+  it("a prompt's diff is its new and changed sections; the rest are named", () => {
+    const before = "## goal\nCall Jane\n\n## plan\n[]\n\n## old\ngone";
+    const after = "## goal\nCall Jane\n\n## plan\n[i1]\n\n## errors\nuses 0";
+    expect(promptDiff(after, before)).toEqual({
+      changed: [
+        { title: "plan", body: "[i1]" },
+        { title: "errors", body: "uses 0" },
+      ],
+      same: ["goal"],
+    });
+    expect(promptDiff(before, before)).toEqual({ changed: [], same: ["goal", "plan", "old"] });
+  });
+
+  it("repeated headings are compared by position, and text before any heading counts", () => {
+    const before = "intro\n## Goal\na\n## Goal\nb";
+    const after = "intro\n## Goal\na\n## Goal\nc";
+    expect(promptDiff(after, before)).toEqual({
+      changed: [{ title: "Goal", body: "c" }],
+      same: ["", "Goal"],
+    });
   });
 });

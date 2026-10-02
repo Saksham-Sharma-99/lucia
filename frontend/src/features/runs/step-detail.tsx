@@ -7,10 +7,21 @@ import type { StepOut } from "@/api/generated/types.gen";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-import { roleLabel, transcriptTurns } from "./steps-model";
+import { promptDiff, roleLabel, transcriptTurns } from "./steps-model";
 
-/** What one step did: a model call's prompt and answer, or a tool's input, output and call. */
-export function StepDetail({ runId, step }: { runId: string; step: StepOut }) {
+/**
+ * What one step did: a model call's prompt (against `previous`, the role's last call) and
+ * answer, or a tool's input, output and call.
+ */
+export function StepDetail({
+  runId,
+  step,
+  previous,
+}: {
+  runId: string;
+  step: StepOut;
+  previous?: StepOut;
+}) {
   const asked = step.input?.message;
   const text = step.output?.text;
   return (
@@ -23,7 +34,11 @@ export function StepDetail({ runId, step }: { runId: string; step: StepOut }) {
           ` · tokens ${step.input_tokens} in / ${step.output_tokens ?? 0} out`}
       </p>
       <Labeled label={step.kind === "llm" ? "Asked" : "Input"}>
-        {typeof asked === "string" ? <Text>{asked}</Text> : <Json value={step.input ?? {}} />}
+        {typeof asked === "string" ? (
+          <PromptView step={step} previous={previous} />
+        ) : (
+          <Json value={step.input ?? {}} />
+        )}
       </Labeled>
       {step.tool === "vapi.place_call" && <CallArtifacts runId={runId} step={step} />}
       <Labeled label={step.kind === "llm" ? "Answered" : "Output"}>
@@ -34,6 +49,46 @@ export function StepDetail({ runId, step }: { runId: string; step: StepOut }) {
           <Json value={step.error} />
         </Labeled>
       )}
+    </div>
+  );
+}
+
+/**
+ * A model call's prompt. After the role's first call, only the sections that are new or changed
+ * since `previous` (prompts are rebuilt whole each call), with the full prompt a click away.
+ */
+export function PromptView({ step, previous }: { step: StepOut; previous?: StepOut }) {
+  const [full, setFull] = useState(false);
+  const prompt = String(step.input?.message ?? "");
+  const before = previous?.input?.message;
+  if (typeof before !== "string") return <Text>{prompt}</Text>;
+  const toggle = (
+    <Button size="xs" variant="ghost" onClick={() => setFull(!full)}>
+      {full ? "Show changes only" : "Show full prompt"}
+    </Button>
+  );
+  if (full)
+    return (
+      <div className="space-y-2">
+        {toggle}
+        <Text>{prompt}</Text>
+      </div>
+    );
+  const { changed, same } = promptDiff(prompt, before);
+  const role = roleLabel(step.role).toLowerCase();
+  return (
+    <div className="space-y-2">
+      <p className="text-muted-foreground text-xs">
+        {changed.length === 0
+          ? `Same prompt as the previous ${role} call.`
+          : `What changed since the previous ${role} call.`}
+        {same.length > 0 &&
+          ` Unchanged: ${same.map((t) => t || "intro").join(", ")} (${same.length}).`}
+      </p>
+      {changed.map((sec, i) => (
+        <Text key={i}>{sec.title ? `## ${sec.title}\n${sec.body}` : sec.body}</Text>
+      ))}
+      {toggle}
     </div>
   );
 }

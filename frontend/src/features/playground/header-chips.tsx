@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { statusLabel } from "@/features/runs/model";
+import { isTerminal, statusLabel } from "@/features/runs/model";
 
 /** The chat's subject (opens its drawer) and the agent runs it started (open a run). */
 export function HeaderChips({
@@ -25,6 +25,9 @@ export function HeaderChips({
   const runs = useQuery({
     ...listConversationRunsOptions({ path: { conversation_id: conversation?.id ?? "" } }),
     enabled: !!conversation,
+    // Statuses change as runs work; refresh while any can still change.
+    refetchInterval: (q) =>
+      (q.state.data ?? []).some((r) => !isTerminal(r.status)) ? 3000 : false,
   });
   if (!conversation) return null;
   return (
