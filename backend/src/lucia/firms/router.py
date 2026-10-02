@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import Query, status
 
 from lucia.api.tags import api_router
-from lucia.auth.deps import CurrentUser, DbSession
+from lucia.auth.deps import DbSession
 from lucia.core.pagination import Page, Paging
 from lucia.db.models import Firm
 from lucia.db.models.firm import FirmStatus
@@ -28,11 +28,11 @@ async def list_firms(
 @router.post(
     "",
     status_code=status.HTTP_201_CREATED,
-    summary="Create a firm (and its inactive @orchestrator mapping)",
+    summary="Create a firm",
     operation_id="createFirm",
 )
-async def create_firm(body: s.FirmCreate, session: DbSession, user: CurrentUser) -> s.FirmDetail:
-    return await service.firm_detail(session, await service.create_firm(session, body, user))
+async def create_firm(body: s.FirmCreate, session: DbSession) -> s.FirmDetail:
+    return await service.firm_detail(session, await service.create_firm(session, body))
 
 
 @router.get("/{firm_id}", summary="Get a firm with counts", operation_id="getFirm")

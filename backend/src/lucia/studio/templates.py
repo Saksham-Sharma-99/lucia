@@ -1,7 +1,7 @@
 """Seeded reference agents (HLD Appendix A, adapted to backend-plan §6).
 
 Each agent is an `AgentCreate`, so it is validated when this module loads. Membership in
-`TEMPLATES` is what makes an agent a template; `ORCHESTRATOR` is seeded but is not one."""
+`TEMPLATES` is what makes an agent a template."""
 
 from lucia.core.schema import PolicyRuleRef
 from lucia.studio.config_schema import (
@@ -29,6 +29,7 @@ _EMAIL_AND_VOICE = [
 
 
 def _quiet_hours(start: str, end: str) -> PolicyRuleRef:
+    """The window in which outreach is deferred (blocked, D50)."""
     return PolicyRuleRef(rule="quiet_hours", params={"start": start, "end": end, "tz": "recipient"})
 
 
@@ -56,7 +57,7 @@ RECORDS = AgentCreate(
         policy_pack=[
             _MIN_PACK,
             PolicyRuleRef(rule="attachment_allowed", params={"hipaa_auth": ["provider"]}),
-            _quiet_hours("08:00", "18:00"),
+            _quiet_hours("18:00", "08:00"),
             PolicyRuleRef(rule="per_subject_contact_cap", params={"n": 2}),
         ],
         hitl=Hitl(ask_on=["channel_not_supported", "missing_authorization", "fee_required"]),
@@ -104,7 +105,7 @@ CHECKIN = AgentCreate(
             PolicyRuleRef(
                 rule="consent_required", params={"channel": ["voice", "email"], "roles": ["client"]}
             ),
-            _quiet_hours("09:00", "20:00"),
+            _quiet_hours("20:00", "09:00"),
             PolicyRuleRef(rule="opt_out_enforced"),
         ],
         hitl=Hitl(ask_on=["client_distressed", "legal_question"]),
@@ -135,38 +136,34 @@ LIENS = AgentCreate(
                 escalate_after=EscalateAfter(attempts=4, urgency="P1"),
             ),
         ),
-        policy_pack=[_MIN_PACK, _quiet_hours("08:00", "18:00")],
+        policy_pack=[_MIN_PACK, _quiet_hours("18:00", "08:00")],
         alert_policy=AlertPolicy(
             default_channels={"P0": ["slack_dm"], "P1": ["slack_thread"], "P2": ["digest"]}
         ),
     ),
 )
 
-ORCHESTRATOR = AgentCreate(
-    handle="orchestrator",
-    name="Orchestrator",
-    description="Answers @lucia mentions in Slack and routes work to the right agent",
-    use_cases=["@lucia get records from Dr. Lee for Jane Doe"],
-    config=VersionConfig(
-        system_prompt=(
-            "You read @mentions in the firm's Slack, work out which agent should handle the "
-            "request, and reply in the thread."
-        ),
-        models=_MODELS,
-        capabilities=[
-            Capability(
-                connector="slack",
-                tools=["slack.listen_mention", "slack.send_message", "slack.read_thread"],
-            ),
-        ],
-        alert_policy=AlertPolicy(
-            default_channels={
-                "P0": ["slack_thread"],
-                "P1": ["slack_thread"],
-                "P2": ["slack_thread"],
-            }
-        ),
-    ),
-)
-
 TEMPLATES = [RECORDS, CHECKIN, LIENS]
+
+# The runtime demo amends @checkin to this voice-only v2 (D56): no Gmail connection needed.
+CHECKIN_VOICE_ONLY = CHECKIN.config.model_copy(
+    update={
+        "capabilities": [Capability(connector="vapi", tools=["vapi.place_call"])],
+        "follow_up": FollowUp(
+            mode="fixed_ladder",
+            ladder=[
+                LadderRung(channel="voice", wait_hours=0),
+                LadderRung(channel="voice", wait_hours=2 * _DAY),
+                LadderRung(action="flag", wait_hours=0, urgency="P2"),
+            ],
+        ),
+        "policy_pack": [
+            _MIN_PACK,
+            PolicyRuleRef(
+                rule="consent_required", params={"channel": ["voice"], "roles": ["client"]}
+            ),
+            _quiet_hours("20:00", "09:00"),
+            PolicyRuleRef(rule="opt_out_enforced"),
+        ],
+    }
+)

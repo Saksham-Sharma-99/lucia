@@ -2,12 +2,16 @@ import hashlib
 import hmac
 import re
 import time
+from datetime import datetime
 from typing import Any
 from urllib.parse import urlencode
+
+import httpx
 
 from lucia.connectors.base import (
     ConnectorError,
     Installed,
+    MaybeSent,
     Outcome,
     callback_url,
     hook_url,
@@ -20,7 +24,11 @@ from lucia.core.config import get_settings
 from lucia.db.models import ConnectorConnection, Firm
 
 API = "https://slack.com/api"
-SCOPES = "app_mentions:read,chat:write,channels:history,groups:history,files:write"
+# Final list (CHANNELS_SPEC §4.4); changing it makes every firm reinstall the app.
+SCOPES = (
+    "app_mentions:read,chat:write,channels:history,groups:history,files:write,"
+    "im:write,reactions:write,users:read"
+)
 SYSTEM_KEYS = frozenset({"team_id", "team_name", "bot_user_id"})
 MAX_SKEW_SECONDS = 300
 CHANNEL_ID = re.compile(r"[CGD][A-Z0-9]{8,}")
@@ -52,14 +60,19 @@ async def _call(
 ) -> dict[str, Any]:
     """Slack answers 200 with `ok: false` on errors."""
     headers = {"Authorization": f"Bearer {token}"} if token else {}
-    async with http() as client:
-        if params is not None:
-            resp = await client.get(f"{API}/{method}", params=params, headers=headers)
-        elif token:
-            resp = await client.post(f"{API}/{method}", json=form, headers=headers)
-        else:
-            resp = await client.post(f"{API}/{method}", data=form)
-    data: dict[str, Any] = resp.json()
+    try:
+        async with http() as client:
+            if params is not None:
+                resp = await client.get(f"{API}/{method}", params=params, headers=headers)
+            elif token:
+                resp = await client.post(f"{API}/{method}", json=form, headers=headers)
+            else:
+                resp = await client.post(f"{API}/{method}", data=form)
+        data: dict[str, Any] = resp.json()
+    except (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout) as e:
+        raise ConnectorError(f"Slack unreachable: {type(e).__name__}") from e
+    except (httpx.HTTPError, ValueError) as e:  # sent, but no (JSON) answer came back
+        raise MaybeSent(f"Slack didn't answer: {type(e).__name__}") from e
     if not data.get("ok"):
         raise ConnectorError(f"Slack error: {data.get('error', 'unknown')}")
     return data
@@ -149,3 +162,66 @@ def verify_signature(body: bytes, timestamp: str, signature: str) -> bool:
     base = b"v0:" + timestamp.encode() + b":" + body
     expected = "v0=" + hmac.new(secret.encode(), base, hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected.encode(), signature.encode())
+
+
+# --- runtime ------------------------------------------------------------------------------
+
+
+async def post_message(
+    token: str,
+    channel: str,
+    text: str,
+    *,
+    thread_ts: str | None = None,
+    blocks: list[dict[str, Any]] | None = None,
+    message_id: str | None = None,
+) -> str:
+    """Posts and returns the message ts; `message_id` rides along as metadata for dedup."""
+    payload: dict[str, Any] = {"channel": channel, "text": text}
+    if thread_ts:
+        payload["thread_ts"] = thread_ts
+    if blocks:
+        payload["blocks"] = blocks
+    if message_id:
+        payload["metadata"] = {
+            "event_type": "lucia_message",
+            "event_payload": {"message_id": message_id},
+        }
+    return str((await _call("chat.postMessage", token, **payload)).get("ts", ""))
+
+
+async def add_reaction(token: str, channel: str, ts: str, name: str = "eyes") -> None:
+    await _call("reactions.add", token, channel=channel, timestamp=ts, name=name)
+
+
+async def user_name(token: str, user: str) -> str:
+    data = await _call("users.info", token, params={"user": user})
+    profile = data.get("user") or {}
+    return str(profile.get("real_name") or profile.get("name") or user)
+
+
+async def open_dm(token: str, user: str) -> str:
+    return str((await _call("conversations.open", token, users=user))["channel"]["id"])
+
+
+async def thread(
+    token: str, channel: str, ts: str, *, since: datetime | None = None
+) -> list[dict[str, Any]]:
+    """The thread's messages, oldest first (`since` skips earlier ones). Metadata is asked for:
+    Slack leaves it out by default."""
+    params = {"channel": channel, "ts": ts, "include_all_metadata": "true"}
+    if since is not None:
+        params["oldest"] = f"{since.timestamp():.6f}"
+    data = await _call("conversations.replies", token, params=params)
+    return list(data.get("messages") or [])
+
+
+async def posted(
+    token: str, channel: str, thread_ts: str, message_id: str, *, since: datetime
+) -> str | None:
+    """The ts of our earlier post of `message_id` in the thread, if one exists (crash replay).
+    `since`: when the work that might have posted began."""
+    for m in await thread(token, channel, thread_ts, since=since):
+        if ((m.get("metadata") or {}).get("event_payload") or {}).get("message_id") == message_id:
+            return str(m["ts"])
+    return None

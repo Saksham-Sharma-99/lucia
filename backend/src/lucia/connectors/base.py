@@ -19,6 +19,11 @@ class ConnectorError(Exception):
     """A provider call failed. The message is safe to show the builder (no secrets)."""
 
 
+class MaybeSent(ConnectorError):
+    """The request may have reached the provider (a 5xx, or no response): a send must not be
+    retried blindly."""
+
+
 @dataclass
 class Outcome:
     ok: bool

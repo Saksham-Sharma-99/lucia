@@ -157,14 +157,13 @@ async def test_vapi_records_by_phone_number(authed: AsyncClient, db: AsyncSessio
     assert got["last_inbound_type"] == "vapi.end-of-call-report"
 
 
-async def test_vapi_without_a_platform_secret_accepts_any(
+async def test_vapi_without_a_platform_secret_rejects_everything(
     authed: AsyncClient, db: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Fail closed (D43): an unset secret must not open the hook that resumes runs."""
     monkeypatch.setattr(get_settings(), "vapi_webhook_secret", "")
-    firm = await create_firm(authed)
-    await connected(db, firm["id"], "vapi", {"phone_number_id": "pn_1"})
     message = {"type": "status-update", "call": {"phoneNumberId": "pn_1"}}
-    assert (await _vapi(authed, message, secret="")).json()["recorded"] == 1
+    assert (await _vapi(authed, message, secret="")).status_code == 401
 
 
 @pytest.mark.parametrize("secret", ["wrong", "ü".encode(), ""])

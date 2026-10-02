@@ -157,12 +157,24 @@ async def complete_consent(session: AsyncSession, connector: str, state: str, co
     ):
         raise ConnectorError("This link is invalid or was already used.")
     installed: Installed = await OAUTH[connector].exchange(code)
+    if connector == "slack" and await _workspace_taken(session, c, installed.config["team_id"]):
+        raise ConnectorError("This Slack workspace is already connected to another firm.")
     c.label = installed.label or c.label
     c.config = {**c.config, **installed.config}
     set_secrets(c, installed.secrets)
     c.status, c.health, c.connected_at, c.consent_nonce = "connected", "unknown", utcnow(), None
     await session.commit()
     return c
+
+
+async def _workspace_taken(session: AsyncSession, c: C, team_id: str) -> bool:
+    """One firm per Slack workspace (D42): inbound events route by team_id alone."""
+    other = await session.scalar(
+        select(C.firm_id).where(
+            C.connector == "slack", C.config["team_id"].astext == team_id, C.id != c.id
+        )
+    )
+    return other is not None and other != c.firm_id
 
 
 def _require_connected(c: C) -> None:

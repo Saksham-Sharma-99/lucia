@@ -33,6 +33,8 @@ class RegistryEntry(IdMixin, TimestampMixin, Base):
     display_name: Mapped[str] = mapped_column(Text)
     description: Mapped[str] = mapped_column(Text, server_default="")
     params_schema: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    input_schema: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    output_schema: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
     risk_tier: Mapped[str | None] = mapped_column(Text)
     direction: Mapped[str | None] = mapped_column(Text)
     is_async: Mapped[bool] = mapped_column(Boolean, server_default="false")

@@ -4,7 +4,7 @@ commits become SAVEPOINT releases. Redis uses DB 1, flushed per test."""
 import os
 import subprocess
 import sys
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 
 os.environ["ENV"] = "test"
@@ -38,12 +38,18 @@ from lucia.core.config import get_settings  # noqa: E402
 os.environ["DATABASE_URL"] = get_settings().test_database_url
 get_settings.cache_clear()
 
+from datetime import UTC, datetime  # noqa: E402
+
+from lucia.core.clock import FrozenClock, set_clock  # noqa: E402
 from lucia.core.redis import get_redis  # noqa: E402
 from lucia.core.security import hash_password  # noqa: E402
 from lucia.db.models import AppUser  # noqa: E402
 from lucia.db.session import get_session  # noqa: E402
+from lucia.llm.client import set_llm  # noqa: E402
+from lucia.llm.fake import FakeLLM  # noqa: E402
 from lucia.main import create_app  # noqa: E402
 from lucia.registry.sync import sync_registry  # noqa: E402
+from lucia.worker.celery_app import celery_app  # noqa: E402
 
 BACKEND = Path(__file__).resolve().parents[1]
 PASSWORD = "correct-horse-battery"
@@ -67,11 +73,21 @@ async def engine() -> AsyncIterator[AsyncEngine]:
     await eng.dispose()
 
 
+class _ProdRollbackSession(AsyncSession):
+    """Savepoint rollbacks expire only rows touched since the savepoint; a real rollback expires
+    everything loaded. Mirror production so code that reads ORM rows after a rollback fails here
+    (MissingGreenlet) instead of in the worker."""
+
+    async def rollback(self) -> None:
+        await super().rollback()
+        self.expire_all()
+
+
 @pytest.fixture
 async def db(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
     async with engine.connect() as conn:
         trans = await conn.begin()
-        session = AsyncSession(
+        session = _ProdRollbackSession(
             bind=conn, expire_on_commit=False, join_transaction_mode="create_savepoint"
         )
         await sync_registry(session)
@@ -118,3 +134,32 @@ async def authed(client: AsyncClient, user: AppUser) -> AsyncClient:
     assert resp.status_code == 200, resp.text
     client.headers.update(CSRF)
     return client
+
+
+@pytest.fixture
+def clock() -> Iterator[FrozenClock]:
+    """Thursday 2026-10-01 14:00 UTC (10:00 in New York): inside business hours."""
+    c = FrozenClock(datetime(2026, 10, 1, 14, 0, tzinfo=UTC))
+    set_clock(c)
+    yield c
+    set_clock(None)
+
+
+@pytest.fixture
+def fake_llm() -> Iterator[FakeLLM]:
+    fake = FakeLLM()
+    set_llm(fake)
+    yield fake
+    set_llm(None)
+
+
+@pytest.fixture(autouse=True)
+def sent(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, tuple[str, ...]]]:
+    """Celery sends are captured instead of reaching the broker."""
+    calls: list[tuple[str, tuple[str, ...]]] = []
+
+    def send_task(task: str, args: list[str], **_: object) -> None:
+        calls.append((task, tuple(args)))
+
+    monkeypatch.setattr(celery_app, "send_task", send_task)
+    return calls

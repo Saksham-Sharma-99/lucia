@@ -26,6 +26,11 @@ TAG_DESCRIPTIONS: dict[str, str] = {
     "internal:hooks": "Inbound provider webhooks; record the last event only (public).",
     "internal:mappings": "Which agent version each firm runs, with its identities.",
     "internal:platform": "Which platform-level app registrations are configured.",
+    "internal:conversations": "Playground chats: messages, live events, pending choices.",
+    "internal:notifications": "The in-app notification bell.",
+    "internal:runs": "Agent runs: tasks and plans, steps, logs, episodes, journal, takeover.",
+    "internal:attention": "Answer what only a person can resolve (questions, confirmations).",
+    "internal:subjects": "Subjects (what agents work on), contact points, roles and consent.",
 }
 
 

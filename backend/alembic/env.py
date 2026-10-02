@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 import lucia.db.models  # noqa: F401  (registers tables on Base.metadata)
 from lucia.core.config import get_settings
 from lucia.db.base import Base
+from lucia.db.manual import MANUAL_INDEXES
 
 config = context.config
 config.set_main_option("sqlalchemy.url", get_settings().database_url)
@@ -17,9 +18,6 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
-
-# Indexes created in raw SQL (not expressible in the ORM) that autogenerate must ignore.
-MANUAL_INDEXES = {"agents_search_trgm_idx"}
 
 
 def include_object(

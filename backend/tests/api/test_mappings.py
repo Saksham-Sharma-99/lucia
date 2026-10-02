@@ -373,6 +373,15 @@ async def test_switch_on_inactive_firm_is_409(authed: AsyncClient, ctx: Ctx) -> 
 # --- list and cascades -------------------------------------------------------------------
 
 
+async def test_reactivating_a_firm_keeps_its_mappings_inactive(
+    authed: AsyncClient, ctx: Ctx
+) -> None:
+    await _create(authed, ctx, activate=True)
+    await authed.post(f"/api/v1/firms/{ctx.firm['id']}/deactivate")
+    resp = (await authed.post(f"/api/v1/firms/{ctx.firm['id']}/activate")).json()
+    assert resp["mapping_counts"] == {"active": 0, "inactive": 1}
+
+
 async def test_list_filters(authed: AsyncClient, ctx: Ctx) -> None:
     await _create(authed, ctx, activate=True)
     await _create(authed, ctx)

@@ -20,6 +20,8 @@ def _row(kind: str, name: str, display_name: str, description: str, **extra: Any
         "risk_tier": None,
         "direction": None,
         "is_async": False,
+        "input_schema": {},
+        "output_schema": {},
         **extra,
     }
 
@@ -49,6 +51,8 @@ def catalog_rows() -> list[dict[str, Any]]:
                 risk_tier=t.risk_tier,
                 direction=t.direction,
                 is_async=t.is_async,
+                input_schema=t.input_schema,
+                output_schema=t.output_schema,
             )
             for t in catalog.TOOLS
         ),

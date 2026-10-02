@@ -52,6 +52,11 @@ async def test_bad_handle_is_422(authed: AsyncClient, handle: str) -> None:
     assert resp.status_code == 422 and resp.json()["errors"][0]["path"] == "/handle"
 
 
+async def test_orchestrator_is_a_reserved_handle(authed: AsyncClient) -> None:
+    resp = await _post(authed, handle="orchestrator")
+    assert resp.status_code == 422 and resp.json()["errors"][0]["path"] == "/handle"
+
+
 async def test_semantic_errors_use_config_pointers(authed: AsyncClient) -> None:
     resp = await _post(authed, config=config(policy_pack=[]))
     assert resp.status_code == 422

@@ -198,6 +198,30 @@ async def test_slack_callback_connects(authed: AsyncClient, firm: Json) -> None:
 
 
 @respx.mock
+async def test_slack_workspace_of_another_firm_is_rejected(
+    authed: AsyncClient, db: AsyncSession, firm: Json
+) -> None:
+    other = await create_firm(authed, slug="other-law")
+    await connected(db, other["id"], "slack", {"team_id": "T1"}, {"bot_token": "fake-token-2"})
+    conn = await pending(authed, firm["id"], "slack")
+    respx.post("https://slack.com/api/oauth.v2.access").respond(json=SLACK_TOKEN)
+    resp = await _callback(authed, "slack", await _link(authed, conn))
+    assert resp.status_code == 400 and "already connected to another firm" in resp.text
+    got = (await authed.get(f"/api/v1/connections/{conn['id']}")).json()
+    assert got["status"] == "pending"
+
+
+@respx.mock
+async def test_reconnecting_the_same_workspace_to_the_same_firm_is_fine(
+    authed: AsyncClient, db: AsyncSession, firm: Json
+) -> None:
+    await connected(db, firm["id"], "slack", {"team_id": "T1"}, {"bot_token": "fake-token-2"})
+    conn = await pending(authed, firm["id"], "slack")
+    respx.post("https://slack.com/api/oauth.v2.access").respond(json=SLACK_TOKEN)
+    assert (await _callback(authed, "slack", await _link(authed, conn))).status_code == 303
+
+
+@respx.mock
 async def test_replayed_callback_is_rejected(authed: AsyncClient, firm: Json) -> None:
     conn = await pending(authed, firm["id"], "slack")
     exchange = respx.post("https://slack.com/api/oauth.v2.access").respond(json=SLACK_TOKEN)

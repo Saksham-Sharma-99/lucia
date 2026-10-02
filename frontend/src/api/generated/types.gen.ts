@@ -5,6 +5,24 @@ export type ClientOptions = {
 };
 
 /**
+ * ActionIn
+ */
+export type ActionIn = {
+    /**
+     * Type
+     */
+    type: 'subject_pick' | 'agent_suggest' | 'clarify_agent' | 'retry';
+    /**
+     * Value
+     */
+    value?: string | null;
+    /**
+     * Message Id
+     */
+    message_id: string;
+};
+
+/**
  * AgentCreate
  */
 export type AgentCreate = {
@@ -221,6 +239,20 @@ export type AlertPolicy = {
     default_channels: {
         [key: string]: Array<string>;
     };
+};
+
+/**
+ * AnswerIn
+ */
+export type AnswerIn = {
+    /**
+     * Choice
+     */
+    choice?: string | null;
+    /**
+     * Text
+     */
+    text?: string | null;
 };
 
 /**
@@ -519,6 +551,180 @@ export type ConsentLink = {
 };
 
 /**
+ * ContactPointCreate
+ */
+export type ContactPointCreate = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Org Name
+     */
+    org_name?: string | null;
+    /**
+     * Emails
+     */
+    emails?: Array<string>;
+    /**
+     * Phones
+     */
+    phones?: Array<Phone>;
+    /**
+     * Tz
+     */
+    tz?: string | null;
+    /**
+     * Org Daily Cap
+     */
+    org_daily_cap?: number | null;
+};
+
+/**
+ * ContactPointOut
+ */
+export type ContactPointOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Org Name
+     */
+    org_name: string | null;
+    /**
+     * Emails
+     */
+    emails: Array<string>;
+    /**
+     * Phones
+     */
+    phones: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Tz
+     */
+    tz: string | null;
+    /**
+     * Opt Out
+     */
+    opt_out: {
+        [key: string]: unknown;
+    };
+    /**
+     * Org Daily Cap
+     */
+    org_daily_cap: number | null;
+};
+
+/**
+ * ContactPointPatch
+ */
+export type ContactPointPatch = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Org Name
+     */
+    org_name?: string | null;
+    /**
+     * Emails
+     */
+    emails?: Array<string> | null;
+    /**
+     * Phones
+     */
+    phones?: Array<Phone> | null;
+    /**
+     * Tz
+     */
+    tz?: string | null;
+    /**
+     * Org Daily Cap
+     */
+    org_daily_cap?: number | null;
+    /**
+     * Opt Out
+     */
+    opt_out?: Array<'voice' | 'email' | 'slack'> | null;
+    /**
+     * Reason
+     */
+    reason?: string | null;
+};
+
+/**
+ * ConversationCreate
+ */
+export type ConversationCreate = {
+    /**
+     * Subject Id
+     */
+    subject_id?: string | null;
+};
+
+/**
+ * ConversationOut
+ */
+export type ConversationOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Firm Id
+     */
+    firm_id: string;
+    /**
+     * Channel
+     */
+    channel: string;
+    /**
+     * Subject Id
+     */
+    subject_id: string | null;
+    /**
+     * Subject Title
+     */
+    subject_title?: string | null;
+    /**
+     * Title
+     */
+    title: string | null;
+    /**
+     * Pending
+     */
+    pending?: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Last Message At
+     */
+    last_message_at: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
+ * ConversationPatch
+ */
+export type ConversationPatch = {
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * DiffEntry
  */
 export type DiffEntry = {
@@ -604,6 +810,60 @@ export type EndConditions = {
      * On Subject Closed
      */
     on_subject_closed?: 'end' | 'pause';
+};
+
+/**
+ * EpisodeOut
+ */
+export type EpisodeOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Task Id
+     */
+    task_id: string | null;
+    /**
+     * Trigger Type
+     */
+    trigger_type: string;
+    /**
+     * Source
+     */
+    source: string | null;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Dedup Key
+     */
+    dedup_key: string;
+    /**
+     * Due At
+     */
+    due_at: string | null;
+    /**
+     * Reason
+     */
+    reason: string | null;
+    /**
+     * Outcome
+     */
+    outcome: string | null;
+    /**
+     * Started At
+     */
+    started_at: string | null;
+    /**
+     * Ended At
+     */
+    ended_at: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
 };
 
 /**
@@ -787,7 +1047,7 @@ export type FirmSettings = {
      * Alert Routing
      */
     alert_routing?: {
-        [key: string]: Array<'slack_dm' | 'slack_thread' | 'email' | 'digest'>;
+        [key: string]: Array<'slack_dm' | 'slack_thread' | 'email' | 'digest' | 'in_app'>;
     };
     /**
      * Policy Floor
@@ -875,6 +1135,42 @@ export type InboundSetup = {
 };
 
 /**
+ * JournalEntryOut
+ */
+export type JournalEntryOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
+ * JournalOut
+ */
+export type JournalOut = {
+    /**
+     * Summary
+     */
+    summary: string | null;
+    /**
+     * Entries
+     */
+    entries: Array<JournalEntryOut>;
+};
+
+/**
  * LadderRung
  */
 export type LadderRung = {
@@ -898,6 +1194,70 @@ export type LadderRung = {
      * Urgency
      */
     urgency?: 'P0' | 'P1' | 'P2' | null;
+};
+
+/**
+ * LinkedRun
+ */
+export type LinkedRun = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Agent Handle
+     */
+    agent_handle: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Substatus
+     */
+    substatus: string | null;
+    /**
+     * Tasks Done
+     */
+    tasks_done: number;
+    /**
+     * Tasks Total
+     */
+    tasks_total: number;
+};
+
+/**
+ * LogOut
+ */
+export type LogOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Task Id
+     */
+    task_id: string | null;
+    /**
+     * Step Id
+     */
+    step_id: string | null;
+    /**
+     * Level
+     */
+    level: string;
+    /**
+     * Stage
+     */
+    stage: string;
+    /**
+     * Message
+     */
+    message: string;
+    /**
+     * At
+     */
+    at: string;
 };
 
 /**
@@ -1100,6 +1460,96 @@ export type MappingResolved = {
 };
 
 /**
+ * MentionableAgent
+ */
+export type MentionableAgent = {
+    /**
+     * Handle
+     */
+    handle: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Description
+     */
+    description: string;
+};
+
+/**
+ * MessageIn
+ */
+export type MessageIn = {
+    /**
+     * Body
+     */
+    body: string;
+};
+
+/**
+ * MessageOut
+ */
+export type MessageOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Conversation Id
+     */
+    conversation_id: string;
+    /**
+     * Direction
+     */
+    direction: string;
+    /**
+     * Actor
+     */
+    actor: string;
+    /**
+     * Author User Id
+     */
+    author_user_id: string | null;
+    /**
+     * External Author
+     */
+    external_author: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Agent Id
+     */
+    agent_id: string | null;
+    /**
+     * Run Id
+     */
+    run_id: string | null;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Mentions
+     */
+    mentions: Array<string>;
+    /**
+     * Blocks
+     */
+    blocks: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
  * Models
  */
 export type Models = {
@@ -1118,6 +1568,40 @@ export type Models = {
 };
 
 /**
+ * NotificationOut
+ */
+export type NotificationOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Run Id
+     */
+    run_id: string | null;
+    /**
+     * Step Result Id
+     */
+    step_result_id: string | null;
+    /**
+     * Summary
+     */
+    summary: string;
+    /**
+     * Urgency
+     */
+    urgency: string;
+    /**
+     * Read At
+     */
+    read_at: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
  * Overrides
  */
 export type Overrides = {
@@ -1126,7 +1610,7 @@ export type Overrides = {
      * Alert Routing
      */
     alert_routing?: {
-        [key: string]: Array<'slack_dm' | 'slack_thread' | 'email' | 'digest'>;
+        [key: string]: Array<'slack_dm' | 'slack_thread' | 'email' | 'digest' | 'in_app'>;
     } | null;
     /**
      * Policy Params
@@ -1146,6 +1630,50 @@ export type PageAgentListItem = {
      * Items
      */
     items: Array<AgentListItem>;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Limit
+     */
+    limit: number;
+};
+
+/**
+ * Page[ContactPointOut]
+ */
+export type PageContactPointOut = {
+    /**
+     * Items
+     */
+    items: Array<ContactPointOut>;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Limit
+     */
+    limit: number;
+};
+
+/**
+ * Page[ConversationOut]
+ */
+export type PageConversationOut = {
+    /**
+     * Items
+     */
+    items: Array<ConversationOut>;
     /**
      * Total
      */
@@ -1202,6 +1730,90 @@ export type PageMappingOut = {
      * Limit
      */
     limit: number;
+};
+
+/**
+ * Page[MessageOut]
+ */
+export type PageMessageOut = {
+    /**
+     * Items
+     */
+    items: Array<MessageOut>;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Limit
+     */
+    limit: number;
+};
+
+/**
+ * Page[RunOut]
+ */
+export type PageRunOut = {
+    /**
+     * Items
+     */
+    items: Array<RunOut>;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Limit
+     */
+    limit: number;
+};
+
+/**
+ * Page[SubjectOut]
+ */
+export type PageSubjectOut = {
+    /**
+     * Items
+     */
+    items: Array<SubjectOut>;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Page
+     */
+    page: number;
+    /**
+     * Limit
+     */
+    limit: number;
+};
+
+/**
+ * Phone
+ */
+export type Phone = {
+    /**
+     * E164
+     */
+    e164: string;
+    /**
+     * Type
+     */
+    type?: 'voice' | 'fax';
+    /**
+     * Label
+     */
+    label?: string;
 };
 
 /**
@@ -1451,6 +2063,16 @@ export type RegistryEntryOut = {
 };
 
 /**
+ * RemarksIn
+ */
+export type RemarksIn = {
+    /**
+     * Remarks
+     */
+    remarks: string;
+};
+
+/**
  * ResolvedCadence
  */
 export type ResolvedCadence = {
@@ -1527,6 +2149,112 @@ export type ResolvedRoute = {
 };
 
 /**
+ * RunBrief
+ */
+export type RunBrief = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Agent Handle
+     */
+    agent_handle: string;
+    /**
+     * Status
+     */
+    status: string;
+};
+
+/**
+ * RunOut
+ */
+export type RunOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Firm Id
+     */
+    firm_id: string;
+    /**
+     * Agent Handle
+     */
+    agent_handle: string;
+    /**
+     * Subject Id
+     */
+    subject_id: string;
+    /**
+     * Subject Title
+     */
+    subject_title: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Substatus
+     */
+    substatus: string | null;
+    /**
+     * Goal
+     */
+    goal: string;
+    /**
+     * Completion Criteria
+     */
+    completion_criteria: string;
+    /**
+     * Version
+     */
+    version: number;
+    /**
+     * Cycle
+     */
+    cycle: number;
+    /**
+     * Next Wake At
+     */
+    next_wake_at: string | null;
+    /**
+     * Started At
+     */
+    started_at: string | null;
+    /**
+     * Ended At
+     */
+    ended_at: string | null;
+    /**
+     * Ended Reason
+     */
+    ended_reason: string | null;
+    /**
+     * Takeover
+     */
+    takeover: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Tasks Done
+     */
+    tasks_done: number;
+    /**
+     * Tasks Total
+     */
+    tasks_total: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Updated At
+     */
+    updated_at: string | null;
+};
+
+/**
  * SchedulesDraft
  */
 export type SchedulesDraft = {
@@ -1568,6 +2296,417 @@ export type SectionDraftRequest = {
 };
 
 /**
+ * StepOut
+ */
+export type StepOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Task Id
+     */
+    task_id: string | null;
+    /**
+     * Episode Id
+     */
+    episode_id: string | null;
+    /**
+     * Plan Item Id
+     */
+    plan_item_id: string | null;
+    /**
+     * Parent Step Id
+     */
+    parent_step_id: string | null;
+    /**
+     * Seq
+     */
+    seq: number;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Role
+     */
+    role: string | null;
+    /**
+     * Tool
+     */
+    tool: string | null;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Input
+     */
+    input: {
+        [key: string]: unknown;
+    };
+    /**
+     * Output
+     */
+    output: {
+        [key: string]: unknown;
+    };
+    /**
+     * Summary
+     */
+    summary: string | null;
+    /**
+     * Error
+     */
+    error: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Model
+     */
+    model: string | null;
+    /**
+     * Latency Ms
+     */
+    latency_ms: number | null;
+    /**
+     * Input Tokens
+     */
+    input_tokens: number | null;
+    /**
+     * Output Tokens
+     */
+    output_tokens: number | null;
+    /**
+     * Cost
+     */
+    cost: number | null;
+    /**
+     * Started At
+     */
+    started_at: string | null;
+    /**
+     * Ended At
+     */
+    ended_at: string | null;
+};
+
+/**
+ * StepResultOut
+ */
+export type StepResultOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Run Id
+     */
+    run_id: string | null;
+    /**
+     * Task Id
+     */
+    task_id: string | null;
+    /**
+     * Type
+     */
+    type: string;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Urgency
+     */
+    urgency: string;
+    /**
+     * Summary
+     */
+    summary: string;
+    /**
+     * Data
+     */
+    data: {
+        [key: string]: unknown;
+    };
+    /**
+     * Options
+     */
+    options: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Blocking
+     */
+    blocking: boolean;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Answer
+     */
+    answer: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Answered At
+     */
+    answered_at: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+};
+
+/**
+ * SubjectContactCreate
+ */
+export type SubjectContactCreate = {
+    /**
+     * Contact Point Id
+     */
+    contact_point_id: string;
+    /**
+     * Role
+     */
+    role: 'client' | 'provider' | 'insurer' | 'prospect' | 'other';
+};
+
+/**
+ * SubjectContactOut
+ */
+export type SubjectContactOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Role
+     */
+    role: string;
+    /**
+     * Consent
+     */
+    consent: {
+        [key: string]: unknown;
+    };
+    /**
+     * Alias Ordinal
+     */
+    alias_ordinal: number;
+    contact_point: ContactPointOut;
+};
+
+/**
+ * SubjectContactPatch
+ */
+export type SubjectContactPatch = {
+    /**
+     * Role
+     */
+    role?: 'client' | 'provider' | 'insurer' | 'prospect' | 'other' | null;
+    /**
+     * Consent
+     */
+    consent?: {
+        [key: string]: 'granted' | 'refused' | 'unknown';
+    } | null;
+};
+
+/**
+ * SubjectCreate
+ */
+export type SubjectCreate = {
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * External Ref
+     */
+    external_ref?: string | null;
+    /**
+     * Status
+     */
+    status?: 'open' | 'closed';
+    /**
+     * Description
+     */
+    description?: string;
+    /**
+     * Data
+     */
+    data?: {
+        [key: string]: unknown;
+    };
+};
+
+/**
+ * SubjectDetail
+ */
+export type SubjectDetail = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Firm Id
+     */
+    firm_id: string;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * External Ref
+     */
+    external_ref: string | null;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Data
+     */
+    data: {
+        [key: string]: unknown;
+    };
+    /**
+     * Revision
+     */
+    revision: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Updated At
+     */
+    updated_at: string | null;
+    /**
+     * Contact Count
+     */
+    contact_count?: number;
+    /**
+     * Live Run Count
+     */
+    live_run_count?: number;
+    /**
+     * Contacts
+     */
+    contacts: Array<SubjectContactOut>;
+    /**
+     * Runs
+     */
+    runs: Array<RunBrief>;
+};
+
+/**
+ * SubjectOut
+ */
+export type SubjectOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Firm Id
+     */
+    firm_id: string;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * External Ref
+     */
+    external_ref: string | null;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Data
+     */
+    data: {
+        [key: string]: unknown;
+    };
+    /**
+     * Revision
+     */
+    revision: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Updated At
+     */
+    updated_at: string | null;
+    /**
+     * Contact Count
+     */
+    contact_count?: number;
+    /**
+     * Live Run Count
+     */
+    live_run_count?: number;
+};
+
+/**
+ * SubjectPatch
+ */
+export type SubjectPatch = {
+    /**
+     * Kind
+     */
+    kind?: string | null;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * External Ref
+     */
+    external_ref?: string | null;
+    /**
+     * Status
+     */
+    status?: 'open' | 'closed' | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Data
+     */
+    data?: {
+        [key: string]: unknown;
+    } | null;
+};
+
+/**
  * SwitchVersion
  */
 export type SwitchVersion = {
@@ -1575,6 +2714,70 @@ export type SwitchVersion = {
      * Agent Prompt Id
      */
     agent_prompt_id: string;
+};
+
+/**
+ * TaskOut
+ */
+export type TaskOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Key
+     */
+    key: string;
+    /**
+     * Kind
+     */
+    kind: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Goal
+     */
+    goal: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Depends On
+     */
+    depends_on: Array<string>;
+    /**
+     * Plan
+     */
+    plan: Array<{
+        [key: string]: unknown;
+    }>;
+    /**
+     * Output
+     */
+    output: {
+        [key: string]: unknown;
+    } | null;
+    /**
+     * Follow Up
+     */
+    follow_up: {
+        [key: string]: unknown;
+    };
+    /**
+     * Started At
+     */
+    started_at: string | null;
+    /**
+     * Ended At
+     */
+    ended_at: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
 };
 
 /**
@@ -4108,3 +5311,1638 @@ export type GetPlatformStatusResponses = {
 };
 
 export type GetPlatformStatusResponse = GetPlatformStatusResponses[keyof GetPlatformStatusResponses];
+
+export type ListSubjectsData = {
+    body?: never;
+    path: {
+        /**
+         * Firm Id
+         */
+        firm_id: string;
+    };
+    query?: {
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Kind
+         */
+        kind?: string | null;
+        /**
+         * Status
+         */
+        status?: 'open' | 'closed' | null;
+        /**
+         * Page
+         */
+        page?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/firms/{firm_id}/subjects';
+};
+
+export type ListSubjectsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListSubjectsError = ListSubjectsErrors[keyof ListSubjectsErrors];
+
+export type ListSubjectsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageSubjectOut;
+};
+
+export type ListSubjectsResponse = ListSubjectsResponses[keyof ListSubjectsResponses];
+
+export type CreateSubjectData = {
+    body: SubjectCreate;
+    path: {
+        /**
+         * Firm Id
+         */
+        firm_id: string;
+    };
+    query?: never;
+    url: '/api/v1/firms/{firm_id}/subjects';
+};
+
+export type CreateSubjectErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type CreateSubjectError = CreateSubjectErrors[keyof CreateSubjectErrors];
+
+export type CreateSubjectResponses = {
+    /**
+     * Successful Response
+     */
+    201: SubjectDetail;
+};
+
+export type CreateSubjectResponse = CreateSubjectResponses[keyof CreateSubjectResponses];
+
+export type ListSubjectKindsData = {
+    body?: never;
+    path: {
+        /**
+         * Firm Id
+         */
+        firm_id: string;
+    };
+    query?: never;
+    url: '/api/v1/firms/{firm_id}/subject-kinds';
+};
+
+export type ListSubjectKindsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListSubjectKindsError = ListSubjectKindsErrors[keyof ListSubjectKindsErrors];
+
+export type ListSubjectKindsResponses = {
+    /**
+     * Response Listsubjectkinds
+     *
+     * Successful Response
+     */
+    200: Array<string>;
+};
+
+export type ListSubjectKindsResponse = ListSubjectKindsResponses[keyof ListSubjectKindsResponses];
+
+export type GetSubjectData = {
+    body?: never;
+    path: {
+        /**
+         * Subject Id
+         */
+        subject_id: string;
+    };
+    query?: never;
+    url: '/api/v1/subjects/{subject_id}';
+};
+
+export type GetSubjectErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type GetSubjectError = GetSubjectErrors[keyof GetSubjectErrors];
+
+export type GetSubjectResponses = {
+    /**
+     * Successful Response
+     */
+    200: SubjectDetail;
+};
+
+export type GetSubjectResponse = GetSubjectResponses[keyof GetSubjectResponses];
+
+export type UpdateSubjectData = {
+    body: SubjectPatch;
+    path: {
+        /**
+         * Subject Id
+         */
+        subject_id: string;
+    };
+    query?: never;
+    url: '/api/v1/subjects/{subject_id}';
+};
+
+export type UpdateSubjectErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type UpdateSubjectError = UpdateSubjectErrors[keyof UpdateSubjectErrors];
+
+export type UpdateSubjectResponses = {
+    /**
+     * Successful Response
+     */
+    200: SubjectDetail;
+};
+
+export type UpdateSubjectResponse = UpdateSubjectResponses[keyof UpdateSubjectResponses];
+
+export type ListContactPointsData = {
+    body?: never;
+    path: {
+        /**
+         * Firm Id
+         */
+        firm_id: string;
+    };
+    query?: {
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Page
+         */
+        page?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/firms/{firm_id}/contact-points';
+};
+
+export type ListContactPointsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListContactPointsError = ListContactPointsErrors[keyof ListContactPointsErrors];
+
+export type ListContactPointsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageContactPointOut;
+};
+
+export type ListContactPointsResponse = ListContactPointsResponses[keyof ListContactPointsResponses];
+
+export type CreateContactPointData = {
+    body: ContactPointCreate;
+    path: {
+        /**
+         * Firm Id
+         */
+        firm_id: string;
+    };
+    query?: never;
+    url: '/api/v1/firms/{firm_id}/contact-points';
+};
+
+export type CreateContactPointErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type CreateContactPointError = CreateContactPointErrors[keyof CreateContactPointErrors];
+
+export type CreateContactPointResponses = {
+    /**
+     * Successful Response
+     */
+    201: ContactPointOut;
+};
+
+export type CreateContactPointResponse = CreateContactPointResponses[keyof CreateContactPointResponses];
+
+export type UpdateContactPointData = {
+    body: ContactPointPatch;
+    path: {
+        /**
+         * Contact Point Id
+         */
+        contact_point_id: string;
+    };
+    query?: never;
+    url: '/api/v1/contact-points/{contact_point_id}';
+};
+
+export type UpdateContactPointErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type UpdateContactPointError = UpdateContactPointErrors[keyof UpdateContactPointErrors];
+
+export type UpdateContactPointResponses = {
+    /**
+     * Successful Response
+     */
+    200: ContactPointOut;
+};
+
+export type UpdateContactPointResponse = UpdateContactPointResponses[keyof UpdateContactPointResponses];
+
+export type LinkSubjectContactData = {
+    body: SubjectContactCreate;
+    path: {
+        /**
+         * Subject Id
+         */
+        subject_id: string;
+    };
+    query?: never;
+    url: '/api/v1/subjects/{subject_id}/contacts';
+};
+
+export type LinkSubjectContactErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type LinkSubjectContactError = LinkSubjectContactErrors[keyof LinkSubjectContactErrors];
+
+export type LinkSubjectContactResponses = {
+    /**
+     * Successful Response
+     */
+    201: SubjectContactOut;
+};
+
+export type LinkSubjectContactResponse = LinkSubjectContactResponses[keyof LinkSubjectContactResponses];
+
+export type UnlinkSubjectContactData = {
+    body?: never;
+    path: {
+        /**
+         * Link Id
+         */
+        link_id: string;
+    };
+    query?: never;
+    url: '/api/v1/subject-contacts/{link_id}';
+};
+
+export type UnlinkSubjectContactErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type UnlinkSubjectContactError = UnlinkSubjectContactErrors[keyof UnlinkSubjectContactErrors];
+
+export type UnlinkSubjectContactResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type UnlinkSubjectContactResponse = UnlinkSubjectContactResponses[keyof UnlinkSubjectContactResponses];
+
+export type UpdateSubjectContactData = {
+    body: SubjectContactPatch;
+    path: {
+        /**
+         * Link Id
+         */
+        link_id: string;
+    };
+    query?: never;
+    url: '/api/v1/subject-contacts/{link_id}';
+};
+
+export type UpdateSubjectContactErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type UpdateSubjectContactError = UpdateSubjectContactErrors[keyof UpdateSubjectContactErrors];
+
+export type UpdateSubjectContactResponses = {
+    /**
+     * Successful Response
+     */
+    200: SubjectContactOut;
+};
+
+export type UpdateSubjectContactResponse = UpdateSubjectContactResponses[keyof UpdateSubjectContactResponses];
+
+export type AnswerAttentionData = {
+    body: AnswerIn;
+    path: {
+        /**
+         * Item Id
+         */
+        item_id: string;
+    };
+    query?: never;
+    url: '/api/v1/attention/{item_id}/answer';
+};
+
+export type AnswerAttentionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type AnswerAttentionError = AnswerAttentionErrors[keyof AnswerAttentionErrors];
+
+export type AnswerAttentionResponses = {
+    /**
+     * Successful Response
+     */
+    200: StepResultOut;
+};
+
+export type AnswerAttentionResponse = AnswerAttentionResponses[keyof AnswerAttentionResponses];
+
+export type ListConversationsData = {
+    body?: never;
+    path: {
+        /**
+         * Firm Id
+         */
+        firm_id: string;
+    };
+    query?: {
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Page
+         */
+        page?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/firms/{firm_id}/conversations';
+};
+
+export type ListConversationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListConversationsError = ListConversationsErrors[keyof ListConversationsErrors];
+
+export type ListConversationsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageConversationOut;
+};
+
+export type ListConversationsResponse = ListConversationsResponses[keyof ListConversationsResponses];
+
+export type CreateConversationData = {
+    body: ConversationCreate;
+    path: {
+        /**
+         * Firm Id
+         */
+        firm_id: string;
+    };
+    query?: never;
+    url: '/api/v1/firms/{firm_id}/conversations';
+};
+
+export type CreateConversationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type CreateConversationError = CreateConversationErrors[keyof CreateConversationErrors];
+
+export type CreateConversationResponses = {
+    /**
+     * Successful Response
+     */
+    201: ConversationOut;
+};
+
+export type CreateConversationResponse = CreateConversationResponses[keyof CreateConversationResponses];
+
+export type GetConversationData = {
+    body?: never;
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversation_id}';
+};
+
+export type GetConversationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type GetConversationError = GetConversationErrors[keyof GetConversationErrors];
+
+export type GetConversationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConversationOut;
+};
+
+export type GetConversationResponse = GetConversationResponses[keyof GetConversationResponses];
+
+export type RenameConversationData = {
+    body: ConversationPatch;
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversation_id}';
+};
+
+export type RenameConversationErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type RenameConversationError = RenameConversationErrors[keyof RenameConversationErrors];
+
+export type RenameConversationResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConversationOut;
+};
+
+export type RenameConversationResponse = RenameConversationResponses[keyof RenameConversationResponses];
+
+export type ListMessagesData = {
+    body?: never;
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: {
+        /**
+         * Page
+         */
+        page?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/conversations/{conversation_id}/messages';
+};
+
+export type ListMessagesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListMessagesError = ListMessagesErrors[keyof ListMessagesErrors];
+
+export type ListMessagesResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageMessageOut;
+};
+
+export type ListMessagesResponse = ListMessagesResponses[keyof ListMessagesResponses];
+
+export type SendMessageData = {
+    body: MessageIn;
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversation_id}/messages';
+};
+
+export type SendMessageErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type SendMessageError = SendMessageErrors[keyof SendMessageErrors];
+
+export type SendMessageResponses = {
+    /**
+     * Successful Response
+     */
+    202: MessageOut;
+};
+
+export type SendMessageResponse = SendMessageResponses[keyof SendMessageResponses];
+
+export type ConversationActionData = {
+    body: ActionIn;
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversation_id}/actions';
+};
+
+export type ConversationActionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ConversationActionError = ConversationActionErrors[keyof ConversationActionErrors];
+
+export type ConversationActionResponses = {
+    /**
+     * Successful Response
+     */
+    200: ConversationOut;
+};
+
+export type ConversationActionResponse = ConversationActionResponses[keyof ConversationActionResponses];
+
+export type ListConversationRunsData = {
+    body?: never;
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversation_id}/runs';
+};
+
+export type ListConversationRunsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListConversationRunsError = ListConversationRunsErrors[keyof ListConversationRunsErrors];
+
+export type ListConversationRunsResponses = {
+    /**
+     * Response Listconversationruns
+     *
+     * Successful Response
+     */
+    200: Array<LinkedRun>;
+};
+
+export type ListConversationRunsResponse = ListConversationRunsResponses[keyof ListConversationRunsResponses];
+
+export type ConversationEventsData = {
+    body?: never;
+    path: {
+        /**
+         * Conversation Id
+         */
+        conversation_id: string;
+    };
+    query?: never;
+    url: '/api/v1/conversations/{conversation_id}/events';
+};
+
+export type ConversationEventsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ConversationEventsError = ConversationEventsErrors[keyof ConversationEventsErrors];
+
+export type ConversationEventsResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ListMentionableAgentsData = {
+    body?: never;
+    path: {
+        /**
+         * Firm Id
+         */
+        firm_id: string;
+    };
+    query?: never;
+    url: '/api/v1/firms/{firm_id}/mentionable-agents';
+};
+
+export type ListMentionableAgentsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListMentionableAgentsError = ListMentionableAgentsErrors[keyof ListMentionableAgentsErrors];
+
+export type ListMentionableAgentsResponses = {
+    /**
+     * Response Listmentionableagents
+     *
+     * Successful Response
+     */
+    200: Array<MentionableAgent>;
+};
+
+export type ListMentionableAgentsResponse = ListMentionableAgentsResponses[keyof ListMentionableAgentsResponses];
+
+export type ListNotificationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Unread
+         */
+        unread?: boolean;
+    };
+    url: '/api/v1/notifications';
+};
+
+export type ListNotificationsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListNotificationsError = ListNotificationsErrors[keyof ListNotificationsErrors];
+
+export type ListNotificationsResponses = {
+    /**
+     * Response Listnotifications
+     *
+     * Successful Response
+     */
+    200: Array<NotificationOut>;
+};
+
+export type ListNotificationsResponse = ListNotificationsResponses[keyof ListNotificationsResponses];
+
+export type MarkNotificationReadData = {
+    body?: never;
+    path: {
+        /**
+         * Notification Id
+         */
+        notification_id: string;
+    };
+    query?: never;
+    url: '/api/v1/notifications/{notification_id}/read';
+};
+
+export type MarkNotificationReadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type MarkNotificationReadError = MarkNotificationReadErrors[keyof MarkNotificationReadErrors];
+
+export type MarkNotificationReadResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type MarkNotificationReadResponse = MarkNotificationReadResponses[keyof MarkNotificationReadResponses];
+
+export type MarkAllNotificationsReadData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/notifications/read-all';
+};
+
+export type MarkAllNotificationsReadErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type MarkAllNotificationsReadError = MarkAllNotificationsReadErrors[keyof MarkAllNotificationsReadErrors];
+
+export type MarkAllNotificationsReadResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type MarkAllNotificationsReadResponse = MarkAllNotificationsReadResponses[keyof MarkAllNotificationsReadResponses];
+
+export type ListRunsData = {
+    body?: never;
+    path: {
+        /**
+         * Firm Id
+         */
+        firm_id: string;
+    };
+    query?: {
+        /**
+         * Agent
+         */
+        agent?: string | null;
+        /**
+         * Status
+         */
+        status?: 'CREATED' | 'ACTIVE' | 'TAKEN_OVER' | 'PAUSED' | 'AWAITING_CONFIRMATION' | 'COMPLETED' | 'ENDED' | 'FAILED' | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Page
+         */
+        page?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/firms/{firm_id}/runs';
+};
+
+export type ListRunsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListRunsError = ListRunsErrors[keyof ListRunsErrors];
+
+export type ListRunsResponses = {
+    /**
+     * Successful Response
+     */
+    200: PageRunOut;
+};
+
+export type ListRunsResponse = ListRunsResponses[keyof ListRunsResponses];
+
+export type GetRunData = {
+    body?: never;
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/runs/{run_id}';
+};
+
+export type GetRunErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type GetRunError = GetRunErrors[keyof GetRunErrors];
+
+export type GetRunResponses = {
+    /**
+     * Successful Response
+     */
+    200: RunOut;
+};
+
+export type GetRunResponse = GetRunResponses[keyof GetRunResponses];
+
+export type ListRunTasksData = {
+    body?: never;
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/runs/{run_id}/tasks';
+};
+
+export type ListRunTasksErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListRunTasksError = ListRunTasksErrors[keyof ListRunTasksErrors];
+
+export type ListRunTasksResponses = {
+    /**
+     * Response Listruntasks
+     *
+     * Successful Response
+     */
+    200: Array<TaskOut>;
+};
+
+export type ListRunTasksResponse = ListRunTasksResponses[keyof ListRunTasksResponses];
+
+export type ListRunStepsData = {
+    body?: never;
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: {
+        /**
+         * Task Id
+         */
+        task_id?: string | null;
+        /**
+         * Plan Item Id
+         */
+        plan_item_id?: string | null;
+    };
+    url: '/api/v1/runs/{run_id}/steps';
+};
+
+export type ListRunStepsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListRunStepsError = ListRunStepsErrors[keyof ListRunStepsErrors];
+
+export type ListRunStepsResponses = {
+    /**
+     * Response Listrunsteps
+     *
+     * Successful Response
+     */
+    200: Array<StepOut>;
+};
+
+export type ListRunStepsResponse = ListRunStepsResponses[keyof ListRunStepsResponses];
+
+export type ListRunLogsData = {
+    body?: never;
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: {
+        /**
+         * Task Id
+         */
+        task_id?: string | null;
+        /**
+         * Step Id
+         */
+        step_id?: string | null;
+        /**
+         * Level
+         */
+        level?: string | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+    };
+    url: '/api/v1/runs/{run_id}/logs';
+};
+
+export type ListRunLogsErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListRunLogsError = ListRunLogsErrors[keyof ListRunLogsErrors];
+
+export type ListRunLogsResponses = {
+    /**
+     * Response Listrunlogs
+     *
+     * Successful Response
+     */
+    200: Array<LogOut>;
+};
+
+export type ListRunLogsResponse = ListRunLogsResponses[keyof ListRunLogsResponses];
+
+export type ListRunEpisodesData = {
+    body?: never;
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/runs/{run_id}/episodes';
+};
+
+export type ListRunEpisodesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListRunEpisodesError = ListRunEpisodesErrors[keyof ListRunEpisodesErrors];
+
+export type ListRunEpisodesResponses = {
+    /**
+     * Response Listrunepisodes
+     *
+     * Successful Response
+     */
+    200: Array<EpisodeOut>;
+};
+
+export type ListRunEpisodesResponse = ListRunEpisodesResponses[keyof ListRunEpisodesResponses];
+
+export type ListRunJournalData = {
+    body?: never;
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/runs/{run_id}/journal';
+};
+
+export type ListRunJournalErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListRunJournalError = ListRunJournalErrors[keyof ListRunJournalErrors];
+
+export type ListRunJournalResponses = {
+    /**
+     * Successful Response
+     */
+    200: JournalOut;
+};
+
+export type ListRunJournalResponse = ListRunJournalResponses[keyof ListRunJournalResponses];
+
+export type ListRunAttentionData = {
+    body?: never;
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/runs/{run_id}/attention';
+};
+
+export type ListRunAttentionErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListRunAttentionError = ListRunAttentionErrors[keyof ListRunAttentionErrors];
+
+export type ListRunAttentionResponses = {
+    /**
+     * Response Listrunattention
+     *
+     * Successful Response
+     */
+    200: Array<StepResultOut>;
+};
+
+export type ListRunAttentionResponse = ListRunAttentionResponses[keyof ListRunAttentionResponses];
+
+export type TakeoverRunData = {
+    body: RemarksIn;
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/runs/{run_id}/takeover';
+};
+
+export type TakeoverRunErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type TakeoverRunError = TakeoverRunErrors[keyof TakeoverRunErrors];
+
+export type TakeoverRunResponses = {
+    /**
+     * Successful Response
+     */
+    200: RunOut;
+};
+
+export type TakeoverRunResponse = TakeoverRunResponses[keyof TakeoverRunResponses];
+
+export type HandbackRunData = {
+    body: RemarksIn;
+    path: {
+        /**
+         * Run Id
+         */
+        run_id: string;
+    };
+    query?: never;
+    url: '/api/v1/runs/{run_id}/handback';
+};
+
+export type HandbackRunErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type HandbackRunError = HandbackRunErrors[keyof HandbackRunErrors];
+
+export type HandbackRunResponses = {
+    /**
+     * Successful Response
+     */
+    200: RunOut;
+};
+
+export type HandbackRunResponse = HandbackRunResponses[keyof HandbackRunResponses];
+
+export type SlackInteractiveData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Slack-Request-Timestamp
+         */
+        'x-slack-request-timestamp'?: string;
+        /**
+         * X-Slack-Signature
+         */
+        'x-slack-signature'?: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/hooks/slack/interactive';
+};
+
+export type SlackInteractiveErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type SlackInteractiveError = SlackInteractiveErrors[keyof SlackInteractiveErrors];
+
+export type SlackInteractiveResponses = {
+    /**
+     * Response Slackinteractive
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: boolean;
+    };
+};
+
+export type SlackInteractiveResponse = SlackInteractiveResponses[keyof SlackInteractiveResponses];
