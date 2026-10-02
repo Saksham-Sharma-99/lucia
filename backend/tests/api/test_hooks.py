@@ -148,21 +148,23 @@ async def test_gmail_invalid_json_is_400(client: AsyncClient) -> None:
 # --- Vapi --------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    "message",
-    [
-        {"type": "end-of-call-report", "call": {"assistantId": "asst_1"}},
-        {"type": "end-of-call-report", "assistant": {"id": "asst_1"}},
-    ],
-)
-async def test_vapi_records_by_assistant(
-    authed: AsyncClient, db: AsyncSession, message: Any
-) -> None:
+async def test_vapi_records_by_phone_number(authed: AsyncClient, db: AsyncSession) -> None:
     firm = await create_firm(authed)
-    c = await connected(db, firm["id"], "vapi", {"assistant_id": "asst_1"})
+    c = await connected(db, firm["id"], "vapi", {"phone_number_id": "pn_1"})
+    message = {"type": "end-of-call-report", "call": {"phoneNumberId": "pn_1"}}
     assert (await _vapi(authed, message)).json()["recorded"] == 1
     got = (await authed.get(f"/api/v1/connections/{c.id}")).json()
     assert got["last_inbound_type"] == "vapi.end-of-call-report"
+
+
+async def test_vapi_without_a_platform_secret_accepts_any(
+    authed: AsyncClient, db: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(get_settings(), "vapi_webhook_secret", "")
+    firm = await create_firm(authed)
+    await connected(db, firm["id"], "vapi", {"phone_number_id": "pn_1"})
+    message = {"type": "status-update", "call": {"phoneNumberId": "pn_1"}}
+    assert (await _vapi(authed, message, secret="")).json()["recorded"] == 1
 
 
 @pytest.mark.parametrize("secret", ["wrong", "ü".encode(), ""])
@@ -176,8 +178,9 @@ async def test_vapi_bad_secret_is_401(client: AsyncClient, secret: str | bytes) 
         {"type": "status-update"},
         "text",
         None,
-        {"assistant": "a", "call": 5},
-        {"type": "x", "assistant": {"id": "nobody"}},
+        {"call": 5},
+        {"type": "x", "call": {"phoneNumberId": "nobody"}},
+        {"type": "x", "assistant": {"id": "asst_1"}},
     ],
 )
 async def test_vapi_unmatched_or_odd_payloads_record_nothing(

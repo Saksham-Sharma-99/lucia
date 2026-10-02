@@ -83,8 +83,8 @@ export function ConnectionCard({
           <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[9rem_1fr]">
             <dt className="text-muted-foreground">Number</dt>
             <dd className="font-mono">{String(c.config.phone_number ?? "—")}</dd>
-            <dt className="text-muted-foreground">Assistant</dt>
-            <dd className="font-mono text-xs">{String(c.config.assistant_id ?? "—")}</dd>
+            <dt className="text-muted-foreground">Vapi number id</dt>
+            <dd className="font-mono text-xs">{String(c.config.phone_number_id ?? "—")}</dd>
           </dl>
         )}
         <SecretsSection connection={c} />

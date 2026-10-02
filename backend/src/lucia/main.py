@@ -19,6 +19,7 @@ from lucia.platform.router import router as platform_router
 from lucia.registry.router import router as registry_router
 from lucia.registry.sync import sync_registry
 from lucia.studio.agents_router import router as agents_router
+from lucia.studio.drafter.router import router as drafts_router
 from lucia.studio.versions_router import router as versions_router
 
 API_PREFIX = "/api/v1"
@@ -38,6 +39,7 @@ def api_router() -> APIRouter:
         auth_router,
         firms_router,
         registry_router,
+        drafts_router,
         agents_router,
         versions_router,
         connections_router,

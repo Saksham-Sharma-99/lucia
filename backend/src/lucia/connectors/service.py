@@ -83,7 +83,6 @@ async def list_for_firm(session: AsyncSession, firm_id: uuid.UUID) -> list[C]:
 
 
 async def create(session: AsyncSession, firm_id: uuid.UUID, body: s.ConnectionCreate) -> C:
-    """Known gap: if the commit fails after Vapi provisioned, the Vapi assistant is orphaned."""
     firm = await get_or_404(session, Firm, firm_id, "Firm")
     c = C(
         firm_id=firm_id,

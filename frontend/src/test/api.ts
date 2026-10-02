@@ -180,9 +180,9 @@ export const PLATFORM: PlatformStatus = {
   slack: true,
   google: true,
   vapi: true,
-  twilio: true,
   public_base_url: "https://lucia.test",
   allowed_models: ["m-big", "m-small"],
+  drafter_enabled: false,
 };
 
 const ENTRIES: RegistryEntryOut[] = [
@@ -196,18 +196,22 @@ const ENTRIES: RegistryEntryOut[] = [
   },
 ];
 
-/** Serve one endpoint and record each request's JSON body (null when empty), to assert what was sent. */
-export function capture(
+/**
+ * Serve one endpoint and record each request's JSON body (null when empty), to assert what was
+ * sent. `reply` gets the body and may wait (e.g. to hold a response open).
+ */
+export function capture<T = unknown>(
   method: "get" | "post" | "patch" | "delete",
   url: string,
-  reply: () => Response = () => HttpResponse.json({}),
+  reply: (body: T) => Response | Promise<Response> = () => HttpResponse.json({}),
 ) {
-  const sent: unknown[] = [];
+  const sent: T[] = [];
   server.use(
     http[method](url, async ({ request }) => {
       const text = await request.text();
-      sent.push(text ? JSON.parse(text) : null);
-      return reply();
+      const body = (text ? JSON.parse(text) : null) as T;
+      sent.push(body);
+      return reply(body);
     }),
   );
   return sent;

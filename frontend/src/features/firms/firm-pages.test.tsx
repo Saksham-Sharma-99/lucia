@@ -260,24 +260,6 @@ describe("firm detail", () => {
 });
 
 describe("connections", () => {
-  it("adding a phone number validates it before calling the API", async () => {
-    oneFirm();
-    server.use(
-      http.get(`${API}/registry/connectors`, () =>
-        HttpResponse.json([...CONNECTORS, connector("vapi", [], { setup: "form" })]),
-      ),
-    );
-    const app = await renderApp("/firms/f1?tab=connections");
-    await app.user.click(
-      await screen.findAllByRole("button", { name: "Add connection" }).then((b) => b[0]),
-    );
-    const dialog = await screen.findByRole("dialog");
-    await app.user.click(within(dialog).getByRole("radio", { name: /VAPI/ }));
-    await app.user.type(within(dialog).getByLabelText("Phone number"), "555");
-    await app.user.click(within(dialog).getByRole("button", { name: "Add and set up the number" }));
-    await within(dialog).findByText(/international format/);
-  });
-
   it("adds gmail as pending, named after the app when no label is given", async () => {
     oneFirm();
     const body = capture("post", `${API}/firms/f1/connections`, () =>
@@ -291,7 +273,10 @@ describe("connections", () => {
     await screen.findByText(/Generate its consent link next/);
   });
 
-  it("adds a phone number with the firm's own Twilio account", async () => {
+  it.each([
+    ["the platform default number when the id is empty", "", {}],
+    ["the firm's own number by its id", " pn_1 ", { phone_number_id: "pn_1" }],
+  ])("adds a Vapi connection with %s", async (_, numberId, config) => {
     oneFirm();
     server.use(
       http.get(`${API}/registry/connectors`, () =>
@@ -299,27 +284,18 @@ describe("connections", () => {
       ),
     );
     const body = capture("post", `${API}/firms/f1/connections`, () =>
-      HttpResponse.json(connection({ connector: "vapi", label: "+14155550123" }), { status: 201 }),
+      HttpResponse.json(connection({ connector: "vapi", label: "Main line" }), { status: 201 }),
     );
     const app = await renderApp("/firms/f1?tab=connections");
     await app.user.click((await screen.findAllByRole("button", { name: "Add connection" }))[0]);
     const dialog = await screen.findByRole("dialog");
     await app.user.click(within(dialog).getByRole("radio", { name: /VAPI/ }));
-    await app.user.type(within(dialog).getByLabelText("Phone number"), "+14155550123");
-    await app.user.click(within(dialog).getByRole("switch"));
-    const add = within(dialog).getByRole("button", { name: "Add and set up the number" });
-    await app.user.click(add);
-    await within(dialog).findByText("Enter the account SID");
-    await app.user.type(within(dialog).getByLabelText("Account SID"), "AC123");
-    await app.user.type(within(dialog).getByLabelText("Auth token"), "tok");
-    await app.user.click(add);
+    await app.user.type(within(dialog).getByLabelText("Label"), "Main line");
+    if (numberId)
+      await app.user.type(within(dialog).getByLabelText("Vapi phone number id"), numberId);
+    await app.user.click(within(dialog).getByRole("button", { name: "Add the number" }));
     await waitFor(() =>
-      expect(body.at(-1)).toEqual({
-        connector: "vapi",
-        label: "+14155550123",
-        config: { phone_number: "+14155550123" },
-        secrets: { twilio_account_sid: "AC123", twilio_auth_token: "tok" },
-      }),
+      expect(body.at(-1)).toEqual({ connector: "vapi", label: "Main line", config }),
     );
   });
 
@@ -362,7 +338,6 @@ describe("connections", () => {
           slack: true,
           google: false,
           vapi: true,
-          twilio: true,
           public_base_url: "x",
           allowed_models: ["m"],
         }),
@@ -443,6 +418,31 @@ describe("connections", () => {
     await app.user.click(within(confirm).getByRole("button", { name: "Send test" }));
     await waitFor(() =>
       expect(sent.at(-1)).toEqual({ tool: "gmail.send_email", input: { to: "me@example.com" } }),
+    );
+  });
+
+  it("Slack's file test asks for a channel ID; its message test also takes a name", async () => {
+    oneFirm();
+    const channel = { required: ["channel"], properties: { channel: { type: "string" } } };
+    server.use(
+      http.get(`${API}/registry/connectors`, () =>
+        HttpResponse.json([
+          connector("slack", [
+            tool("slack.send_message", { direction: "outbound", params_schema: channel }),
+            tool("slack.post_file", { direction: "outbound", params_schema: channel }),
+          ]),
+        ]),
+      ),
+      http.get(`${API}/firms/f1/connections`, () =>
+        HttpResponse.json([connection({ connector: "slack", label: "lucia" })]),
+      ),
+    );
+    await renderApp("/firms/f1?tab=connections");
+    expect((await screen.findByLabelText("Slack channel ID")).getAttribute("placeholder")).toBe(
+      "C0123456789",
+    );
+    expect(screen.getByLabelText("Slack channel").getAttribute("placeholder")).toContain(
+      "#general",
     );
   });
 

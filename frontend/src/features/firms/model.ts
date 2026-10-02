@@ -78,7 +78,7 @@ type Setup = {
   labelPlaceholder: string;
   labelHint: string;
   /** What a builder does to produce an inbound event for the inbound tests. */
-  inboundAsk: (c: ConnectionOut) => string;
+  inboundAsk?: (c: ConnectionOut) => string;
 };
 
 /** Everything connector-specific the connections screens need, in one place. */
@@ -101,8 +101,7 @@ export const SETUP = {
   vapi: {
     platformKey: "vapi",
     labelPlaceholder: "Main line",
-    labelHint: "Defaults to the phone number.",
-    inboundAsk: (c) => `Call ${String(c.config.phone_number ?? "the number")}, then recheck.`,
+    labelHint: "Defaults to the connector name. Calls are outbound only.",
   },
 } satisfies Record<"gmail" | "slack" | "vapi", Setup>;
 export type SetupConnector = keyof typeof SETUP;
@@ -115,8 +114,10 @@ export function isConfigured(platform: PlatformStatus | undefined, connector: st
   return platform[SETUP[connector].platformKey] === true;
 }
 
-/** The input an outbound tool test needs, keyed by the tool's required param. */
+/** The input an outbound tool test needs, keyed by tool name, else by its required param. */
 export const TEST_TARGET: Record<string, { label: string; placeholder: string }> = {
+  // Slack file uploads take only channel ids, not names.
+  "slack.post_file": { label: "Slack channel ID", placeholder: "C0123456789" },
   channel: { label: "Slack channel", placeholder: "C0123456 or #general" },
   to: { label: "Send to", placeholder: "name@example.com or +14155550123" },
 };

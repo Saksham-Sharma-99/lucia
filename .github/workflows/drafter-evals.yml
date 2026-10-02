@@ -1,0 +1,27 @@
+name: Drafter evals
+
+# Runs only when the drafter's prompts, output models or eval cases change. Keep it a
+# non-required check: a path-filtered workflow that is skipped never reports a status.
+on:
+  pull_request:
+    paths:
+      - "backend/src/lucia/studio/drafter/**"
+      - "backend/evals/drafter/**"
+  workflow_dispatch:
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      SECRET_KEY: ci-only-not-secret-ci-only-not-secret-00000=
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run python -m evals.drafter.run

@@ -437,6 +437,34 @@
         "title": "ArchiveResult",
         "type": "object"
       },
+      "Basic": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "default": "",
+            "maxLength": 120,
+            "title": "Name",
+            "type": "string"
+          },
+          "use_cases": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Use Cases",
+            "type": "array"
+          }
+        },
+        "title": "Basic",
+        "type": "object"
+      },
       "Cadence": {
         "additionalProperties": false,
         "properties": {
@@ -451,6 +479,41 @@
           "min_wait_hours"
         ],
         "title": "Cadence",
+        "type": "object"
+      },
+      "CapabilitiesDraft": {
+        "properties": {
+          "capabilities": {
+            "items": {
+              "$ref": "#/components/schemas/Capability"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "section": {
+            "const": "capabilities",
+            "default": "capabilities",
+            "title": "Section",
+            "type": "string"
+          },
+          "unmapped": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unmapped",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rationale",
+          "unmapped",
+          "capabilities"
+        ],
+        "title": "CapabilitiesDraft",
         "type": "object"
       },
       "Capability": {
@@ -917,6 +980,105 @@
           "op"
         ],
         "title": "DiffEntry",
+        "type": "object"
+      },
+      "DraftContext": {
+        "additionalProperties": false,
+        "description": "What the person already has on the other steps. Unset (null) means not reached yet.",
+        "properties": {
+          "alert_policy": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlertPolicy"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "capabilities": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Capability"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capabilities"
+          },
+          "end_conditions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EndConditions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "follow_up": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FollowUp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hitl": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Hitl"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_turns_per_episode": {
+            "anyOf": [
+              {
+                "maximum": 50.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Turns Per Episode"
+          },
+          "policy_pack": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PolicyRuleRef"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Pack"
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Recurrence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "DraftContext",
         "type": "object"
       },
       "Dynamic": {
@@ -2155,6 +2317,10 @@
             "title": "Allowed Models",
             "type": "array"
           },
+          "drafter_enabled": {
+            "title": "Drafter Enabled",
+            "type": "boolean"
+          },
           "google": {
             "title": "Google",
             "type": "boolean"
@@ -2167,10 +2333,6 @@
             "title": "Slack",
             "type": "boolean"
           },
-          "twilio": {
-            "title": "Twilio",
-            "type": "boolean"
-          },
           "vapi": {
             "title": "Vapi",
             "type": "boolean"
@@ -2180,11 +2342,54 @@
           "slack",
           "google",
           "vapi",
-          "twilio",
           "public_base_url",
-          "allowed_models"
+          "allowed_models",
+          "drafter_enabled"
         ],
         "title": "PlatformStatus",
+        "type": "object"
+      },
+      "PoliciesDraft": {
+        "properties": {
+          "alert_policy": {
+            "$ref": "#/components/schemas/AlertPolicy"
+          },
+          "hitl": {
+            "$ref": "#/components/schemas/Hitl"
+          },
+          "policy_pack": {
+            "items": {
+              "$ref": "#/components/schemas/PolicyRuleRef"
+            },
+            "title": "Policy Pack",
+            "type": "array"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "section": {
+            "const": "policies",
+            "default": "policies",
+            "title": "Section",
+            "type": "string"
+          },
+          "unmapped": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unmapped",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rationale",
+          "unmapped",
+          "policy_pack",
+          "hitl",
+          "alert_policy"
+        ],
+        "title": "PoliciesDraft",
         "type": "object"
       },
       "PolicyRuleRef": {
@@ -2277,6 +2482,114 @@
           "status"
         ],
         "title": "Problem",
+        "type": "object"
+      },
+      "PromptDelta": {
+        "properties": {
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "type": {
+            "const": "delta",
+            "default": "delta",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "PromptDelta",
+        "type": "object"
+      },
+      "PromptDone": {
+        "properties": {
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "type": {
+            "const": "done",
+            "default": "done",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "title": "PromptDone",
+        "type": "object"
+      },
+      "PromptDraftRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "basic": {
+            "$ref": "#/components/schemas/Basic",
+            "default": {
+              "description": "",
+              "name": "",
+              "use_cases": []
+            }
+          },
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DraftContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "current_prompt": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Prompt"
+          },
+          "instruction": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Instruction",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instruction"
+        ],
+        "title": "PromptDraftRequest",
+        "type": "object"
+      },
+      "PromptFailed": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "const": "error",
+            "default": "error",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "PromptFailed",
         "type": "object"
       },
       "Recurrence": {
@@ -2553,6 +2866,95 @@
           "mapping"
         ],
         "title": "ResolvedRoute",
+        "type": "object"
+      },
+      "SchedulesDraft": {
+        "properties": {
+          "end_conditions": {
+            "$ref": "#/components/schemas/EndConditions"
+          },
+          "follow_up": {
+            "$ref": "#/components/schemas/FollowUp"
+          },
+          "max_turns_per_episode": {
+            "title": "Max Turns Per Episode",
+            "type": "integer"
+          },
+          "rationale": {
+            "title": "Rationale",
+            "type": "string"
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Recurrence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "section": {
+            "const": "schedules",
+            "default": "schedules",
+            "title": "Section",
+            "type": "string"
+          },
+          "unmapped": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unmapped",
+            "type": "array"
+          }
+        },
+        "required": [
+          "rationale",
+          "unmapped",
+          "follow_up",
+          "recurrence",
+          "end_conditions",
+          "max_turns_per_episode"
+        ],
+        "title": "SchedulesDraft",
+        "type": "object"
+      },
+      "SectionDraftRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "basic": {
+            "$ref": "#/components/schemas/Basic",
+            "default": {
+              "description": "",
+              "name": "",
+              "use_cases": []
+            }
+          },
+          "section": {
+            "enum": [
+              "capabilities",
+              "policies",
+              "schedules"
+            ],
+            "title": "Section",
+            "type": "string"
+          },
+          "system_prompt": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "System Prompt",
+            "type": "string"
+          },
+          "upstream": {
+            "$ref": "#/components/schemas/DraftContext",
+            "default": {}
+          }
+        },
+        "required": [
+          "section",
+          "system_prompt"
+        ],
+        "title": "SectionDraftRequest",
         "type": "object"
       },
       "SwitchVersion": {
@@ -3185,6 +3587,268 @@
         "summary": "Create an agent and its v1",
         "tags": [
           "internal:agents"
+        ]
+      }
+    },
+    "/api/v1/agents/drafts/prompt": {
+      "post": {
+        "operationId": "draftAgentPrompt",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromptDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "itemSchema": {
+                  "properties": {
+                    "data": {
+                      "contentMediaType": "application/json",
+                      "contentSchema": {
+                        "discriminator": {
+                          "mapping": {
+                            "delta": "#/components/schemas/PromptDelta",
+                            "done": "#/components/schemas/PromptDone",
+                            "error": "#/components/schemas/PromptFailed"
+                          },
+                          "propertyName": "type"
+                        },
+                        "oneOf": [
+                          {
+                            "$ref": "#/components/schemas/PromptDelta"
+                          },
+                          {
+                            "$ref": "#/components/schemas/PromptDone"
+                          },
+                          {
+                            "$ref": "#/components/schemas/PromptFailed"
+                          }
+                        ],
+                        "title": "Streamitem Draftagentprompt"
+                      },
+                      "type": "string"
+                    },
+                    "event": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "retry": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "404": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation failed"
+          },
+          "502": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "The model provider failed"
+          },
+          "503": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "AI drafting isn't configured"
+          },
+          "504": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "The drafter timed out"
+          }
+        },
+        "summary": "Stream a drafted or refined system prompt",
+        "tags": [
+          "internal:drafts"
+        ]
+      }
+    },
+    "/api/v1/agents/drafts/section": {
+      "post": {
+        "operationId": "draftAgentSection",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SectionDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "discriminator": {
+                    "mapping": {
+                      "capabilities": "#/components/schemas/CapabilitiesDraft",
+                      "policies": "#/components/schemas/PoliciesDraft",
+                      "schedules": "#/components/schemas/SchedulesDraft"
+                    },
+                    "propertyName": "section"
+                  },
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/CapabilitiesDraft"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PoliciesDraft"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SchedulesDraft"
+                    }
+                  ],
+                  "title": "Response Draftagentsection"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation failed"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "The model provider failed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "AI drafting isn't configured"
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "The drafter timed out"
+          }
+        },
+        "summary": "Draft one config section from the system prompt",
+        "tags": [
+          "internal:drafts"
         ]
       }
     },
@@ -6764,6 +7428,10 @@
     {
       "description": "Agents and their immutable versions.",
       "name": "internal:agents"
+    },
+    {
+      "description": "AI drafts of an agent's prompt and config sections (nothing is saved).",
+      "name": "internal:drafts"
     },
     {
       "description": "A firm's connector installations, consent links and tests.",

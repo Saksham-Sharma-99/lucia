@@ -28,6 +28,9 @@ import { allOf } from "@/lib/query";
 import { useApiMutation } from "@/lib/use-api-mutation";
 
 import { configSchema, toForm, toPayload, type ConfigForm } from "./config";
+import { DRAFT_SECTIONS, draftContext } from "./drafter/draft";
+import { usePromptDraft } from "./drafter/use-prompt-draft";
+import { Wand } from "./drafter/wand";
 import {
   AMEND_SECTIONS,
   changedSections,
@@ -104,6 +107,15 @@ function AmendForm({
   const config = useWatch({ control: form.control, name: "config" });
   const check = useServerValidation(config);
   const changed = useMemo(() => changedSections(base, config), [base, config]);
+  // Amend gets the wand only: it refines the prompt, and never drafts the other tabs.
+  const prompt = usePromptDraft(form, {
+    basic: () => ({ name: agent.name, description: agent.description, use_cases: agent.use_cases }),
+    // An amended version is fully set up, so every step is context.
+    context: () => draftContext(form.getValues("config"), DRAFT_SECTIONS),
+  });
+  const wand = (
+    <Wand draft={prompt} enabled={registry.platform.drafter_enabled} prefill={agent.description} />
+  );
 
   const save = useApiMutation(
     {
@@ -163,7 +175,7 @@ function AmendForm({
         </TabsList>
         {AMEND_SECTIONS.map((s) => (
           <TabsContent key={s.id} value={s.id}>
-            {SECTION_VIEWS[s.id]({ registry })}
+            {SECTION_VIEWS[s.id]({ registry, disabled: prompt.streaming, assist: wand })}
           </TabsContent>
         ))}
       </Tabs>
@@ -195,7 +207,10 @@ function AmendForm({
           >
             Cancel
           </Button>
-          <Button onClick={() => void submit()} disabled={save.isPending || changed.size === 0}>
+          <Button
+            onClick={() => void submit()}
+            disabled={save.isPending || prompt.streaming || changed.size === 0}
+          >
             {save.isPending ? "Saving…" : `Save as v${nextVersion}`}
           </Button>
         </div>

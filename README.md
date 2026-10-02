@@ -82,11 +82,20 @@ Open <http://localhost:5173> and sign in as a seeded user. The API is served und
 - **Firms:** firm settings and connections (Gmail and Slack consent links, Vapi numbers, live tests).
 - **Registry:** the read-only catalog of connectors, tools and policy rules.
 
-`make seed` creates the users `saksham` and `rishabh`. Set `SEED_PASSWORD` in `backend/.env` before the first seed to choose their password; otherwise it generates one per user and prints it once.
+Seeded users (local development only):
+
+| Username | Password |
+| --- | --- |
+| `saksham` | `lucia-dev` |
+| `rishabh` | `lucia-dev` |
+
+The password comes from `SEED_PASSWORD` in `backend/.env`, which `make setup` copies from `.env.example`. If `SEED_PASSWORD` is empty, `make seed` generates one password per user and prints it once. Seeding never changes the password of a user that already exists, so to apply a new `SEED_PASSWORD`, run `make db-reset`, then `make migrate` and `make seed`.
 
 Postgres is published on host port 5433 because a natively installed Postgres often already holds 5432.
 
 ## Connecting integrations
+
+[setup.md](setup.md) walks through every step: `.env`, Slack, Gmail, Vapi, the AI drafter and the public URL. In short:
 
 App registrations are global and live in `backend/.env`. Each firm then connects its own mailbox, Slack workspace or phone number from the Firm → Connections page. `GET /api/v1/platform/status` shows which registrations are set.
 
@@ -102,10 +111,10 @@ OAuth redirects and webhooks need a public URL. In development:
    - Redirect URI: `$PUBLIC_BASE_URL/api/v1/oauth/google/callback`.
    - Enable the Gmail API.
    - Create a Pub/Sub topic, grant `gmail-api-push@system.gserviceaccount.com` publish on it, and add a push subscription to `$PUBLIC_BASE_URL/api/v1/hooks/gmail?token=<GOOGLE_PUBSUB_VERIFICATION_TOKEN>`.
-4. **Vapi:**
+4. **Vapi (outbound calls only):**
    - Set `VAPI_API_KEY`.
-   - Set `VAPI_WEBHOOK_SECRET` to any random string. Lucia sends it as `x-vapi-secret` on the assistants it creates.
-   - Set `TWILIO_*` if firms use the platform Twilio account.
+   - Optionally set `VAPI_WEBHOOK_SECRET`. When it's set, each call sends it as `x-vapi-secret` and the webhook checks it. When it's empty, the webhook is open.
+   - Import a number into Vapi (from Twilio, Telnyx or Vonage; Vapi's free numbers can't place calls) and set its id as `VAPI_PHONE_NUMBER_ID`, the default for every firm. A firm's Vapi connection can set its own number id instead.
 
 Manual checklist (real APIs, not covered by `make test`):
 

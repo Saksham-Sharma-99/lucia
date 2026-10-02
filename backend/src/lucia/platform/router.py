@@ -11,9 +11,9 @@ class PlatformStatus(BaseModel):
     slack: bool
     google: bool
     vapi: bool
-    twilio: bool
     public_base_url: str
     allowed_models: list[str]
+    drafter_enabled: bool
 
 
 @router.get(
@@ -25,7 +25,7 @@ async def platform_status() -> PlatformStatus:
         slack=slack.configured(),
         google=gmail.configured(),
         vapi=vapi.configured(),
-        twilio=bool(s.twilio_account_sid and s.twilio_auth_token),
         public_base_url=s.public_base_url,
         allowed_models=s.allowed_models,
+        drafter_enabled=bool(s.openai_api_key),
     )

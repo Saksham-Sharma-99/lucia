@@ -9,6 +9,7 @@ from pydantic_core import PydanticCustomError
 from lucia.core.schema import PolicyRuleRef, Strict, Urgency
 
 RESERVED_KEYS = ("task_templates", "finding_schema", "state_schema")
+MAX_PROMPT = 20000
 
 
 class Models(Strict):
@@ -77,7 +78,7 @@ class AlertPolicy(Strict):
 
 
 class VersionConfig(Strict):
-    system_prompt: str = Field(min_length=1, max_length=20000)
+    system_prompt: str = Field(min_length=1, max_length=MAX_PROMPT)
     models: Models
     capabilities: list[Capability] = Field(min_length=1)
     follow_up: FollowUp = FollowUp()

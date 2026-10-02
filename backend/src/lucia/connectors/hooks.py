@@ -86,13 +86,14 @@ async def gmail_hook(
 async def vapi_hook(
     request: Request, session: DbSession, x_vapi_secret: str = Header(default="")
 ) -> HookAck:
-    _require_secret(x_vapi_secret, get_settings().vapi_webhook_secret)
+    if secret := get_settings().vapi_webhook_secret:  # optional while unset in Vapi
+        _require_secret(x_vapi_secret, secret)
     message = _obj((await _json(request)).get("message"))
     call = _obj(message.get("call"))
-    assistant = _obj(message.get("assistant")).get("id") or call.get("assistantId")
-    if not assistant:
+    number = call.get("phoneNumberId")
+    if not number:
         return HookAck()
     kind = f"vapi.{message.get('type', 'unknown')}"
     return HookAck(
-        recorded=await record_inbound(session, "vapi", "assistant_id", str(assistant), kind)
+        recorded=await record_inbound(session, "vapi", "phone_number_id", str(number), kind)
     )

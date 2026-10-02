@@ -15,38 +15,20 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { STALE } from "@/lib/invalidate";
 import { showFormErrors } from "@/lib/problem";
 import { useApiMutation } from "@/lib/use-api-mutation";
 
 import { SETUP, isConfigured, isSetupConnector, type SetupConnector } from "../model";
 
-const schema = z
-  .object({
-    connector: z.enum(["gmail", "slack", "vapi"]),
-    label: z.string().max(120),
-    phone: z.string(),
-    ownTwilio: z.boolean(),
-    sid: z.string(),
-    token: z.string(),
-  })
-  .superRefine((v, ctx) => {
-    if (v.connector !== "vapi") return;
-    if (!/^\+[1-9]\d{6,14}$/.test(v.phone))
-      ctx.addIssue({
-        code: "custom",
-        path: ["phone"],
-        message: "Use international format, e.g. +14155550123",
-      });
-    if (v.ownTwilio && !v.sid)
-      ctx.addIssue({ code: "custom", path: ["sid"], message: "Enter the account SID" });
-    if (v.ownTwilio && !v.token)
-      ctx.addIssue({ code: "custom", path: ["token"], message: "Enter the auth token" });
-  });
+const schema = z.object({
+  connector: z.enum(["gmail", "slack", "vapi"]),
+  label: z.string().max(120),
+  numberId: z.string().trim(),
+});
 type Values = z.infer<typeof schema>;
 
-/** Adds a connection. Gmail/Slack start pending (a consent link comes next); Vapi is set up now. */
+/** Adds a connection. Gmail/Slack start pending (a consent link comes next); Vapi is checked now. */
 export function AddConnectionDialog({
   firmId,
   connectors,
@@ -63,16 +45,10 @@ export function AddConnectionDialog({
     defaultValues: {
       connector: "gmail",
       label: "",
-      phone: "",
-      ownTwilio: false,
-      sid: "",
-      token: "",
+      numberId: "",
     },
   });
-  const [connector, ownTwilio] = useWatch({
-    control: form.control,
-    name: ["connector", "ownTwilio"],
-  });
+  const connector = useWatch({ control: form.control, name: "connector" });
   const create = useApiMutation(
     {
       ...createConnectionMutation(),
@@ -101,9 +77,9 @@ export function AddConnectionDialog({
         v.connector === "vapi"
           ? {
               connector: "vapi",
-              label: v.label || v.phone,
-              config: { phone_number: v.phone },
-              secrets: v.ownTwilio ? { twilio_account_sid: v.sid, twilio_auth_token: v.token } : {},
+              label: v.label || name(v.connector),
+              // Empty: the platform's default number (VAPI_PHONE_NUMBER_ID).
+              config: v.numberId ? { phone_number_id: v.numberId } : {},
             }
           : { connector: v.connector, label: v.label || name(v.connector) },
     }),
@@ -148,47 +124,21 @@ export function AddConnectionDialog({
               <FieldDescription>{setup.labelHint}</FieldDescription>
             </Field>
             {connector === "vapi" && (
-              <>
-                <Field data-invalid={!!errors.phone}>
-                  <FieldLabel htmlFor="conn-phone">Phone number</FieldLabel>
-                  <Input
-                    id="conn-phone"
-                    className="font-mono"
-                    placeholder="+14155550123"
-                    {...form.register("phone")}
-                  />
-                  <FieldDescription>
-                    A Twilio number. Lucia creates the voice assistant for it.
-                  </FieldDescription>
-                  <FieldError errors={[errors.phone]} />
-                </Field>
-                <label className="flex items-center gap-2 text-sm">
-                  <Switch
-                    checked={ownTwilio}
-                    onCheckedChange={(on) => form.setValue("ownTwilio", on)}
-                  />
-                  Use the firm's own Twilio account
-                </label>
-                {ownTwilio && (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Field data-invalid={!!errors.sid}>
-                      <FieldLabel htmlFor="tw-sid">Account SID</FieldLabel>
-                      <Input id="tw-sid" autoComplete="off" {...form.register("sid")} />
-                      <FieldError errors={[errors.sid]} />
-                    </Field>
-                    <Field data-invalid={!!errors.token}>
-                      <FieldLabel htmlFor="tw-token">Auth token</FieldLabel>
-                      <Input
-                        id="tw-token"
-                        type="password"
-                        autoComplete="off"
-                        {...form.register("token")}
-                      />
-                      <FieldError errors={[errors.token]} />
-                    </Field>
-                  </div>
-                )}
-              </>
+              <Field data-invalid={!!errors.numberId}>
+                <FieldLabel htmlFor="conn-number-id">Vapi phone number id</FieldLabel>
+                <Input
+                  id="conn-number-id"
+                  className="font-mono"
+                  autoComplete="off"
+                  {...form.register("numberId")}
+                />
+                <FieldDescription>
+                  Leave empty to use the platform's default number. Otherwise copy the id from Vapi
+                  → Phone Numbers after importing the number there (Twilio, Telnyx or Vonage);
+                  Vapi's free numbers can't place calls.
+                </FieldDescription>
+                <FieldError errors={[errors.numberId]} />
+              </Field>
             )}
             {errors.root && (
               <p role="alert" className="text-destructive text-sm">
@@ -201,7 +151,7 @@ export function AddConnectionDialog({
               {create.isPending
                 ? "Adding…"
                 : connector === "vapi"
-                  ? "Add and set up the number"
+                  ? "Add the number"
                   : "Add connection"}
             </Button>
           </DialogFooter>

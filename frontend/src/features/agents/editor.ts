@@ -33,8 +33,8 @@ export type AgentTab = (typeof AGENT_TABS)[number];
 /** The editing sections, in wizard order. Each owns some top-level form fields. */
 export const SECTIONS = [
   { id: "basic", label: "Basic info", fields: ["handle", "name", "description", "use_cases"] },
-  { id: "capabilities", label: "Capabilities", fields: ["config.capabilities"] },
   { id: "prompt", label: "Prompt and models", fields: ["config.system_prompt", "config.models"] },
+  { id: "capabilities", label: "Capabilities", fields: ["config.capabilities"] },
   {
     id: "policies",
     label: "Policies and alerts",

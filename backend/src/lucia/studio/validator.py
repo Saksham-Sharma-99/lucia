@@ -1,6 +1,6 @@
 """Semantic checks of a version config against the registry (backend-plan §7). Pure functions."""
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 
 from jsonschema import Draft202012Validator
 
@@ -118,12 +118,15 @@ def _check_follow_up(cfg: VersionConfig) -> list[FieldError]:
     return errors
 
 
+def contacts_outside(tools: Iterable[str], snap: RegistrySnapshot) -> bool:
+    return any(
+        (t := snap.tools.get(name)) is not None and t.risk_tier == "external_comm" for name in tools
+    )
+
+
 def needs_min_pack(cfg: VersionConfig, snap: RegistrySnapshot) -> bool:
     """An agent that can contact people outside the firm must carry the platform's minimum rule."""
-    return any(
-        (t := snap.tools.get(name)) is not None and t.risk_tier == "external_comm"
-        for name in _selected_tools(cfg)
-    )
+    return contacts_outside(_selected_tools(cfg), snap)
 
 
 def _check_min_pack(cfg: VersionConfig, snap: RegistrySnapshot) -> list[FieldError]:
