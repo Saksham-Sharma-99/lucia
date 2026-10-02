@@ -16,7 +16,6 @@ from lucia.core.config import get_settings
 from lucia.db.models import AuditLog, Conversation, Message, Subject
 from lucia.harness.context import conversation_context, subject_snapshot
 from lucia.harness.intake import EpisodeSpec, TargetUnavailable, create_or_fold
-from lucia.llm.client import LLMError
 from lucia.orchestrator import prompts, status
 from lucia.orchestrator.directory import DirectoryAgent, describe, for_firm, known_handles
 from lucia.orchestrator.llm import ask, say
@@ -40,7 +39,7 @@ async def handle_message(session: AsyncSession, message_id: uuid.UUID) -> None:
     conv_id = conv.id
     try:
         await _handle(session, conv, msg)
-    except LLMError:
+    except Exception:  # fail closed on any failure, not only the model's: never a silent stop
         await session.rollback()  # drop half-made decisions; reload what the reply needs
         conv = await session.get_one(Conversation, conv_id, populate_existing=True)
         msg = await session.get_one(Message, message_id, populate_existing=True)
@@ -82,10 +81,28 @@ async def _progress(conv: Conversation, msg: Message, stage: str) -> None:
 
 
 async def _handle(session: AsyncSession, conv: Conversation, msg: Message) -> None:
+    directory = await for_firm(session, conv.firm_id)
+    if picked := _chosen(conv, msg, directory):
+        await _hand_off(session, conv, msg, [(picked, msg.body)])
+        return
+    mentions = parse(msg.body, await known_handles(session, conv.firm_id))
+    # Without a mention, the intent comes first: help needs no case, so a greeting is answered
+    # instead of being asked which case it is about.
+    intent = None if mentions else await _intent(session, conv, msg, directory)
+    if not mentions and intent is None:
+        return
     if conv.subject_id is None and not await _lock_subject(session, conv, msg):
         return
-    directory = await for_firm(session, conv.firm_id)
-    targets = await _targets(session, conv, msg, directory)
+    if intent == "status":
+        await _status(session, conv, msg)
+        return
+    targets = (
+        await _mentioned(session, conv, msg, directory, mentions)
+        if mentions
+        else await _route(
+            session, conv, msg, directory, await _scores(session, conv, msg, directory)
+        )
+    )
     if targets:
         await _hand_off(session, conv, msg, targets)
 
@@ -157,38 +174,29 @@ async def _scores(
     return sanitize(raw, [a.handle for a in directory])
 
 
-async def _targets(
-    session: AsyncSession, conv: Conversation, msg: Message, directory: list[DirectoryAgent]
-) -> list[Target]:
-    by_handle = {a.handle: a for a in directory}
-    settings = get_settings()
+def _chosen(
+    conv: Conversation, msg: Message, directory: list[DirectoryAgent]
+) -> DirectoryAgent | None:
+    """The agent the user clicked for this message (a suggestion), consumed once."""
     chosen = conv.state.get("chosen") or {}
-    if chosen.get("message_id") == str(msg.id) and chosen.get("handle") in by_handle:
+    if chosen.get("message_id") != str(msg.id):
+        return None
+    agent = next((a for a in directory if a.handle == chosen.get("handle")), None)
+    if agent:
         conv.state = {k: v for k, v in conv.state.items() if k != "chosen"}
-        return [(by_handle[chosen["handle"]], msg.body)]
-    mentions = parse(msg.body, await known_handles(session, conv.firm_id))
-    if inactive := [m for m in mentions if m not in by_handle]:
-        await _reply(
-            session,
-            conv,
-            msg,
-            "inactive",
-            f"@{inactive[0]} isn't active for this firm. {_available(directory)}",
-        )
-        return []
-    if mentions:
-        scores = await _scores(session, conv, msg, directory)
-        for handle in mentions:
-            check = precheck(scores, handle, settings.precheck_threshold, settings.route_threshold)
-            if not check.ok:
-                await _suggest(session, conv, msg, handle, check.suggestions, by_handle)
-                return []
-        return [(by_handle[h], msg.body) for h in mentions]
-    if settings.orchestrator_phase < 2:
+    return agent
+
+
+async def _intent(
+    session: AsyncSession, conv: Conversation, msg: Message, directory: list[DirectoryAgent]
+) -> str | None:
+    """A message without a mention: status or work, or None once answered (P1 asks for a
+    mention; chat gets the help reply)."""
+    if get_settings().orchestrator_phase < 2:
         await _reply(
             session, conv, msg, "mention", f"Mention an agent to start. {_available(directory)}"
         )
-        return []
+        return None
     intent = await ask(
         session,
         conv.firm_id,
@@ -205,11 +213,35 @@ async def _targets(
             "help",
             f"I hand work to this firm's agents. {_available(directory)}",
         )
+        return None
+    return intent.intent
+
+
+async def _mentioned(
+    session: AsyncSession,
+    conv: Conversation,
+    msg: Message,
+    directory: list[DirectoryAgent],
+    mentions: list[str],
+) -> list[Target]:
+    by_handle = {a.handle: a for a in directory}
+    if inactive := [m for m in mentions if m not in by_handle]:
+        await _reply(
+            session,
+            conv,
+            msg,
+            "inactive",
+            f"@{inactive[0]} isn't active for this firm. {_available(directory)}",
+        )
         return []
-    if intent.intent == "status":
-        await _status(session, conv, msg)
-        return []
-    return await _route(session, conv, msg, directory, await _scores(session, conv, msg, directory))
+    scores = await _scores(session, conv, msg, directory)
+    settings = get_settings()
+    for handle in mentions:
+        check = precheck(scores, handle, settings.precheck_threshold, settings.route_threshold)
+        if not check.ok:
+            await _suggest(session, conv, msg, handle, check.suggestions, by_handle)
+            return []
+    return [(by_handle[h], msg.body) for h in mentions]
 
 
 def _available(directory: list[DirectoryAgent]) -> str:

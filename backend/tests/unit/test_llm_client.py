@@ -10,7 +10,8 @@ import openai
 import pytest
 from pydantic import BaseModel
 
-from lucia.llm.client import LLMError, OpenAILLM
+from lucia.core.config import get_settings
+from lucia.llm.client import LLMError, OpenAILLM, get_llm
 from lucia.llm.fake import FakeLLM
 
 
@@ -178,3 +179,27 @@ async def test_fake_llm_raises_scripted_errors() -> None:
     fake.on("brief", LLMError("down", retryable=True))
     with pytest.raises(LLMError):
         await fake.text(role="brief", model="m", instructions="i", message="m")
+
+
+def test_each_event_loop_gets_its_own_client(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pooled connections belong to the loop that opened them, and every Celery task runs in
+    a fresh loop: a shared client fails the next task with "Event loop is closed"."""
+    monkeypatch.setattr(get_settings(), "openai_api_key", "sk-test")
+
+    async def twice() -> tuple[object, object]:
+        return get_llm(), get_llm()
+
+    first, again = asyncio.run(twice())
+    other, _ = asyncio.run(twice())
+    assert first is again and first is not other
+
+
+def test_without_a_key_is_a_fatal_llm_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(get_settings(), "openai_api_key", "")
+
+    async def call() -> object:
+        return get_llm()
+
+    with pytest.raises(LLMError) as e:
+        asyncio.run(call())
+    assert e.value.retryable is False

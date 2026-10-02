@@ -9,8 +9,8 @@ import json
 import time
 from dataclasses import dataclass
 from decimal import Decimal
-from functools import lru_cache
 from typing import Any, Protocol
+from weakref import WeakKeyDictionary
 
 import openai
 from agents import (
@@ -87,7 +87,7 @@ def _cost(model: str, input_tokens: int, output_tokens: int) -> Decimal:
 
 class OpenAILLM:
     def __init__(self, client: openai.AsyncOpenAI) -> None:
-        self._client = client
+        self.client = client
 
     async def _run(
         self, agent: Agent[None], message: str, model: str, seconds: float
@@ -117,7 +117,7 @@ class OpenAILLM:
         return Agent(
             name="lucia",
             instructions=instructions,
-            model=OpenAIResponsesModel(model, self._client),
+            model=OpenAIResponsesModel(model, self.client),
             model_settings=settings.resolve(ModelSettings(store=False)),
             **kwargs,
         )
@@ -183,11 +183,10 @@ class OpenAILLM:
 
 
 _override: LLM | None = None
-
-
-@lru_cache
-def _openai(api_key: str) -> OpenAILLM:
-    return OpenAILLM(openai.AsyncOpenAI(api_key=api_key, max_retries=0, timeout=60))
+# One client per event loop: its pooled connections belong to the loop that opened them, and
+# each Celery task runs in a fresh loop (worker/runner.py), so a shared client breaks the next
+# task with "Event loop is closed".
+_clients: WeakKeyDictionary[asyncio.AbstractEventLoop, OpenAILLM] = WeakKeyDictionary()
 
 
 def get_llm() -> LLM:
@@ -196,7 +195,16 @@ def get_llm() -> LLM:
     key = get_settings().openai_api_key
     if not key:
         raise LLMError("OPENAI_API_KEY is not set", retryable=False)
-    return _openai(key)
+    loop = asyncio.get_running_loop()
+    if loop not in _clients:
+        _clients[loop] = OpenAILLM(openai.AsyncOpenAI(api_key=key, max_retries=0, timeout=60))
+    return _clients[loop]
+
+
+async def close_llm() -> None:
+    """Closes the current loop's client (a task's last step, before its loop ends)."""
+    if llm := _clients.pop(asyncio.get_running_loop(), None):
+        await llm.client.close()
 
 
 def set_llm(llm: LLM | None) -> None:

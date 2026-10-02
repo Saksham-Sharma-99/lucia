@@ -262,6 +262,18 @@ async def test_model_failure_fails_closed_with_a_retry(
     assert await db.scalar(select(AgentRun)) is None
 
 
+async def test_any_failure_fails_closed_with_a_retry(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
+) -> None:
+    w = await make_world(db)
+    conv, msg = await _chat(db, w, "@checkin call Jane", subject=True)
+    fake_llm.on("agent_scores", RuntimeError("Event loop is closed"))
+    with pytest.raises(RuntimeError):
+        await handle_message(db, msg.id)
+    (reply,) = await _replies(db, conv)
+    assert reply.blocks == [{"type": "retry", "message_id": str(msg.id)}]
+
+
 async def test_paused_run_says_the_message_will_wait(
     db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
 ) -> None:
@@ -286,7 +298,74 @@ async def test_phase_one_requires_a_mention(
     assert "@checkin" in reply.body and fake_llm.calls == []
 
 
+async def test_phase_one_asks_for_a_mention_before_any_case(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(get_settings(), "orchestrator_phase", 1)
+    w = await make_world(db)
+    conv, msg = await _chat(db, w, "hi")
+    await handle_message(db, msg.id)
+    (reply,) = await _replies(db, conv)
+    await db.refresh(conv)
+    assert "Mention an agent" in reply.body and "pending" not in conv.state
+
+
 # --- phase 2: no mention ---------------------------------------------------------------------
+
+
+async def test_a_greeting_in_a_new_chat_gets_help_without_a_case(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
+) -> None:
+    w = await make_world(db)
+    conv, msg = await _chat(db, w, "hi")
+    fake_llm.on("intent", Intent(intent="chat"))
+    await handle_message(db, msg.id)
+    (reply,) = await _replies(db, conv)
+    await db.refresh(conv)
+    assert "@checkin" in reply.body and reply.blocks == []
+    assert conv.subject_id is None and "pending" not in conv.state
+    assert [c[0] for c in fake_llm.calls] == ["intent"]
+
+
+async def test_status_in_a_new_chat_finds_the_case_first(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
+) -> None:
+    w = await make_world(db)
+    await make_run(db, w, status="ACTIVE", goal="Check in with Jane")
+    conv, msg = await _chat(db, w, "how is DOE-1 going?")
+    fake_llm.on("intent", Intent(intent="status"))
+    fake_llm.on("status_reply", "The check-in run is active.")
+    await handle_message(db, msg.id)
+    (reply,) = await _replies(db, conv)
+    await db.refresh(conv)
+    assert conv.subject_id == w.subject.id and reply.body == "The check-in run is active."
+    assert [c[0] for c in fake_llm.calls] == ["intent", "status_reply"]
+
+
+async def test_work_in_a_new_chat_without_a_case_asks_for_one(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
+) -> None:
+    w = await make_world(db)
+    conv, msg = await _chat(db, w, "zzz qqq")
+    fake_llm.on("intent", Intent(intent="work"))
+    await handle_message(db, msg.id)
+    (reply,) = await _replies(db, conv)
+    await db.refresh(conv)
+    assert "couldn't find" in reply.body and conv.state["pending"]["kind"] == "subject_pick"
+    assert await db.scalar(select(AgentRun)) is None
+
+
+async def test_work_in_a_new_chat_is_routed_once_the_case_is_found(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
+) -> None:
+    w = await make_world(db)
+    _conv, msg = await _chat(db, w, "call Jane on DOE-1 for her check-in")
+    fake_llm.on("intent", Intent(intent="work"))
+    fake_llm.on("agent_scores", _scores(checkin=0.9))
+    fake_llm.on("brief", BRIEF)
+    await handle_message(db, msg.id)
+    assert await db.scalar(select(func.count()).select_from(AgentRun)) == 1
+    assert [c[0] for c in fake_llm.calls] == ["intent", "agent_scores", "brief"]
 
 
 async def test_chat_intent_gets_help(
