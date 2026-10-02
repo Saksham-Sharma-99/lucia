@@ -41,6 +41,7 @@ class MessageOut(Read):
     author_user_id: uuid.UUID | None
     external_author: dict[str, Any] | None
     agent_id: uuid.UUID | None
+    agent_handle: str | None = None  # who an agent post is from (@sdr)
     run_id: uuid.UUID | None
     body: str
     mentions: list[str]

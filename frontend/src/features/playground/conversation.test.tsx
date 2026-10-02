@@ -31,6 +31,8 @@ describe("conversation", () => {
         actor: "agent",
         body: "**Jane** is doing better",
         mentions: [],
+        agent_id: "a1",
+        agent_handle: "sdr",
         run_id: "r1",
       }),
     ]);
@@ -48,6 +50,8 @@ describe("conversation", () => {
         ?.getAttribute("data-actor"),
     ).toBe("system");
     expect(p.getByText("Jane").tagName).toBe("STRONG");
+    p.getByText("@sdr");
+    expect(p.queryByText("@agent")).toBeNull();
   });
 
   it("Enter sends, Shift+Enter adds a line", async () => {

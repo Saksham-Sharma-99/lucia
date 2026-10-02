@@ -1526,6 +1526,10 @@ export type MessageOut = {
      */
     agent_id: string | null;
     /**
+     * Agent Handle
+     */
+    agent_handle?: string | null;
+    /**
      * Run Id
      */
     run_id: string | null;

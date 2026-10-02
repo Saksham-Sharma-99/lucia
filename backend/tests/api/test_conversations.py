@@ -40,6 +40,31 @@ async def test_send_stores_the_message_and_hands_it_to_the_orchestrator(
     assert [m["body"] for m in listed["items"]] == ["@checkin call Jane"]
 
 
+async def test_agent_posts_name_their_agent(
+    authed: AsyncClient, db: AsyncSession, sent: list[Any]
+) -> None:
+    w = await make_world(db)
+    conv = await _conv(authed, w)
+    await _send(authed, conv)
+    db.add(
+        Message(
+            firm_id=w.firm.id,
+            conversation_id=uuid.UUID(conv["id"]),
+            direction="outbound",
+            actor="agent",
+            agent_id=w.agent.id,
+            body="I'll call Jane.",
+            status="sent",
+        )
+    )
+    await db.commit()
+    listed = (await authed.get(f"/api/v1/conversations/{conv['id']}/messages")).json()
+    assert [(m["actor"], m["agent_handle"]) for m in listed["items"]] == [
+        ("human", None),
+        ("agent", "checkin"),
+    ]
+
+
 @pytest.mark.parametrize("body", ["", " ", "x" * 8001])
 async def test_bad_message_bodies_are_422(authed: AsyncClient, db: AsyncSession, body: str) -> None:
     w = await make_world(db)

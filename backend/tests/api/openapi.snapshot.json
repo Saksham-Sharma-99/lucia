@@ -2922,6 +2922,17 @@
             "title": "Actor",
             "type": "string"
           },
+          "agent_handle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Handle"
+          },
           "agent_id": {
             "anyOf": [
               {

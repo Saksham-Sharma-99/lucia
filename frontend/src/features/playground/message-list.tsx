@@ -48,7 +48,7 @@ export function MessageList({
               <div className="min-w-0 flex-1 space-y-2">
                 {m.actor === "agent" && (
                   <p className="text-muted-foreground text-xs font-medium">
-                    @{m.mentions[0] ?? "agent"}
+                    @{m.agent_handle ?? "agent"}
                   </p>
                 )}
                 {m.actor === "agent" ? (

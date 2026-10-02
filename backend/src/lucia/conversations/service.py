@@ -80,9 +80,21 @@ async def create(
 async def messages(
     session: AsyncSession, conv: Conversation, paging: PageParams
 ) -> Page[s.MessageOut]:
-    stmt = select(Message).where(Message.conversation_id == conv.id).order_by(Message.seq)
-    rows, total = await fetch_page(session, stmt, paging)
-    return Page.of([s.MessageOut.model_validate(m) for m in rows], total, paging)
+    stmt = (
+        select(Message, Agent.handle)
+        .outerjoin(Agent, Agent.id == Message.agent_id)
+        .where(Message.conversation_id == conv.id)
+        .order_by(Message.seq)
+    )
+    rows, total = await fetch_page(session, stmt, paging, scalars=False)
+    return Page.of(
+        [
+            s.MessageOut.model_validate(m).model_copy(update={"agent_handle": handle})
+            for m, handle in rows
+        ],
+        total,
+        paging,
+    )
 
 
 async def add_message(session: AsyncSession, conv: Conversation, **fields: Any) -> Message:
