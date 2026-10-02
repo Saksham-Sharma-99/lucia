@@ -313,11 +313,50 @@ async def test_vapi_needs_a_number_id(authed: AsyncClient, firm: Json, config: J
 
 
 @respx.mock
-async def test_vapi_unknown_number_is_422(authed: AsyncClient, firm: Json) -> None:
-    respx.get(VAPI_NUMBER).respond(404, json={"message": "Not Found"})
+async def test_vapi_uses_the_platform_default_number(
+    authed: AsyncClient, firm: Json, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(get_settings(), "vapi_phone_number_id", "pn_default")
+    respx.get("https://api.vapi.ai/phone-number/pn_default").respond(
+        json={"provider": "twilio", "number": "+14155550100"}
+    )
+    resp = await authed.post(
+        f"/api/v1/firms/{firm['id']}/connections", json={**VAPI_BODY, "config": {}}
+    )
+    assert resp.status_code == 201
+    assert resp.json()["config"] == {
+        "phone_number_id": "pn_default",
+        "phone_number": "+14155550100",
+    }
+
+
+@respx.mock
+async def test_vapi_firm_number_overrides_the_default(
+    authed: AsyncClient, firm: Json, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(get_settings(), "vapi_phone_number_id", "pn_default")
+    respx.get(VAPI_NUMBER).respond(json={"provider": "twilio", "number": "+14155550123"})
+    resp = await authed.post(f"/api/v1/firms/{firm['id']}/connections", json=VAPI_BODY)
+    assert resp.json()["config"]["phone_number_id"] == "pn_1"
+
+
+@respx.mock
+@pytest.mark.parametrize("status", [400, 404])
+async def test_vapi_unknown_number_is_422(authed: AsyncClient, firm: Json, status: int) -> None:
+    respx.get(VAPI_NUMBER).respond(status, json={"message": "Not Found"})
     resp = await authed.post(f"/api/v1/firms/{firm['id']}/connections", json=VAPI_BODY)
     assert resp.status_code == 422
-    assert "Vapi error 404: Not Found" in resp.json()["errors"][0]["message"]
+    assert f"Vapi error {status}: Not Found" in resp.json()["errors"][0]["message"]
+
+
+@respx.mock
+async def test_vapi_rejected_key_is_502_and_names_the_key(authed: AsyncClient, firm: Json) -> None:
+    respx.get(VAPI_NUMBER).respond(401, json={"message": "Invalid Key."})
+    resp = await authed.post(f"/api/v1/firms/{firm['id']}/connections", json=VAPI_BODY)
+    assert resp.status_code == 502
+    assert resp.json()["detail"] == (
+        "Vapi error 401: Invalid Key. Check VAPI_API_KEY: it must be the private key."
+    )
 
 
 @respx.mock
@@ -427,9 +466,19 @@ async def test_slack_post_file_three_step_upload(
     done = respx.post("https://slack.com/api/files.completeUploadExternal").respond(
         json={"ok": True}
     )
-    resp = await _test(authed, slack, tool="slack.post_file", input={"channel": "C1"})
+    resp = await _test(authed, slack, tool="slack.post_file", input={"channel": "C0C68MQ6LJY"})
     assert resp.json()["ok"] and upload.called
-    assert json.loads(done.calls.last.request.content)["channel_id"] == "C1"
+    assert json.loads(done.calls.last.request.content)["channel_id"] == "C0C68MQ6LJY"
+
+
+@respx.mock
+@pytest.mark.parametrize("channel", ["#general", "general", "c0c68mq6ljy", "C1"])
+async def test_slack_post_file_needs_a_channel_id(
+    authed: AsyncClient, slack: ConnectorConnection, channel: str
+) -> None:
+    resp = (await _test(authed, slack, tool="slack.post_file", input={"channel": channel})).json()
+    assert resp["ok"] is False and "channel ID" in resp["detail"]
+    assert not respx.calls  # rejected before any Slack call
 
 
 @respx.mock
@@ -501,6 +550,15 @@ async def test_vapi_place_call(authed: AsyncClient, vapi_conn: ConnectorConnecti
     assert sent["phoneNumberId"] == "p1" and sent["customer"] == {"number": "+14155550199"}
     assistant = sent["assistant"]
     assert assistant["maxDurationSeconds"] == 20
+    assert assistant["model"]["provider"] == "openai"
+    assert assistant["model"]["model"] == "gpt-4.1-mini"
+    assert assistant["voice"] == {
+        "provider": "cartesia",
+        "model": "sonic-3.5",
+        "voiceId": "95d51f79-c397-46f9-b49a-23763d3eaa2d",
+        "generationConfig": {"speed": 1.1},
+    }
+    assert assistant["transcriber"] == {"provider": "deepgram", "model": "nova-3"}
     assert assistant["metadata"] == {
         "firm_id": str(vapi_conn.firm_id),
         "connection_id": str(vapi_conn.id),

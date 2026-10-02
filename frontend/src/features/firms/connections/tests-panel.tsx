@@ -88,7 +88,7 @@ function OutboundTest({
   const [value, setValue] = useState("");
   const [confirming, setConfirming] = useState(false);
   const key = ((tool.params_schema as { required?: string[] }).required ?? [])[0];
-  const target = key ? TEST_TARGET[key] : undefined;
+  const target = key ? (TEST_TARGET[tool.name] ?? TEST_TARGET[key]) : undefined;
   const to = value.trim();
   return (
     <div className="flex flex-wrap items-center gap-3">

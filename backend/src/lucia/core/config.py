@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     google_pubsub_verification_token: str = ""
     vapi_api_key: str = ""
     vapi_webhook_secret: str = ""
+    vapi_phone_number_id: str = ""  # used by firms that don't set their own number
 
     # Studio's AI drafter (wand + section drafts). Disabled while the key is empty.
     openai_api_key: str = ""

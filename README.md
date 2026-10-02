@@ -114,7 +114,7 @@ OAuth redirects and webhooks need a public URL. In development:
 4. **Vapi (outbound calls only):**
    - Set `VAPI_API_KEY`.
    - Optionally set `VAPI_WEBHOOK_SECRET`. When it's set, each call sends it as `x-vapi-secret` and the webhook checks it. When it's empty, the webhook is open.
-   - Import each firm's number into Vapi (from Twilio, Telnyx or Vonage; Vapi's free numbers can't place calls), then add a Vapi connection with the number's Vapi id.
+   - Import a number into Vapi (from Twilio, Telnyx or Vonage; Vapi's free numbers can't place calls) and set its id as `VAPI_PHONE_NUMBER_ID`, the default for every firm. A firm's Vapi connection can set its own number id instead.
 
 Manual checklist (real APIs, not covered by `make test`):
 

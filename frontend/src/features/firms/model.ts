@@ -114,8 +114,10 @@ export function isConfigured(platform: PlatformStatus | undefined, connector: st
   return platform[SETUP[connector].platformKey] === true;
 }
 
-/** The input an outbound tool test needs, keyed by the tool's required param. */
+/** The input an outbound tool test needs, keyed by tool name, else by its required param. */
 export const TEST_TARGET: Record<string, { label: string; placeholder: string }> = {
+  // Slack file uploads take only channel ids, not names.
+  "slack.post_file": { label: "Slack channel ID", placeholder: "C0123456789" },
   channel: { label: "Slack channel", placeholder: "C0123456 or #general" },
   to: { label: "Send to", placeholder: "name@example.com or +14155550123" },
 };

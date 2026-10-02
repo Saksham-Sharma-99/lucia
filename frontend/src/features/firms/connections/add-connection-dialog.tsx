@@ -21,16 +21,11 @@ import { useApiMutation } from "@/lib/use-api-mutation";
 
 import { SETUP, isConfigured, isSetupConnector, type SetupConnector } from "../model";
 
-const schema = z
-  .object({
-    connector: z.enum(["gmail", "slack", "vapi"]),
-    label: z.string().max(120),
-    numberId: z.string().trim(),
-  })
-  .refine((v) => v.connector !== "vapi" || v.numberId, {
-    path: ["numberId"],
-    message: "Paste the phone number id from the Vapi dashboard",
-  });
+const schema = z.object({
+  connector: z.enum(["gmail", "slack", "vapi"]),
+  label: z.string().max(120),
+  numberId: z.string().trim(),
+});
 type Values = z.infer<typeof schema>;
 
 /** Adds a connection. Gmail/Slack start pending (a consent link comes next); Vapi is checked now. */
@@ -83,7 +78,8 @@ export function AddConnectionDialog({
           ? {
               connector: "vapi",
               label: v.label || name(v.connector),
-              config: { phone_number_id: v.numberId },
+              // Empty: the platform's default number (VAPI_PHONE_NUMBER_ID).
+              config: v.numberId ? { phone_number_id: v.numberId } : {},
             }
           : { connector: v.connector, label: v.label || name(v.connector) },
     }),
@@ -137,8 +133,9 @@ export function AddConnectionDialog({
                   {...form.register("numberId")}
                 />
                 <FieldDescription>
-                  From Vapi → Phone Numbers. Import the number there first (Twilio, Telnyx or
-                  Vonage); Vapi's free numbers can't place calls.
+                  Leave empty to use the platform's default number. Otherwise copy the id from Vapi
+                  → Phone Numbers after importing the number there (Twilio, Telnyx or Vonage);
+                  Vapi's free numbers can't place calls.
                 </FieldDescription>
                 <FieldError errors={[errors.numberId]} />
               </Field>

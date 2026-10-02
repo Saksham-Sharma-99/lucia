@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import re
 import time
 from typing import Any
 from urllib.parse import urlencode
@@ -22,6 +23,7 @@ API = "https://slack.com/api"
 SCOPES = "app_mentions:read,chat:write,channels:history,groups:history,files:write"
 SYSTEM_KEYS = frozenset({"team_id", "team_name", "bot_user_id"})
 MAX_SKEW_SECONDS = 300
+CHANNEL_ID = re.compile(r"[CGD][A-Z0-9]{8,}")
 
 
 def configured() -> bool:
@@ -118,6 +120,13 @@ async def tool_test(
         )
         return Outcome(True, f"Posted to {data['channel']}")
     if tool == "slack.post_file":
+        # Uploads take only ids (messages also take names); resolving a name needs channels:read.
+        if not CHANNEL_ID.fullmatch(data["channel"]):
+            return Outcome(
+                False,
+                "File uploads need the channel ID (e.g. C0123456789), not its name. "
+                "Find it in Slack under the channel's details.",
+            )
         await _post_file(need(secrets, "bot_token"), data["channel"])
         return Outcome(True, f"Uploaded a file to {data['channel']}")
     return inbound_outcome(conn, "slack.", "Mention the bot in a channel it is in")
