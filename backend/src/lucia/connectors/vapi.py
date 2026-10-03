@@ -23,6 +23,9 @@ VOICE = {
     "generationConfig": {"speed": 1.1},
 }
 TRANSCRIBER = {"provider": "deepgram", "model": "nova-3"}
+# A beat after the call connects before the assistant speaks. Vapi has no greeting-only delay:
+# this minimum wait applies before every reply (Vapi's default is 0.4 s).
+START_SPEAKING = {"waitSeconds": 1.0}
 
 
 class UnknownId(ConnectorError):
@@ -114,6 +117,7 @@ def assistant(
         "voice": VOICE,
         "transcriber": TRANSCRIBER,
         "maxDurationSeconds": max_seconds,
+        "startSpeakingPlan": START_SPEAKING,
         "metadata": metadata,
         "server": {"url": hook_url("vapi"), "headers": {"x-vapi-secret": secret} if secret else {}},
         "serverMessages": ["end-of-call-report", "status-update"],

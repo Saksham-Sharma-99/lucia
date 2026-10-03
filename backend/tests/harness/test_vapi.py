@@ -75,6 +75,7 @@ async def test_place_call_sends_metadata_and_rails(
     assert "between 09:00 and 20:00" in instructions and "America/New_York" in instructions
     assert "10:00" in instructions
     assert body["assistant"]["maxDurationSeconds"] == 300
+    assert body["assistant"]["startSpeakingPlan"] == {"waitSeconds": 1.0}
     assert step.external_ref == "call-1"
 
 
