@@ -13,7 +13,14 @@ from tests.world import item, make_leased_run, make_task, make_world
 
 
 def _draft(*items: dict[str, Any]) -> PlanDraft:
-    base = {"tool": None, "input_hint": "", "expected_output": "", "uses": [], "wait_seconds": None}
+    base = {
+        "tool": None,
+        "input_hint": "",
+        "expected_output": "",
+        "uses": [],
+        "wait_seconds": None,
+        "wait_until": None,
+    }
     return PlanDraft(items=[PlanItemDraft(**{**base, **i}) for i in items])
 
 
@@ -45,11 +52,30 @@ async def test_plan_is_stored_with_ids_in_order(
             "not one of this agent's tools",
         ),
         ({"title": "Wait", "kind": "wait", "wait_seconds": 0}, "wait_seconds"),
+        ({"title": "Wait", "kind": "wait"}, "either wait_seconds or wait_until"),
+        (
+            {
+                "title": "Wait",
+                "kind": "wait",
+                "wait_seconds": 60,
+                "wait_until": "2026-10-01T18:00:00-04:00",
+            },
+            "either wait_seconds or wait_until",
+        ),
+        ({"title": "Wait", "kind": "wait", "wait_until": "6pm"}, "ISO 8601"),
+        ({"title": "Wait", "kind": "wait", "wait_until": "2026-10-01T18:00:00"}, "UTC offset"),
+        (
+            {"title": "Wait", "kind": "wait", "wait_until": "2026-10-01T09:00:00-04:00"},
+            "in the past",
+        ),
+        ({"title": "Wait", "kind": "wait", "wait_until": "2027-10-01T09:00:00-04:00"}, "within"),
         ({"title": "Tool-less", "kind": "tool"}, "needs a tool"),
         ({"title": "Bad ref", "kind": "subagent", "uses": ["i9"]}, "uses i9"),
     ],
 )
-async def test_validation_errors(db: AsyncSession, bad: dict[str, Any], error: str) -> None:
+async def test_validation_errors(
+    db: AsyncSession, clock: FrozenClock, bad: dict[str, Any], error: str
+) -> None:
     w = await make_world(db)
     view = await load(db, await make_leased_run(db, w))
     errors = validate(_draft(bad), view, existing=0)
@@ -110,3 +136,30 @@ async def test_append_cap(db: AsyncSession, clock: FrozenClock, fake_llm: FakeLL
     with pytest.raises(CapHit):
         await append(db, await load(db, run), task, reason="r", new_info="x", epoch=1)
     assert fake_llm.calls == []
+
+
+async def test_a_clock_time_wait_is_stored_in_server_time(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
+) -> None:
+    """ "Call me at 6 pm" in the contact's zone becomes one UTC instant; the model does no math."""
+    w = await make_world(db)
+    run = await make_leased_run(db, w)
+    task = await make_task(db, w, run)
+    wait = {"title": "Wait for 6 pm", "kind": "wait", "wait_until": "2026-10-01T18:00:00-04:00"}
+    fake_llm.on("planner", _draft(wait, {**CALL, "uses": []}))
+    assert await plan_task(db, await load(db, run), task, 1)
+    await db.refresh(task)
+    assert task.plan[0]["wait"] == {"until": "2026-10-01T22:00:00+00:00"}
+
+
+async def test_the_planner_sees_the_server_time_and_each_contacts_local_time(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
+) -> None:
+    w = await make_world(db)
+    run = await make_leased_run(db, w)
+    task = await make_task(db, w, run)
+    fake_llm.on("planner", _draft(SCRIPT))
+    await plan_task(db, await load(db, run), task, 1)
+    packet = fake_llm.calls[0][1]
+    assert "## now" in packet and "2026-10-01T14:00:00+00:00" in packet
+    assert '"Jane Doe": "2026-10-01T10:00:00-04:00"' in packet

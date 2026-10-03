@@ -3,6 +3,7 @@ the subject, never a number; the call result comes back as an end-of-call Episod
 
 from datetime import timedelta
 from typing import Any, Literal
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -46,6 +47,24 @@ async def _connection(session: AsyncSession, run: AgentRun) -> ConnectorConnecti
     return await session.get_one(ConnectorConnection, mapping.identities["vapi"])
 
 
+def _callback_window(ctx: ToolContext, recipient: Recipient) -> str:
+    """The callback times the assistant may agree to: outside quiet hours, in the person's own
+    time, so it never promises a call the policy will defer."""
+    for policy in ctx.view.policies:
+        for source in policy.sources if policy.rule == "quiet_hours" else []:
+            if not source.applies:
+                continue
+            firm_tz = ctx.view.firm.timezone
+            tz = firm_tz if source.params.get("tz") == "firm" else (recipient.tz or firm_tz)
+            local = get_clock().now().astimezone(ZoneInfo(tz))
+            return (
+                f"It is {local:%H:%M} on {local:%A} for them ({tz}). If they ask to be called "
+                f"back, only agree to a time between {source.params['end']} and "
+                f"{source.params['start']} their time; otherwise offer the next such time.\n\n"
+            )
+    return ""
+
+
 class VapiCall:
     async def recipient(self, ctx: ToolContext, args: dict[str, Any]) -> Recipient | None:
         return await contact_recipient(
@@ -76,7 +95,7 @@ class VapiCall:
         }
         spec = vapi.assistant(
             args["first_message"],
-            f"{args['script']}\n\n{RAILS}",
+            f"{args['script']}\n\n{_callback_window(ctx, recipient)}{RAILS}",
             metadata,
             args.get("max_seconds", 600),
         )

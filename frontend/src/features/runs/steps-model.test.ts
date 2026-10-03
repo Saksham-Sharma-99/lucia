@@ -270,6 +270,77 @@ describe("steps model", () => {
       expect(rows[1].notes.map((n) => [n.label, n.at])).toEqual([["Wake-up scheduled", at(90)]]);
     });
 
+    it("describes each note from what its step recorded", () => {
+      const steps = [
+        step({
+          id: "p",
+          seq: 1,
+          kind: "llm",
+          role: "planner",
+          tool: null,
+          plan_item_id: null,
+          started_at: at(1),
+          output: { items: [{ title: "Call Jane" }, { title: "Summarize" }] },
+        }),
+        step({
+          id: "c",
+          seq: 2,
+          plan_item_id: "i1",
+          summary: "Call placed",
+          started_at: at(2),
+          output: { call_id: "x", summary: "Jane asked for a callback" },
+        }),
+        step({
+          id: "v",
+          seq: 3,
+          plan_item_id: "i1",
+          summary: "Call placed",
+          started_at: at(3),
+          output: { ended_reason: "customer-did-not-answer" },
+        }),
+        step({
+          id: "r",
+          seq: 4,
+          kind: "llm",
+          role: "relevance",
+          tool: null,
+          plan_item_id: null,
+          episode_id: "e2",
+          started_at: at(31),
+          output: { verdicts: [{ item_id: "i2", verdict: "keep", reason: "Still needed" }] },
+        }),
+        step({
+          id: "s",
+          seq: 5,
+          kind: "subagent",
+          tool: "harness.subagent",
+          plan_item_id: "i2",
+          started_at: at(32),
+          output: { text: "**Outcome:** reached" },
+        }),
+        step({
+          id: "f",
+          seq: 6,
+          tool: "harness.emit_finding",
+          plan_item_id: "i2",
+          summary: "Reported outcome",
+          started_at: at(33),
+          input: { summary: "Jane is better", kind: "outcome" },
+        }),
+      ];
+      const rows = flowRows(task({ plan: [planItem(1), planItem(2)] }), steps, [trigger, report]);
+      const details = Object.fromEntries(rows.flatMap((r) => r.notes).map((n) => [n.id, n.detail]));
+      expect(details).toEqual({
+        p: "2 items:\n1. Call Jane\n2. Summarize",
+        c: "Jane asked for a callback",
+        v: "customer did not answer",
+        e2: "External response",
+        r: "#i2 keep: Still needed",
+        s: "**Outcome:** reached",
+        f: "Jane is better",
+      });
+    });
+
     it("drops summaries that repeat the label and other tasks' journal entries", () => {
       const steps = [
         step({ id: "c", summary: "Call placed", episode_id: "e1", started_at: at(5) }),

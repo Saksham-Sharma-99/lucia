@@ -83,6 +83,7 @@ async def test_plans_then_runs_items_to_done(
                     expected_output="",
                     uses=[],
                     wait_seconds=None,
+                    wait_until=None,
                 )
             ]
         ),
@@ -327,6 +328,7 @@ async def test_policy_block_skips_the_item_and_asks_for_an_alternative(
                     expected_output="",
                     uses=[],
                     wait_seconds=None,
+                    wait_until=None,
                 )
             ]
         ),
@@ -439,6 +441,14 @@ async def test_wait_item_schedules_a_wake_up(db: AsyncSession, clock: FrozenCloc
     assert task.status == "DONE"
 
 
+async def test_a_wait_until_wakes_at_that_instant(db: AsyncSession, clock: FrozenClock) -> None:
+    until = clock.now() + timedelta(hours=8)
+    _, run, task = await _setup(db, [item(1, "wait", wait={"until": until.isoformat()})])
+    assert await execute_task(db, run, task, 1) == "waiting"
+    wake = await db.scalar(select(Episode).where(Episode.source == "plan_wait"))
+    assert wake is not None and wake.due_at == until
+
+
 async def test_llm_call_cap_blocks_the_task(
     db: AsyncSession,
     clock: FrozenClock,
@@ -519,6 +529,7 @@ async def test_not_reached_schedules_the_next_ladder_rung(
                     expected_output="",
                     uses=[],
                     wait_seconds=None,
+                    wait_until=None,
                 )
             ]
         ),

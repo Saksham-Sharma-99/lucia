@@ -103,17 +103,41 @@ const STEP_EVENT: Record<string, string> = {
 /** When an episode reached the run: a scheduled one is created early and fires at `due_at`. */
 const arrived = (e: EpisodeOut) => e.started_at ?? e.due_at ?? e.created_at;
 
+/** What a step recorded, as a note's description: plan items, verdicts, a call's summary… */
+function stepDetail(s: StepOut, label: string): string | null {
+  const out = s.output ?? {};
+  const items = out.items as { title?: string }[] | undefined;
+  if (s.role === "planner" && items)
+    return [`${items.length} items:`, ...items.map((it, i) => `${i + 1}. ${it.title}`)].join("\n");
+  const verdicts = out.verdicts as
+    { item_id: string; verdict: string; reason: string }[] | undefined;
+  if (verdicts) return verdicts.map((v) => `#${v.item_id} ${v.verdict}: ${v.reason}`).join("\n");
+  const said =
+    (out.summary as string | undefined) ??
+    (out.text as string | undefined) ??
+    (s.input?.summary as string | undefined) ??
+    (out.ended_reason as string | undefined)?.replaceAll("-", " ") ??
+    s.summary;
+  return said && said !== label ? said : null;
+}
+
 /** A step as a note, or null for internal calls (executor, guardrail model, summaries). */
 function stepNote(s: StepOut, firstPlanner?: string): Note | null {
   const note = { id: s.id, at: s.started_at ?? "", status: s.status };
   if (s.kind === "llm") {
-    if (s.role === "planner")
-      return { ...note, label: s.id === firstPlanner ? "Plan written" : "Plan revised" };
-    return s.role === "relevance" ? { ...note, label: "Checked what's still needed" } : null;
+    const label =
+      s.role === "planner"
+        ? s.id === firstPlanner
+          ? "Plan written"
+          : "Plan revised"
+        : s.role === "relevance"
+          ? "Checked what's still needed"
+          : null;
+    return label ? { ...note, label, detail: stepDetail(s, label) } : null;
   }
   if (s.parent_step_id || s.tool === "harness.journal_append") return null; // its entry shows
   const label = STEP_EVENT[s.kind] ?? STEP_EVENT[s.tool ?? ""] ?? s.tool ?? statusLabel(s.kind);
-  return { ...note, label, detail: s.summary === label ? null : s.summary };
+  return { ...note, label, detail: stepDetail(s, label) };
 }
 
 /**
@@ -195,7 +219,7 @@ export function flowRows(
       id: e.id,
       at: arrived(e),
       label: ["scheduled", "armed"].includes(e.status) ? "Wake-up scheduled" : "Episode arrived",
-      detail: statusLabel(e.trigger_type),
+      detail: e.reason ?? statusLabel(e.trigger_type),
       trigger: e.trigger_type,
     });
   }

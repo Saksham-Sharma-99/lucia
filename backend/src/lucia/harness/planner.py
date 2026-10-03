@@ -2,12 +2,14 @@
 never edited or removed (RUNTIME_SPEC §6.1, §7). Plans are validated deterministically."""
 
 from collections.abc import Sequence
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from lucia.core.clock import get_clock
 from lucia.core.config import get_settings
 from lucia.db.models import AgentRunStep, RunTask
 from lucia.harness import context
@@ -20,7 +22,11 @@ INSTRUCTIONS = """You plan one task for an agent. Write the items that finish it
 Item kinds:
 - tool: one call of one of the agent's tools (set `tool`). Arguments are filled in later.
 - subagent: thinking work that produces text: draft, review, summarize, extract.
-- wait: pause before the next item (set `wait_seconds`).
+- wait: pause before the next item. A span goes in `wait_seconds` ("in 10 minutes" → 600); a
+  clock time someone gave goes in `wait_until` as ISO 8601 with that person's UTC offset
+  ("6 pm" for a contact in New York → 2026-10-01T18:00:00-04:00). `now` shows the server time
+  and each contact's local time. Wait only for what was asked or needed: quiet hours, consent
+  and contact caps are enforced when something is sent, so never plan around them.
 - human: ask a person for something only they can give.
 `uses` lists the ids of earlier items whose output this item needs. New items get ids after
 the existing ones. Respect the policies, consent and opt-outs shown. Keep plans short."""
@@ -34,6 +40,7 @@ class PlanItemDraft(BaseModel):
     expected_output: str
     uses: list[str]
     wait_seconds: int | None
+    wait_until: str | None
 
 
 class PlanDraft(BaseModel):
@@ -57,14 +64,39 @@ def validate(draft: PlanDraft, view: AgentView, existing: int) -> list[str]:
                 errors.append(f"{where} needs a tool")
             elif it.tool not in view.tools or not view.tools[it.tool].input_schema:
                 errors.append(f"{where}: {it.tool} is not one of this agent's tools")
-        if it.kind == "wait" and not (it.wait_seconds and 0 < it.wait_seconds <= max_wait):
-            errors.append(f"{where}: wait_seconds must be between 1 and {max_wait}")
+        if it.kind == "wait" and (problem := _wait_problem(it, max_wait)):
+            errors.append(f"{where}: {problem}")
         errors += [
             f"{where} uses {u}, which is not an earlier item"
             for u in it.uses
             if not u.startswith("i") or not u[1:].isdigit() or int(u[1:]) >= n
         ]
     return errors
+
+
+def _until(it: PlanItemDraft) -> datetime:
+    """`wait_until` as an instant; validated before anything is stored."""
+    return datetime.fromisoformat(it.wait_until or "").astimezone(UTC)
+
+
+def _wait_problem(it: PlanItemDraft, max_wait: int) -> str | None:
+    if (it.wait_seconds is None) == (it.wait_until is None):
+        return "set either wait_seconds or wait_until"
+    if it.wait_seconds is not None:
+        ok = 0 < it.wait_seconds <= max_wait
+        return None if ok else f"wait_seconds must be between 1 and {max_wait}"
+    try:
+        parsed = datetime.fromisoformat(it.wait_until or "")
+    except ValueError:
+        return "wait_until must be ISO 8601, like 2026-10-01T18:00:00-04:00"
+    if parsed.tzinfo is None:
+        return "wait_until needs the person's UTC offset, like -04:00"
+    now = get_clock().now()
+    if parsed <= now:
+        return f"wait_until is in the past (now is {now.isoformat()})"
+    if parsed > now + timedelta(seconds=max_wait):
+        return f"wait_until must be within {max_wait} seconds of now"
+    return None
 
 
 def _stored(draft: PlanDraft, start: int, added_in: int) -> list[dict[str, Any]]:
@@ -78,7 +110,7 @@ def _stored(draft: PlanDraft, start: int, added_in: int) -> list[dict[str, Any]]
             "input_hint": it.input_hint,
             "expected_output": it.expected_output,
             "uses": it.uses,
-            "wait": {"seconds": it.wait_seconds} if it.kind == "wait" else None,
+            "wait": _stored_wait(it) if it.kind == "wait" else None,
             "status": "PENDING",
             "attempts": 0,
             "step_ids": [],
@@ -89,6 +121,13 @@ def _stored(draft: PlanDraft, start: int, added_in: int) -> list[dict[str, Any]]
         }
         for n, it in enumerate(draft.items, start=start)
     ]
+
+
+def _stored_wait(it: PlanItemDraft) -> dict[str, Any]:
+    """A clock time is kept as one UTC instant: it means the same moment whenever it runs."""
+    if it.wait_until is not None:
+        return {"until": _until(it).isoformat()}
+    return {"seconds": it.wait_seconds}
 
 
 async def _packet(
@@ -103,12 +142,14 @@ async def _packet(
         .order_by(AgentRunStep.seq)
     )
     summary, entries = await recent(session, view.run.id)
+    subject = await context.subject_snapshot(session, view.subject)
     return context.packet(
         "planner",
         {
             "system_prompt": view.config.system_prompt,
+            "now": context.clock(subject),
             "goal": {"goal": view.run.goal, "criteria": view.run.completion_criteria},
-            "subject": await context.subject_snapshot(session, view.subject),
+            "subject": subject,
             "timeline": await context.timeline(session, view.subject.id),
             "task": {"title": task.title, "goal": task.goal, "input": task.input},
             "dependencies": {d.key: (d.output or {}).get("summary") for d in deps},

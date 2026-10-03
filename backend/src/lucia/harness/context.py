@@ -4,10 +4,12 @@ fixed order, trimmed to a budget (journal and episodes go first)."""
 import json
 import uuid
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from lucia.core.clock import get_clock
 from lucia.db.models import (
     AgentRun,
     ContactPoint,
@@ -35,6 +37,7 @@ ROLE_SECTIONS: dict[str, tuple[str, ...]] = {
     ),
     "planner": (
         "system_prompt",
+        "now",
         "goal",
         "subject",
         "timeline",
@@ -49,7 +52,16 @@ ROLE_SECTIONS: dict[str, tuple[str, ...]] = {
         "trigger",
     ),
     "relevance": ("task", "plan", "attempts", "trigger"),
-    "executor": ("system_prompt", "subject", "task", "item", "inputs", "attempts", "policies"),
+    "executor": (
+        "system_prompt",
+        "now",
+        "subject",
+        "task",
+        "item",
+        "inputs",
+        "attempts",
+        "policies",
+    ),
     "completion": ("system_prompt", "goal", "timeline", "tasks", "episodes", "journal"),
     "summarizer": ("task", "item", "trigger"),
 }
@@ -99,6 +111,20 @@ async def subject_snapshot(session: AsyncSession, subject: Subject) -> dict[str,
             }
             for link, cp in rows.all()
         ],
+    }
+
+
+def clock(subject: dict[str, Any]) -> dict[str, Any]:
+    """The server's time and each contact's local time: models give times against these and the
+    harness converts them, so no model does timezone arithmetic."""
+    now = get_clock().now()
+    return {
+        "server_utc": now.isoformat(timespec="seconds"),
+        "contacts_local": {
+            c["name"]: now.astimezone(ZoneInfo(c["timezone"])).isoformat(timespec="seconds")
+            for c in subject["contacts"]
+            if c["timezone"]
+        },
     }
 
 

@@ -69,7 +69,11 @@ async def test_place_call_sends_metadata_and_rails(
         "step_id": str(step.id),
         "idem_key": step.idempotency_key,
     }
-    assert RAILS in body["assistant"]["model"]["messages"][0]["content"]
+    instructions = body["assistant"]["model"]["messages"][0]["content"]
+    assert RAILS in instructions
+    # Callbacks only in the allowed window, in the person's own time (10:00 in New York).
+    assert "between 09:00 and 20:00" in instructions and "America/New_York" in instructions
+    assert "10:00" in instructions
     assert body["assistant"]["maxDurationSeconds"] == 300
     assert step.external_ref == "call-1"
 

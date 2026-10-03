@@ -77,6 +77,7 @@ async def test_planner(
         expected_output="",
         uses=[],
         wait_seconds=None,
+        wait_until=None,
     )
     fake_llm.on("planner", PlanDraft(items=[plan]))
     land_during(monkeypatch, fake_llm, db, run.id, "planner", control)

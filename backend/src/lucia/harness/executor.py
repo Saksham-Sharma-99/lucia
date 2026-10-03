@@ -4,7 +4,7 @@ Each item ends DONE, SKIPPED or FAILED, or WAITING on a webhook, a timer or a pe
 next Episode for the task resumes it here."""
 
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from sqlalchemy import func, select
@@ -162,7 +162,7 @@ async def _run_item(
             view.run,
             task_id=task.id,
             source="plan_wait",
-            due_at=get_clock().now() + duration(it["wait"]["seconds"], "seconds"),
+            due_at=_wait_due(it["wait"]),
             dedup_key=f"plan_wait:{task.id}:{it['id']}",
             reason=it["title"],
             metadata={"plan_item_id": it["id"]},
@@ -226,14 +226,23 @@ def _wait(task: RunTask, it: dict[str, Any]) -> str:
     return "waiting"
 
 
+def _wait_due(wait: dict[str, Any]) -> datetime:
+    """A clock time is already an instant; a span counts from now (dev scale applies)."""
+    if until := wait.get("until"):
+        return datetime.fromisoformat(until)
+    return get_clock().now() + duration(wait["seconds"], "seconds")
+
+
 async def _executor_packet(
     session: AsyncSession, view: AgentView, task: RunTask, it: dict[str, Any]
 ) -> str:
+    subject = await context.subject_snapshot(session, view.subject)
     return context.packet(
         "executor",
         {
             "system_prompt": view.config.system_prompt,
-            "subject": await context.subject_snapshot(session, view.subject),
+            "now": context.clock(subject),
+            "subject": subject,
             "task": {"title": task.title, "goal": task.goal, "input": task.input},
             "item": {k: it[k] for k in ("title", "input_hint", "expected_output", "tool")},
             "inputs": {u: (item(task, u)["output"] or {}).get("summary") for u in it["uses"]},

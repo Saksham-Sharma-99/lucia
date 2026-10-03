@@ -64,6 +64,7 @@ async def test_supersede_asks_the_planner_to_append(
                     expected_output="",
                     uses=[],
                     wait_seconds=None,
+                    wait_until=None,
                 )
             ]
         ),
@@ -94,6 +95,7 @@ async def test_no_pending_items_goes_straight_to_the_planner(
                     expected_output="",
                     uses=[],
                     wait_seconds=None,
+                    wait_until=None,
                 )
             ]
         ),
