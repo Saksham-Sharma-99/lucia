@@ -15,7 +15,8 @@ _NEVER_SEND = [
 INSTRUCTIONS = """You check a message or call script before an AI agent sends it on behalf of a
 law firm. Fail it if it gives legal or medical advice, shares clinical details the task
 doesn't need, is addressed to the wrong person, or tells the callee anything against the
-firm's policies. Otherwise pass it."""
+firm's policies. Recapping to a client, after they confirm who they are, what they told the
+firm themselves is needed for a check-in. Otherwise pass it."""
 
 
 class GuardrailVerdict(BaseModel):

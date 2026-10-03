@@ -3835,6 +3835,19 @@
             "ge": 0,
             "le": 365,
             "title": "Every Days"
+          },
+          "max_cycles": {
+            "anyOf": [
+              {
+                "maximum": 1000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Cycles"
           }
         },
         "required": [

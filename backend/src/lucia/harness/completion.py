@@ -123,7 +123,7 @@ async def check_run(session: AsyncSession, run: AgentRun, epoch: int, key: str) 
             await session.commit()
             return "continued"
         if view.config.recurrence is not None:
-            return await _close_cycle(session, view)
+            return await _close_cycle(session, view, epoch, key, verdict.reason)
         return await _ask(
             session,
             run,
@@ -144,6 +144,24 @@ async def check_run(session: AsyncSession, run: AgentRun, epoch: int, key: str) 
     if not judge.agree:
         why = f"Done? The agent says yes; the check says: {judge.reason}"
         return await _ask(session, run, key, why)
+    return await _await_confirmation(
+        session,
+        run,
+        epoch,
+        key,
+        f"I think this is done: {verdict.reason}",
+        verdict.evidence_step_ids,
+    )
+
+
+async def _await_confirmation(
+    session: AsyncSession,
+    run: AgentRun,
+    epoch: int,
+    key: str,
+    summary: str,
+    evidence_step_ids: list[str],
+) -> Outcome:
     await fence(session, run.id, epoch)  # FOR SHARE until our commit: intake waits on it
     if await _new_work(session, run):
         return "superseded"  # it's answered once that work is done: its triage re-checks
@@ -152,9 +170,9 @@ async def check_run(session: AsyncSession, run: AgentRun, epoch: int, key: str) 
         session,
         run,
         kind="confirm_completion",
-        summary=f"I think this is done: {verdict.reason}",
+        summary=summary,
         dedup_key=f"sr:{run.id}:confirm:{key}",
-        data={"evidence_step_ids": verdict.evidence_step_ids},
+        data={"evidence_step_ids": evidence_step_ids},
         options=[
             {"value": "confirm", "label": "Confirm complete"},
             {"value": "reopen", "label": "Reopen"},
@@ -231,15 +249,21 @@ async def _ask(
     return "asked"
 
 
-async def _close_cycle(session: AsyncSession, view: AgentView) -> Outcome:
+async def _close_cycle(
+    session: AsyncSession, view: AgentView, epoch: int, key: str, reason: str
+) -> Outcome:
     run = view.run
-    assert view.config.recurrence is not None
+    recurrence = view.config.recurrence
+    assert recurrence is not None
     cycle = max(run.cycle, 1) + 1
+    if recurrence.max_cycles is not None and cycle > recurrence.max_cycles:  # the last round
+        done = f"All {recurrence.max_cycles} rounds are done. {reason}"
+        return await _await_confirmation(session, run, epoch, key, done, [])
     await scheduler.schedule(
         session,
         run,
         source="recurrence",
-        due_at=get_clock().now() + duration(view.config.recurrence.every_days, "days"),
+        due_at=get_clock().now() + duration(recurrence.every_days, "days"),
         dedup_key=f"recurrence:{run.id}:{cycle}",
         reason=f"cycle {cycle}",
         metadata={"cycle": cycle},

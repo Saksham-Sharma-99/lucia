@@ -34,11 +34,13 @@ RETRY_BACKOFF = (timedelta(seconds=60), timedelta(seconds=300))  # then a person
 RUNNABLE = ("PENDING", "RUNNING")  # an item the executor can work on now
 MAX_ITEM_RESUMES = 3  # crashed attempts of one item before a person decides
 EXECUTOR = """Fill in the arguments for this one tool call from the item, its inputs and the
-subject. Use only contacts listed on the subject. Anything said to a person outside the firm
-(a call script, a message) must not repeat clinical details from the record (diagnoses,
-treatment, how they have been feeling): ask open questions instead ("How have you been?").
-A first message names no case or reference number: only the firm, until the person has
-confirmed who they are."""
+subject. Use only contacts listed on the subject. Clinical details from the record (diagnoses,
+treatment, how they have been feeling) go only to the person they are about, once that person
+has confirmed who they are: a check-in may recap what the client told us last time ("last time
+you mentioned you had changed doctors; how is that going?"). To anyone else, share only what
+the task needs (a records request names the patient and dates of service) and ask open
+questions. A first message names no case, reference number or clinical detail: only the firm,
+until the person has confirmed who they are."""
 
 
 async def _end_item(

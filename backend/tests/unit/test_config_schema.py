@@ -57,3 +57,14 @@ def test_whole_numbers_stay_ints_so_stored_hashes_dont_change() -> None:
     stored = VersionConfig.model_validate(config(recurrence={"every_days": 14})).stored()
     assert stored["recurrence"]["every_days"] == 14
     assert isinstance(stored["recurrence"]["every_days"], int)
+
+
+def test_max_cycles_is_stored_only_when_set() -> None:
+    plain = VersionConfig.model_validate(config(recurrence={"every_days": 14})).stored()
+    assert plain["recurrence"] == {"every_days": 14}  # older versions keep their hash
+    capped = VersionConfig.model_validate(
+        config(recurrence={"every_days": 0, "max_cycles": 2})
+    ).stored()
+    assert capped["recurrence"] == {"every_days": 0, "max_cycles": 2}
+    with pytest.raises(ValidationError):
+        VersionConfig.model_validate(config(recurrence={"every_days": 1, "max_cycles": 0}))

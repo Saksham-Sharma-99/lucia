@@ -113,3 +113,14 @@ describe("blankConfig / selectedTools", () => {
     ]).toEqual(["a.x", "b.y", "b.z"]);
   });
 });
+
+describe("recurrence", () => {
+  it("keeps a round limit through the form, and validates it", () => {
+    const cfg = { ...VERSION_CONFIG, recurrence: { every_days: 0.005, max_cycles: 2 } };
+    expect(toPayload(toForm(cfg)).recurrence).toEqual({ every_days: 0.005, max_cycles: 2 });
+    const form = toForm(cfg);
+    expect(configSchema.safeParse(form).success).toBe(true);
+    const zero = { ...form, recurrence: { every_days: 1, max_cycles: 0 } };
+    expect(configSchema.safeParse(zero).success).toBe(false);
+  });
+});

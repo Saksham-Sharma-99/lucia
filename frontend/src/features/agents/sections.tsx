@@ -545,6 +545,28 @@ export function SchedulesSection({ registry, disabled }: SectionProps) {
               {!Number.isInteger(recurrence.every_days) && recurrence.every_days > 0 && (
                 <span className="text-muted-foreground">≈ {hours(recurrence.every_days * 24)}</span>
               )}
+              <span className="text-muted-foreground">·</span>
+              stop after
+              <Controller
+                control={control}
+                name="config.recurrence.max_cycles"
+                render={({ field }) => (
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    aria-label="Stop after N rounds"
+                    placeholder="no limit"
+                    className="w-24"
+                    value={field.value ?? ""}
+                    onChange={(e) =>
+                      field.onChange(e.target.value === "" ? null : Number(e.target.value))
+                    }
+                    disabled={disabled}
+                  />
+                )}
+              />
+              rounds
             </>
           ) : (
             <span className="text-muted-foreground">Runs once per matter</span>

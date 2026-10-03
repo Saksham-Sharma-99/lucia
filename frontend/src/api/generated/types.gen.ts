@@ -2030,6 +2030,10 @@ export type Recurrence = {
      * Every Days
      */
     every_days: number | number;
+    /**
+     * Max Cycles
+     */
+    max_cycles?: number | null;
 };
 
 /**

@@ -58,6 +58,9 @@ class FollowUp(Strict):
 
 class Recurrence(Strict):
     every_days: int | float = Field(ge=0, le=365)  # decimals allowed: 0.5 = 12 h; 0 = back to back
+    # Stop after this many rounds (then a person confirms completion). Unset: no limit, and not
+    # stored, so versions saved before this field keep their config hash.
+    max_cycles: int | None = Field(default=None, ge=1, le=1000, exclude_if=lambda v: v is None)
 
 
 class EndConditions(Strict):
