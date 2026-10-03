@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from lucia.core.clock import FrozenClock
-from lucia.db.models import AgentRun, Episode, JournalEntry, RunTask, StepResult
+from lucia.db.models import AgentRun, AgentRunStep, Episode, JournalEntry, RunTask, StepResult
 from lucia.harness.exec import tool_executor
 from lucia.harness.executor import execute_task, resume_task
 from lucia.harness.planner import PlanDraft, PlanItemDraft
@@ -100,6 +100,37 @@ async def test_plans_then_runs_items_to_done(
         {"to_contact_id": str(w.jane_link.id), "script": "s", "first_message": "hi"}
     ]
     assert await db.scalar(select(JournalEntry.text)) == "Call Jane: Called Jane"
+
+
+async def test_a_markdown_summary_starts_its_own_journal_paragraph(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, tool: FakeTool
+) -> None:
+    w, run, task = await _setup(db, [])
+    fake_llm.on(
+        "planner",
+        PlanDraft(
+            items=[
+                PlanItemDraft(
+                    title="Call Jane",
+                    kind="tool",
+                    tool="vapi.place_call",
+                    input_hint="",
+                    expected_output="",
+                    uses=[],
+                    wait_seconds=None,
+                    wait_until=None,
+                )
+            ]
+        ),
+    )
+    fake_llm.on(
+        "executor", {"to_contact_id": str(w.jane_link.id), "script": "s", "first_message": "hi"}
+    )
+    tool.results.append(_ok("## Reached\n- **Mood:** good"))
+    assert await execute_task(db, run, task, 1) == "done"
+    assert await db.scalar(select(JournalEntry.text)) == (
+        "Call Jane:\n\n## Reached\n- **Mood:** good"
+    )
 
 
 async def test_async_tool_waits_then_the_callback_finishes_it(
@@ -411,6 +442,14 @@ async def test_human_item_asks_and_the_answer_completes_it(
     await resume_task(db, run, task, ep, 1)
     await db.refresh(task)
     assert task.status == "DONE" and task.plan[0]["output"]["summary"] == "Her mobile"
+    # the answer is a human step on the item: evidence the completion check can cite
+    step = await db.scalar(select(AgentRunStep).where(AgentRunStep.kind == "human"))
+    assert step is not None and (step.status, step.actor, step.summary) == (
+        "SUCCEEDED",
+        "human",
+        "Her mobile",
+    )
+    assert task.plan[0]["step_ids"] == [str(step.id)]
 
 
 async def test_an_answer_for_a_superseded_item_changes_nothing(
@@ -611,3 +650,114 @@ async def test_a_callback_for_an_item_that_isnt_waiting_is_ignored(
     await resume_task(db, run, task, ep, 1)
     await db.refresh(task)
     assert (task.status, task.plan[0]["status"]) == ("BLOCKED", "FAILED")
+
+
+async def test_an_answer_rechecks_the_items_it_makes_moot(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, tool: FakeTool
+) -> None:
+    """Staff said the packet arrived: the planned 'call to confirm receipt' is skipped."""
+    from lucia.harness.relevance import ItemVerdict, Relevance
+
+    w, run, task = await _setup(
+        db, [item(1, "human", status="WAITING"), item(2, "tool", status="PENDING")]
+    )
+    asked = StepResult(
+        firm_id=w.firm.id,
+        run_id=run.id,
+        task_id=task.id,
+        type="attention",
+        kind="question",
+        urgency="P1",
+        summary="Did the records arrive?",
+        summary_public="x",
+        status="answered",
+        dedup_key="sr:moot",
+        data={"item_id": "i1"},
+    )
+    db.add(asked)
+    await db.commit()
+    fake_llm.on(
+        "relevance",
+        Relevance(
+            verdicts=[ItemVerdict(item_id="i2", verdict="skip", reason="already received")],
+            append_needed=False,
+            append_reason="",
+        ),
+    )
+    meta = {"step_result_id": str(asked.id), "answer": {"text": "Yes, all 212 pages arrived"}}
+    ep = await _episode(db, w, run, task, trigger_type="user_response", metadata_=meta)
+    await resume_task(db, run, task, ep, 1)
+    await db.refresh(task)
+    assert [i["status"] for i in task.plan] == ["DONE", "SKIPPED"]
+    assert tool.calls == []
+
+
+async def test_a_note_at_the_plan_cap_blocks_the_task_instead_of_failing(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, tool: FakeTool
+) -> None:
+    w, run, task = await _setup(db, [item(1, "tool", status="DONE")], plan_appends=5)
+    ep = await _episode(db, w, run, task, metadata_={"note": "try their fax line"})
+    await resume_task(db, run, task, ep, 1)  # no CapHit escapes: the episode completes
+    await db.refresh(task)
+    assert task.status == "BLOCKED"
+    kinds = await db.scalars(select(StepResult.kind).where(StepResult.task_id == task.id))
+    assert list(kinds) == ["plan_cap"]
+
+
+async def test_the_executor_sees_what_earlier_calls_learned(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, tool: FakeTool
+) -> None:
+    """A check-in's script can open with last time's topics: the journal and past findings."""
+    from lucia.harness.journal import append as journal_append
+
+    w, run, task = await _setup(db, [item(1, "tool")])
+    await journal_append(
+        db, run, text="Call Jane: back pain, MRI on Oct 20", source="harness", key="j1"
+    )
+    db.add(
+        StepResult(
+            firm_id=w.firm.id,
+            run_id=run.id,
+            type="finding",
+            kind="treatment",
+            urgency="P2",
+            summary="Jane has an MRI on Oct 20",
+            summary_public="x",
+            status="open",
+            dedup_key="sr:prior",
+        )
+    )
+    await db.commit()
+    fake_llm.on("executor", {"to_contact_id": "x", "script": "s", "first_message": "hi"})
+    tool.results.append(_ok())
+    await execute_task(db, run, task, 1)
+    packet = next(msg for role, msg, *_ in fake_llm.calls if role == "executor")
+    assert "back pain, MRI on Oct 20" in packet  # journal
+    assert "Jane has an MRI on Oct 20" in packet  # timeline
+    assert "episodes" in packet  # e.g. what the firm said when it reopened the run
+
+
+@pytest.mark.parametrize("needed", [True, False])
+async def test_a_human_item_asks_what_its_inputs_call_for(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, needed: bool
+) -> None:
+    """Planned before the call as 'only if the review finds something, ask the firm'."""
+    from lucia.harness.executor import HumanQuestion
+
+    review = item(
+        1,
+        "subagent",
+        status="DONE",
+        output={"summary": "Doe asked if changing doctors is a concern"},
+    )
+    asks = item(2, "human", uses=["i1"], input_hint="Only if needed, ask the firm")
+    _, run, task = await _setup(db, [review, asks])
+    question = "Doe asked whether changing doctors could hurt the case. What should we tell Doe?"
+    fake_llm.on("asker", HumanQuestion(needed=needed, question=question if needed else ""))
+    outcome = await execute_task(db, run, task, 1)
+    await db.refresh(task)
+    asked = await db.scalar(select(StepResult))
+    if needed:
+        assert outcome == "blocked" and asked is not None and asked.summary == question
+    else:
+        assert asked is None and task.plan[1]["status"] == "SKIPPED"

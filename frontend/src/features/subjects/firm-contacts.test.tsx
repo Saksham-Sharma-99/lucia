@@ -74,18 +74,21 @@ describe("firm contacts tab", () => {
     );
   });
 
-  it("edits a contact, showing the server's field errors", async () => {
+  it("edits a contact's timezone from the list, showing the server's field errors", async () => {
     firmWithContacts();
     let attempt = 0;
     const sent: unknown[] = [];
     server.use(
+      http.get(`${API}/platform/timezones`, () =>
+        HttpResponse.json(["America/Chicago", "Asia/Kolkata", "UTC"]),
+      ),
       http.patch(`${API}/contact-points/cp1`, async ({ request }) => {
         sent.push(await request.json());
         return ++attempt === 1
           ? fail(422, "Validation failed", [
               { path: "/tz", code: "invalid", message: "Unknown timezone" },
             ])
-          : HttpResponse.json(contactPoint({ tz: "America/Chicago" }));
+          : HttpResponse.json(contactPoint({ tz: "Asia/Kolkata" }));
       }),
     );
     const app = await renderApp("/firms/f1?tab=contacts");
@@ -93,14 +96,13 @@ describe("firm contacts tab", () => {
     const d = within(await screen.findByRole("dialog"));
     const tz = d.getByLabelText("Timezone");
     await app.user.clear(tz);
-    await app.user.type(tz, "Mars/Base");
+    await app.user.type(tz, "kolk");
+    await app.user.click(await screen.findByRole("option", { name: "Asia/Kolkata" }));
     await app.user.click(d.getByRole("button", { name: "Save contact" }));
     await d.findByText("Unknown timezone");
-    await app.user.clear(tz);
-    await app.user.type(tz, "America/Chicago");
     await app.user.click(d.getByRole("button", { name: "Save contact" }));
     await waitFor(() => expect(sent).toHaveLength(2));
-    expect(sent[1]).toMatchObject({ tz: "America/Chicago" });
+    expect(sent[1]).toMatchObject({ tz: "Asia/Kolkata" });
   });
 
   it("empty firm", async () => {

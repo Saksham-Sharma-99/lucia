@@ -579,7 +579,7 @@ async def test_vapi_place_call(authed: AsyncClient, vapi_conn: ConnectorConnecti
     assert assistant["voice"] == {
         "provider": "cartesia",
         "model": "sonic-3.5",
-        "voiceId": "95d51f79-c397-46f9-b49a-23763d3eaa2d",
+        "voiceId": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
         "generationConfig": {"speed": 1.1},
     }
     assert assistant["transcriber"] == {"provider": "deepgram", "model": "nova-3"}

@@ -14,15 +14,18 @@ from lucia.db.models import ConnectorConnection, Firm
 
 API = "https://api.vapi.ai"
 SYSTEM_KEYS = frozenset({"phone_number"})
-# Lucia's voice: the model that talks, how it sounds (Cartesia, Arushi) and how it hears.
+# Lucia's voice: the model that talks, how it sounds (Cartesia, Katie) and how it hears.
 MODEL = {"provider": "openai", "model": "gpt-4.1-mini"}
 VOICE = {
     "provider": "cartesia",
     "model": "sonic-3.5",
-    "voiceId": "95d51f79-c397-46f9-b49a-23763d3eaa2d",  # Arushi
+    "voiceId": "f786b574-daa5-4673-aa0c-cbe3e8534c02",  # Katie, en-US female
     "generationConfig": {"speed": 1.1},
 }
 TRANSCRIBER = {"provider": "deepgram", "model": "nova-3"}
+# A beat after the call connects before the assistant speaks. Vapi has no greeting-only delay:
+# this minimum wait applies before every reply (Vapi's default is 0.4 s).
+START_SPEAKING = {"waitSeconds": 1.0}
 
 
 class UnknownId(ConnectorError):
@@ -114,6 +117,7 @@ def assistant(
         "voice": VOICE,
         "transcriber": TRANSCRIBER,
         "maxDurationSeconds": max_seconds,
+        "startSpeakingPlan": START_SPEAKING,
         "metadata": metadata,
         "server": {"url": hook_url("vapi"), "headers": {"x-vapi-secret": secret} if secret else {}},
         "serverMessages": ["end-of-call-report", "status-update"],

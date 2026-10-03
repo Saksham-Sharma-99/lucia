@@ -28,10 +28,18 @@ from lucia.scheduling.durations import duration
 Outcome = Literal["continued", "awaiting_confirmation", "asked", "cycle_closed", "superseded"]
 DECIDE = """Decide whether this run's whole goal is met, from the task outputs, journal and
 episodes. If it is, cite the step ids that prove it. If not, list the next tasks it needs, or
-none if nothing more can be done."""
+none if nothing more can be done. Judge by what the agent can do and observe (`goal.agent_tools`):
+what a contact confirmed and what a person told the agent (human steps) is proof. Never require
+work no listed tool can do, like opening, reviewing or inventorying documents or checking an
+inbox; the person who confirms completion checks those. Every next task must be doable with
+the listed tools. When `goal.recurs_every_days` is set the run repeats: a finished cycle is not
+the goal met. It is met only when its ongoing purpose has ended (the matter closed, the contact
+opted out, the firm said to stop); otherwise answer not met with no next tasks, which closes
+this cycle and schedules the next."""
 JUDGE = """Independently check this claim that the run's goal is met. Agree only if the task
-outputs support it. Consent, quiet hours and recipient rules are enforced by the platform on
-every send, so don't require evidence of them."""
+outputs support it. A contact's or a person's confirmation is evidence; the agent can't open
+documents, so don't require it to have reviewed them. Consent, quiet hours and recipient rules
+are enforced by the platform on every send, so don't require evidence of them."""
 
 
 class NextTask(BaseModel):
@@ -59,7 +67,12 @@ async def _packet(session: AsyncSession, view: AgentView) -> str:
         "completion",
         {
             "system_prompt": view.config.system_prompt,
-            "goal": {"goal": view.run.goal, "criteria": view.run.completion_criteria},
+            "goal": {
+                "goal": view.run.goal,
+                "criteria": view.run.completion_criteria,
+                "agent_tools": sorted(view.tools),
+                "recurs_every_days": view.config.recurrence and view.config.recurrence.every_days,
+            },
             "timeline": await context.timeline(session, view.subject.id),
             "tasks": await context.tasks_overview(session, view.run.id),
             "episodes": await context.episodes_timeline(session, view.run.id),
@@ -91,6 +104,10 @@ async def check_run(session: AsyncSession, run: AgentRun, epoch: int, key: str) 
     view = await load(session, run)
     message = await _packet(session, view)
     verdict = await _decide(session, view, epoch, message)
+    if view.config.recurrence is not None and (verdict.met or not verdict.next):
+        # A recurring run ends by its round limit, its end conditions or a person, never by a
+        # verdict: a finished round reads as "met" to the model, so it just closes the round.
+        return await _close_cycle(session, view, epoch, key, verdict.reason)
     if verdict.met and not await _cited_ok(session, run, verdict.evidence_step_ids):
         retry = message + "\n\n## your evidence ids were not steps of this run that succeeded"
         verdict = await _decide(session, view, epoch, retry)
@@ -109,8 +126,6 @@ async def check_run(session: AsyncSession, run: AgentRun, epoch: int, key: str) 
         if nxt:
             await session.commit()
             return "continued"
-        if view.config.recurrence is not None:
-            return await _close_cycle(session, view)
         return await _ask(
             session,
             run,
@@ -131,6 +146,24 @@ async def check_run(session: AsyncSession, run: AgentRun, epoch: int, key: str) 
     if not judge.agree:
         why = f"Done? The agent says yes; the check says: {judge.reason}"
         return await _ask(session, run, key, why)
+    return await _await_confirmation(
+        session,
+        run,
+        epoch,
+        key,
+        f"I think this is done: {verdict.reason}",
+        verdict.evidence_step_ids,
+    )
+
+
+async def _await_confirmation(
+    session: AsyncSession,
+    run: AgentRun,
+    epoch: int,
+    key: str,
+    summary: str,
+    evidence_step_ids: list[str],
+) -> Outcome:
     await fence(session, run.id, epoch)  # FOR SHARE until our commit: intake waits on it
     if await _new_work(session, run):
         return "superseded"  # it's answered once that work is done: its triage re-checks
@@ -139,9 +172,9 @@ async def check_run(session: AsyncSession, run: AgentRun, epoch: int, key: str) 
         session,
         run,
         kind="confirm_completion",
-        summary=f"I think this is done: {verdict.reason}",
+        summary=summary,
         dedup_key=f"sr:{run.id}:confirm:{key}",
-        data={"evidence_step_ids": verdict.evidence_step_ids},
+        data={"evidence_step_ids": evidence_step_ids},
         options=[
             {"value": "confirm", "label": "Confirm complete"},
             {"value": "reopen", "label": "Reopen"},
@@ -218,15 +251,21 @@ async def _ask(
     return "asked"
 
 
-async def _close_cycle(session: AsyncSession, view: AgentView) -> Outcome:
+async def _close_cycle(
+    session: AsyncSession, view: AgentView, epoch: int, key: str, reason: str
+) -> Outcome:
     run = view.run
-    assert view.config.recurrence is not None
+    recurrence = view.config.recurrence
+    assert recurrence is not None
     cycle = max(run.cycle, 1) + 1
+    if recurrence.max_cycles is not None and cycle > recurrence.max_cycles:  # the last round
+        done = f"All {recurrence.max_cycles} rounds are done. {reason}"
+        return await _await_confirmation(session, run, epoch, key, done, [])
     await scheduler.schedule(
         session,
         run,
         source="recurrence",
-        due_at=get_clock().now() + duration(view.config.recurrence.every_days, "days"),
+        due_at=get_clock().now() + duration(recurrence.every_days, "days"),
         dedup_key=f"recurrence:{run.id}:{cycle}",
         reason=f"cycle {cycle}",
         metadata={"cycle": cycle},

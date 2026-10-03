@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,8 +28,14 @@ Item kinds:
   and each contact's local time. Wait only for what was asked or needed: quiet hours, consent
   and contact caps are enforced when something is sent, so never plan around them.
 - human: ask a person for something only they can give.
-`uses` lists the ids of earlier items whose output this item needs. New items get ids after
-the existing ones. Respect the policies, consent and opt-outs shown. Keep plans short.
+`uses` lists the ids ("i1", "i2", ...) of earlier items whose output this item needs; your
+new items are numbered from `plan.new_items_start_at`, in order. A wait has no output: never
+use one. An item that reports or summarizes uses every earlier item whose results it covers. A
+follow-up contact uses what earlier contacts learned, and continues from it instead of asking
+again. Respect the policies, consent and opt-outs shown. A person can't waive a policy: never
+ask anyone to approve or override consent, quiet hours, contact caps or opt-outs; plan the
+contact and the platform defers it until it is allowed (a capped call goes out the next day).
+Keep plans short.
 Whatever the firm should hear about (a status, a change, a commitment, a concern) is reported
 with harness.emit_finding; the journal is only the agent's own memory."""
 
@@ -44,6 +50,12 @@ class PlanItemDraft(BaseModel):
     wait_seconds: int | None
     wait_until: str | None
 
+    @field_validator("uses")
+    @classmethod
+    def _item_ids(cls, uses: list[str]) -> list[str]:
+        """The model sometimes writes "1" for "i1"; that intent is unambiguous."""
+        return [f"i{u.strip()}" if u.strip().isdigit() else u.strip() for u in uses]
+
 
 class PlanDraft(BaseModel):
     items: list[PlanItemDraft]
@@ -53,13 +65,17 @@ class CapHit(Exception):
     """The task reached its item or append cap; a human has to look."""
 
 
-def validate(draft: PlanDraft, view: AgentView, existing: int) -> list[str]:
+def validate(draft: PlanDraft, view: AgentView, existing: Sequence[dict[str, Any]]) -> list[str]:
+    """`existing` is the task's stored plan; the draft's items are numbered after it."""
     cap = get_settings().plan_item_cap
-    if existing + len(draft.items) > cap:
+    if len(existing) + len(draft.items) > cap:
         return [f"a task has at most {cap} items"]
     max_wait = view.config.end_conditions.max_duration_days * 86400
+    waits = {i["id"] for i in existing if i["kind"] == "wait"} | {
+        f"i{n}" for n, it in enumerate(draft.items, start=len(existing) + 1) if it.kind == "wait"
+    }
     errors: list[str] = []
-    for n, it in enumerate(draft.items, start=existing + 1):
+    for n, it in enumerate(draft.items, start=len(existing) + 1):
         where = f"item i{n} ({it.title})"
         if it.kind == "tool":
             if not it.tool:
@@ -73,6 +89,7 @@ def validate(draft: PlanDraft, view: AgentView, existing: int) -> list[str]:
             for u in it.uses
             if not u.startswith("i") or not u[1:].isdigit() or not 1 <= int(u[1:]) < n
         ]
+        errors += [f"{where} uses {u}, a wait, which has no output" for u in it.uses if u in waits]
     return errors
 
 
@@ -155,7 +172,7 @@ async def _packet(
             "timeline": await context.timeline(session, view.subject.id),
             "task": {"title": task.title, "goal": task.goal, "input": task.input},
             "dependencies": {d.key: (d.output or {}).get("summary") for d in deps},
-            "plan": task.plan,
+            "plan": {"new_items_start_at": f"i{len(task.plan) + 1}", "items": task.plan},
             "attempts": [a for a in attempts if a],
             "episodes": await context.episodes_timeline(session, view.run.id),
             "journal": {"summary": summary, "recent": entries},
@@ -190,7 +207,7 @@ async def _draft(
             epoch=epoch,
             task_id=task.id,
         )
-        errors = validate(draft, view, existing=len(task.plan))
+        errors = validate(draft, view, existing=task.plan)
         if not errors:
             return draft
         message += "\n\n## errors in your last plan\n" + "\n".join(errors)

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { API, HttpResponse, http, page, server } from "@/test/api";
 import { path, renderApp, screen } from "@/test/app";
 import { isDisabled } from "@/test/dom";
-import { conversation, linkedRun, message } from "@/test/runtime";
+import { conversation, linkedRun, message, stepResult } from "@/test/runtime";
 import { hold, sse } from "@/test/sse";
 
 import { playgroundApi } from "@/test/playground";
@@ -67,6 +67,73 @@ describe("conversation", () => {
     const box = await within(await pane()).findByRole("textbox", { name: "Message" });
     await app.user.type(box, "@checkin first{Shift>}{Enter}{/Shift}second{Enter}");
     await waitFor(() => expect(sent).toEqual([{ body: "@checkin first\nsecond" }]));
+  });
+
+  it("replaces the message box with a prompt while a run in the chat waits on an answer", async () => {
+    chat([
+      message({ id: "m0", actor: "agent", body: "Calling Trevor", run_id: "r1" }),
+      message({
+        id: "m1",
+        actor: "agent",
+        body: "Is Lucia SOC 2?",
+        run_id: "r1",
+        blocks: [{ type: "attention", step_result_id: "q1", kind: "question" }],
+      }),
+    ]);
+    let status = "open";
+    server.use(
+      http.get(`${API}/runs/r1/attention`, () =>
+        HttpResponse.json([stepResult({ id: "q1", run_id: "r1", kind: "question", status })]),
+      ),
+    );
+    const app = await renderApp("/playground/c1");
+    const p = within(await pane());
+    await p.findByText("Answer the open question above to continue");
+    expect(p.queryByRole("textbox", { name: "Message" })).toBeNull();
+    status = "answered";
+    await app.queryClient.invalidateQueries();
+    await p.findByRole("textbox", { name: "Message" });
+    expect(p.queryByText("Answer the open question above to continue")).toBeNull();
+  });
+
+  it("prompts for a question that arrives after the run's attention was loaded", async () => {
+    chat([
+      message({
+        id: "m1",
+        actor: "agent",
+        body: "New question",
+        run_id: "r1",
+        blocks: [{ type: "attention", step_result_id: "q2", kind: "question" }],
+      }),
+    ]);
+    server.use(http.get(`${API}/runs/r1/attention`, () => HttpResponse.json([])));
+    await renderApp("/playground/c1");
+    await within(await pane()).findByText("Answer the open question above to continue");
+  });
+
+  it("a reported finding is read-only and leaves the message box usable", async () => {
+    chat([
+      message({
+        id: "m1",
+        actor: "agent",
+        body: "No additional callback is authorized",
+        run_id: "r1",
+        blocks: [{ type: "finding", step_result_id: "f1", urgency: "P1" }],
+      }),
+      message({
+        id: "m2",
+        actor: "agent",
+        body: "Older finding",
+        run_id: "r1",
+        blocks: [{ type: "attention", step_result_id: "f2", kind: "finding", free_text: true }],
+      }),
+    ]);
+    server.use(http.get(`${API}/runs/r1/attention`, () => HttpResponse.json([])));
+    await renderApp("/playground/c1");
+    const p = within(await pane());
+    expect(await p.findAllByText(/Reported to the firm/)).toHaveLength(2);
+    expect(p.queryByRole("textbox", { name: "Your answer" })).toBeNull();
+    await p.findByRole("textbox", { name: "Message" });
   });
 
   it("@ suggests the firm's agents and inserts the mention", async () => {

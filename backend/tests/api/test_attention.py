@@ -117,6 +117,17 @@ async def test_reopen_needs_text(authed: AsyncClient, db: AsyncSession, clock: F
     assert resp.status_code == 422 and resp.json()["errors"][0]["path"] == "/text"
 
 
+async def test_a_finding_cannot_be_answered(
+    authed: AsyncClient, db: AsyncSession, clock: FrozenClock
+) -> None:
+    _, _, sr = await _item(db, "question")
+    sr.type = "finding"
+    await db.commit()
+    assert (await _answer(authed, sr, text="go ahead")).status_code == 404
+    await db.refresh(sr)
+    assert (sr.status, sr.answer) == ("open", None)
+
+
 async def test_unknown_item_is_404(authed: AsyncClient) -> None:
     resp = await authed.post(f"/api/v1/attention/{ZERO}/answer", json={"text": "x"})
     assert resp.status_code == 404

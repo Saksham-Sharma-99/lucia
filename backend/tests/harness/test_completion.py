@@ -23,11 +23,14 @@ from lucia.llm.fake import FakeLLM
 from tests.world import VOICE_CONFIG, World, make_leased_run, make_task, make_world
 
 
-async def _done(db: AsyncSession, recurring: bool = False) -> tuple[World, AgentRun, AgentRunStep]:
-    config = {**VOICE_CONFIG, "recurrence": {"every_days": 14}} if recurring else VOICE_CONFIG
+async def _done(
+    db: AsyncSession, recurring: bool = False, max_cycles: int | None = None, cycle: int = 0
+) -> tuple[World, AgentRun, AgentRunStep]:
+    every = {"every_days": 14} | ({"max_cycles": max_cycles} if max_cycles else {})
+    config = {**VOICE_CONFIG, "recurrence": every} if recurring else VOICE_CONFIG
     w = await make_world(db, config=config)
     run = await make_leased_run(
-        db, w, goal="Check in with Jane", completion_criteria="A completed call"
+        db, w, goal="Check in with Jane", completion_criteria="A completed call", cycle=cycle
     )
     step = await add_step(
         db,
@@ -247,6 +250,8 @@ async def test_recurring_cycle_closes_silently_and_schedules_the_next(
     wake = await db.scalar(select(Episode).where(Episode.source == "recurrence"))
     assert wake is not None and wake.metadata_["cycle"] == 2
     assert await db.scalar(select(StepResult)) is None
+    # the check is told the run repeats, so a finished cycle isn't read as the goal met
+    assert '"recurs_every_days": 14' in fake_llm.calls[0][1]
 
 
 async def test_confirm_completes_and_reopen_resumes(
@@ -306,3 +311,40 @@ async def test_the_completion_prompt_shows_citable_step_ids(
     fake_llm.on("completion", _met(met=False))
     await check_run(db, run, 1, "t")
     assert str(step.id) in fake_llm.calls[0][1]
+
+
+async def test_rounds_continue_until_max_cycles(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
+) -> None:
+    _, run, _ = await _done(db, recurring=True, max_cycles=2, cycle=1)
+    fake_llm.on("completion", _met(met=False))
+    assert await check_run(db, run, 1, "t") == "cycle_closed"
+    wake = await db.scalar(select(Episode).where(Episode.source == "recurrence"))
+    assert wake is not None and wake.metadata_["cycle"] == 2
+
+
+async def test_the_last_round_asks_to_confirm_instead_of_starting_another(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
+) -> None:
+    _, run, _ = await _done(db, recurring=True, max_cycles=2, cycle=2)
+    fake_llm.on("completion", _met(met=False))
+    assert await check_run(db, run, 1, "t") == "awaiting_confirmation"
+    assert await db.scalar(select(Episode).where(Episode.source == "recurrence")) is None
+    await db.refresh(run)
+    item = await db.scalar(select(StepResult))
+    assert run.status == "AWAITING_CONFIRMATION"
+    assert item is not None and item.kind == "confirm_completion"
+    assert item.summary.startswith("All 2 rounds are done.")
+
+
+async def test_a_recurring_round_judged_met_closes_the_round_instead_of_completing(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
+) -> None:
+    """The model reads a finished round as the goal met; the round limit decides instead."""
+    _, run, step = await _done(db, recurring=True, max_cycles=2)
+    fake_llm.on("completion", _met(str(step.id)))
+    assert await check_run(db, run, 1, "t") == "cycle_closed"
+    wake = await db.scalar(select(Episode).where(Episode.source == "recurrence"))
+    assert wake is not None and wake.metadata_["cycle"] == 2
+    assert await db.scalar(select(StepResult)) is None
+    assert [role for role, *_ in fake_llm.calls] == ["completion"]  # no judge needed

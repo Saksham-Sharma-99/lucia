@@ -63,7 +63,11 @@ async def load(session: AsyncSession, run: AgentRun) -> AgentView:
     mapping = await session.get_one(CompiledAgentFirmMapping, run.mapping_id)
     firm = await session.get_one(Firm, run.firm_id)
     config = VersionConfig.model_validate(prompt.config)
-    names = [t for cap in config.capabilities for t in cap.tools]
+    # Only tools the runtime can run (the registry may list more): one without an
+    # implementation can't be planned, so the planner never sees it.
+    from lucia.harness.exec.tool_executor import IMPLS, OUTBOX
+
+    names = [t for cap in config.capabilities for t in cap.tools if t in OUTBOX or t in IMPLS]
     entries = await session.scalars(
         select(RegistryEntry).where(RegistryEntry.kind == "tool", RegistryEntry.name.in_(names))
     )

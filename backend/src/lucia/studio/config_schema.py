@@ -26,7 +26,7 @@ class Capability(Strict):
 class LadderRung(Strict):
     channel: str | None = None
     action: Literal["escalate", "flag"] | None = None
-    wait_hours: int = Field(ge=0, le=24 * 60)
+    wait_hours: int | float = Field(ge=0, le=24 * 60)  # decimals allowed: 0.1 h = 6 min
     attempts: int = Field(default=1, ge=1, le=10)
     urgency: Urgency | None = None
 
@@ -43,8 +43,8 @@ class EscalateAfter(Strict):
 
 
 class Dynamic(Strict):
-    min_hours: int = Field(ge=1, le=24 * 60)
-    max_hours: int = Field(ge=1, le=24 * 60)
+    min_hours: int | float = Field(gt=0, le=24 * 60)
+    max_hours: int | float = Field(gt=0, le=24 * 60)
     business_hours: bool = True
     channels: list[str] = Field(min_length=1)
     escalate_after: EscalateAfter
@@ -57,7 +57,10 @@ class FollowUp(Strict):
 
 
 class Recurrence(Strict):
-    every_days: int = Field(ge=1, le=365)
+    every_days: int | float = Field(ge=0, le=365)  # decimals allowed: 0.5 = 12 h; 0 = back to back
+    # Stop after this many rounds (then a person confirms completion). Unset: no limit, and not
+    # stored, so versions saved before this field keep their config hash.
+    max_cycles: int | None = Field(default=None, ge=1, le=1000, exclude_if=lambda v: v is None)
 
 
 class EndConditions(Strict):

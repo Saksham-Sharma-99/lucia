@@ -23,12 +23,14 @@ export function dateTime(iso: string | null | undefined): string {
     : "—";
 }
 
-/** 49 -> "2d 1h", 24 -> "1d", 5 -> "5h", 0 -> "now" */
+/** 49 -> "2d 1h", 24 -> "1d", 5 -> "5h", 1.5 -> "1h 30m", 0.1 -> "6m", 0 -> "now" */
 export function hours(h: number): string {
-  if (h === 0) return "now";
-  const d = Math.floor(h / 24);
-  const r = h % 24;
-  return [d && `${d}d`, r && `${r}h`].filter(Boolean).join(" ");
+  const total = Math.round(h * 60);
+  if (total === 0) return "now";
+  const d = Math.floor(total / 1440);
+  const hr = Math.floor((total % 1440) / 60);
+  const m = total % 60;
+  return [d && `${d}d`, hr && `${hr}h`, m && `${m}m`].filter(Boolean).join(" ");
 }
 
 export function initials(text: string): string {

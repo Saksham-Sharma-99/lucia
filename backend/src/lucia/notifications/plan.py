@@ -68,6 +68,8 @@ async def notify(
     }
     if kind == "confirm_completion":
         block = {"type": "run_confirm", "run_id": str(run.id), "step_result_id": str(item_id)}
+    elif kind == "finding":  # a report to read, not a question to answer
+        block = {"type": "finding", "step_result_id": str(item_id), "urgency": urgency}
     await post_run_update(session, run, body=summary, source_id=f"sr:{item_id}", blocks=[block])
     channels = await _channels(session, run, urgency)
     users, slack = await _people(session, run)

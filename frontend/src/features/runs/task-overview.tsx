@@ -230,11 +230,7 @@ function Notes({ notes }: { notes: Note[] }) {
                 new Date(n.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </time>
           </p>
-          {n.detail && (
-            <p className="text-muted-foreground mt-0.5 break-words whitespace-pre-line">
-              {n.detail}
-            </p>
-          )}
+          {n.detail && <Markdown className="text-muted-foreground mt-0.5">{n.detail}</Markdown>}
         </li>
       ))}
     </ol>

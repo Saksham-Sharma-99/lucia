@@ -31,3 +31,12 @@ async def test_instructions_are_the_prompt_without_triggers(db: AsyncSession) ->
     w = await make_world(db)
     view = await load(db, await make_run(db, w))
     assert view.instructions == view.config.system_prompt
+
+
+async def test_only_tools_the_runtime_can_run_are_offered(db: AsyncSession) -> None:
+    email = {"connector": "gmail", "tools": ["gmail.send_email", "gmail.read_thread"]}
+    cfg = {**VOICE_CONFIG, "capabilities": [*VOICE_CONFIG["capabilities"], email]}
+    w = await make_world(db, config=cfg)
+    view = await load(db, await make_run(db, w))
+    assert "vapi.place_call" in view.tools
+    assert not {"gmail.send_email", "gmail.read_thread"} & set(view.tools)

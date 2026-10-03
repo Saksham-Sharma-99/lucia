@@ -27,7 +27,7 @@ async def answer(
     item = await session.scalar(
         select(StepResult).where(StepResult.id == item_id).with_for_update()
     )
-    if item is None:
+    if item is None or item.type != "attention":  # findings are read, not answered
         raise not_found("Attention item")
     if item.status != "open":
         raise conflict("This item was already answered")

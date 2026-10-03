@@ -52,10 +52,14 @@ ROLE_SECTIONS: dict[str, tuple[str, ...]] = {
         "trigger",
     ),
     "relevance": ("task", "plan", "attempts", "trigger"),
+    "asker": ("task", "item", "inputs"),
     "executor": (
         "system_prompt",
         "now",
         "subject",
+        "timeline",
+        "journal",
+        "episodes",
         "task",
         "item",
         "inputs",
@@ -174,6 +178,11 @@ def _episode_line(e: Episode) -> str:
     line += f" {e.status}"
     if e.due_at:
         line += f" due {e.due_at.isoformat()}"
+    if answer := e.metadata_.get("answer"):  # what the person said, so nobody asks it again
+        said = answer.get("text") or answer.get("choice") or ""
+        line += f' (person answered: "{said[:300]}")'
+    elif instruction := e.metadata_.get("instruction"):  # e.g. what to do when reopening
+        line += f' (person said: "{str(instruction)[:300]}")'
     return f"{line} -> {e.outcome}" if e.outcome else line
 
 

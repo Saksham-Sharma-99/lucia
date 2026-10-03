@@ -129,7 +129,16 @@ export function OrchestrationDiagram({
       atFirm?.cadence ? { ...b, lines: [...b.lines, atFirm.cadence] } : b,
     ),
     ...(config.recurrence
-      ? [{ title: `Every ${config.recurrence.every_days} days`, lines: ["starts a new round"] }]
+      ? [
+          {
+            title: `Every ${config.recurrence.every_days} days`,
+            lines: [
+              config.recurrence.max_cycles
+                ? `starts a new round, ${config.recurrence.max_cycles} rounds in all`
+                : "starts a new round",
+            ],
+          },
+        ]
       : []),
   ];
   const reads = tools

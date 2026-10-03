@@ -73,6 +73,8 @@ export function LadderEditor({ channels, disabled }: { channels: Option[]; disab
                 <NumberInput
                   aria-label="Wait in hours"
                   className="w-20"
+                  step="any"
+                  inputMode="decimal"
                   value={r.wait_hours}
                   disabled={disabled}
                   onChange={(v) => setRung(i, { wait_hours: v })}

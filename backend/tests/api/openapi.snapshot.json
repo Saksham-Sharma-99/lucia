@@ -1560,16 +1560,30 @@
             "$ref": "#/components/schemas/EscalateAfter"
           },
           "max_hours": {
-            "maximum": 1440.0,
-            "minimum": 1.0,
-            "title": "Max Hours",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "gt": 0,
+            "le": 1440,
+            "title": "Max Hours"
           },
           "min_hours": {
-            "maximum": 1440.0,
-            "minimum": 1.0,
-            "title": "Min Hours",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "gt": 0,
+            "le": 1440,
+            "title": "Min Hours"
           }
         },
         "required": [
@@ -2412,10 +2426,17 @@
             "title": "Urgency"
           },
           "wait_hours": {
-            "maximum": 1440.0,
-            "minimum": 0.0,
-            "title": "Wait Hours",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "ge": 0,
+            "le": 1440,
+            "title": "Wait Hours"
           }
         },
         "required": [
@@ -3803,10 +3824,30 @@
         "additionalProperties": false,
         "properties": {
           "every_days": {
-            "maximum": 365.0,
-            "minimum": 1.0,
-            "title": "Every Days",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "ge": 0,
+            "le": 365,
+            "title": "Every Days"
+          },
+          "max_cycles": {
+            "anyOf": [
+              {
+                "maximum": 1000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Cycles"
           }
         },
         "required": [
@@ -11500,6 +11541,71 @@
           }
         },
         "summary": "Which platform app registrations are set",
+        "tags": [
+          "internal:platform"
+        ]
+      }
+    },
+    "/api/v1/platform/timezones": {
+      "get": {
+        "operationId": "listTimezones",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response Listtimezones",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validation failed"
+          }
+        },
+        "summary": "IANA timezones to pick from",
         "tags": [
           "internal:platform"
         ]

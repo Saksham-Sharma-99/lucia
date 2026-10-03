@@ -79,14 +79,14 @@ async def test_validation_errors(
 ) -> None:
     w = await make_world(db)
     view = await load(db, await make_leased_run(db, w))
-    errors = validate(_draft(bad), view, existing=0)
+    errors = validate(_draft(bad), view, existing=[])
     assert len(errors) == 1 and error in errors[0]
 
 
 async def test_too_many_items_is_an_error(db: AsyncSession) -> None:
     w = await make_world(db)
     view = await load(db, await make_leased_run(db, w))
-    assert "at most 20" in validate(_draft(*[SCRIPT] * 21), view, existing=0)[0]
+    assert "at most 20" in validate(_draft(*[SCRIPT] * 21), view, existing=[])[0]
 
 
 async def test_invalid_twice_blocks_the_task(
@@ -125,6 +125,7 @@ async def test_append_continues_ids_and_links_superseded_items(
     )
     await db.refresh(task)
     assert new == ["i3", "i4"]
+    assert '"new_items_start_at": "i3"' in fake_llm.calls[0][1]  # the planner needn't count
     assert task.plan[1]["status"] == "SUPERSEDED" and task.plan[1]["superseded_by"] == ["i3", "i4"]
     assert [i["added_in"] for i in task.plan[2:]] == [1, 1]
     assert task.plan_appends == 1
@@ -164,3 +165,27 @@ async def test_the_planner_sees_the_server_time_and_each_contacts_local_time(
     packet = fake_llm.calls[0][1]
     assert "## now" in packet and "2026-10-01T14:00:00+00:00" in packet
     assert '"Jane Doe": "2026-10-01T10:00:00-04:00"' in packet
+
+
+def test_bare_numbers_in_uses_are_item_ids() -> None:
+    draft = _draft(SCRIPT, {**CALL, "uses": ["1", " i1 "]})
+    assert draft.items[1].uses == ["i1", "i1"]
+
+
+WAIT = {"title": "Wait a day", "kind": "wait", "wait_seconds": 86400}
+
+
+async def test_using_a_new_wait_is_an_error(db: AsyncSession, clock: FrozenClock) -> None:
+    w = await make_world(db)
+    view = await load(db, await make_leased_run(db, w))
+    errors = validate(_draft(WAIT, {**SCRIPT, "uses": ["i1"]}), view, existing=[])
+    assert errors == ["item i2 (Draft the call script) uses i1, a wait, which has no output"]
+
+
+async def test_using_an_existing_wait_is_an_error(db: AsyncSession, clock: FrozenClock) -> None:
+    """The planner numbered its new items one short: the extract pointed at the wait."""
+    w = await make_world(db)
+    view = await load(db, await make_leased_run(db, w))
+    plan = [item(1, "tool", status="DONE"), item(2, "wait", status="DONE")]
+    errors = validate(_draft({**SCRIPT, "uses": ["i2"]}), view, existing=plan)
+    assert errors == ["item i3 (Draft the call script) uses i2, a wait, which has no output"]

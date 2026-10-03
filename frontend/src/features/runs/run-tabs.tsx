@@ -14,6 +14,7 @@ import type {
   StepResultOut,
   TaskOut,
 } from "@/api/generated/types.gen";
+import { Markdown } from "@/components/shared/markdown";
 import { EmptyState } from "@/components/shared/empty-state";
 import { QueryState } from "@/components/shared/query-state";
 import { Badge } from "@/components/ui/badge";
@@ -229,7 +230,7 @@ export function JournalView({ journal }: { journal: JournalOut }) {
           <p className="text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase">
             Summary so far
           </p>
-          <p>{journal.summary}</p>
+          <Markdown>{journal.summary}</Markdown>
         </div>
       )}
       <ul className="divide-y rounded-lg border">
@@ -243,7 +244,7 @@ export function JournalView({ journal }: { journal: JournalOut }) {
             >
               {j.source}
             </span>
-            <span className="flex-1">{j.text}</span>
+            <Markdown className="min-w-0 flex-1">{j.text}</Markdown>
             <span className="text-muted-foreground shrink-0 text-xs">
               {relativeTime(j.created_at)}
             </span>
