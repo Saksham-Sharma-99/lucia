@@ -702,3 +702,35 @@ async def test_a_note_at_the_plan_cap_blocks_the_task_instead_of_failing(
     assert task.status == "BLOCKED"
     kinds = await db.scalars(select(StepResult.kind).where(StepResult.task_id == task.id))
     assert list(kinds) == ["plan_cap"]
+
+
+async def test_the_executor_sees_what_earlier_calls_learned(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, tool: FakeTool
+) -> None:
+    """A check-in's script can open with last time's topics: the journal and past findings."""
+    from lucia.harness.journal import append as journal_append
+
+    w, run, task = await _setup(db, [item(1, "tool")])
+    await journal_append(
+        db, run, text="Call Jane: back pain, MRI on Oct 20", source="harness", key="j1"
+    )
+    db.add(
+        StepResult(
+            firm_id=w.firm.id,
+            run_id=run.id,
+            type="finding",
+            kind="treatment",
+            urgency="P2",
+            summary="Jane has an MRI on Oct 20",
+            summary_public="x",
+            status="open",
+            dedup_key="sr:prior",
+        )
+    )
+    await db.commit()
+    fake_llm.on("executor", {"to_contact_id": "x", "script": "s", "first_message": "hi"})
+    tool.results.append(_ok())
+    await execute_task(db, run, task, 1)
+    packet = next(msg for role, msg, *_ in fake_llm.calls if role == "executor")
+    assert "back pain, MRI on Oct 20" in packet  # journal
+    assert "Jane has an MRI on Oct 20" in packet  # timeline

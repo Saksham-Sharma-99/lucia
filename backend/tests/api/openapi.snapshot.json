@@ -3832,7 +3832,7 @@
                 "type": "number"
               }
             ],
-            "gt": 0,
+            "ge": 0,
             "le": 365,
             "title": "Every Days"
           }

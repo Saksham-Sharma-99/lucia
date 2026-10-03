@@ -60,7 +60,7 @@ export const configSchema = z.object({
       escalate_after: z.object({ attempts: z.number().int().min(1).max(20), urgency }),
     }),
   }),
-  recurrence: z.object({ every_days: z.number().positive().max(365) }).nullable(),
+  recurrence: z.object({ every_days: z.number().min(0).max(365) }).nullable(),
   end_conditions: z.object({
     max_duration_days: z.number().int().min(1).max(730),
     max_steps: z.number().int().min(10).max(5000),

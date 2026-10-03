@@ -19,6 +19,7 @@ from lucia.harness.attention import raise_attention
 from lucia.harness.exec import tool_executor
 from lucia.harness.followup import next_rung
 from lucia.harness.journal import append as journal
+from lucia.harness.journal import recent
 from lucia.harness.lease import ensure_lease
 from lucia.harness.plan import item, set_item
 from lucia.harness.planner import CapHit, append, plan_task
@@ -238,12 +239,16 @@ async def _executor_packet(
     session: AsyncSession, view: AgentView, task: RunTask, it: dict[str, Any]
 ) -> str:
     subject = await context.subject_snapshot(session, view.subject)
+    summary, entries = await recent(session, view.run.id)
     return context.packet(
         "executor",
         {
             "system_prompt": view.instructions,
             "now": context.clock(subject),
             "subject": subject,
+            # what earlier calls and cycles learned, so a call can pick up from last time
+            "timeline": await context.timeline(session, view.subject.id),
+            "journal": {"summary": summary, "recent": entries},
             "task": {"title": task.title, "goal": task.goal, "input": task.input},
             "item": {k: it[k] for k in ("title", "input_hint", "expected_output", "tool")},
             "inputs": {u: (item(task, u)["output"] or {}).get("summary") for u in it["uses"]},

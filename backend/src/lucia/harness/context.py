@@ -56,6 +56,8 @@ ROLE_SECTIONS: dict[str, tuple[str, ...]] = {
         "system_prompt",
         "now",
         "subject",
+        "timeline",
+        "journal",
         "task",
         "item",
         "inputs",

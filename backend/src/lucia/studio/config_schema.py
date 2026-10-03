@@ -57,7 +57,7 @@ class FollowUp(Strict):
 
 
 class Recurrence(Strict):
-    every_days: int | float = Field(gt=0, le=365)  # decimals allowed: 0.5 = 12 h
+    every_days: int | float = Field(ge=0, le=365)  # decimals allowed: 0.5 = 12 h; 0 = back to back
 
 
 class EndConditions(Strict):

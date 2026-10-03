@@ -47,8 +47,10 @@ def test_waits_and_recurrence_take_decimals_for_minute_scale_schedules() -> None
     ).stored()
     assert cfg["follow_up"]["ladder"][0]["wait_hours"] == 0.1  # 6 minutes
     assert cfg["recurrence"] == {"every_days": 0.005}  # ~7 minutes
+    back_to_back = VersionConfig.model_validate(config(recurrence={"every_days": 0}))
+    assert back_to_back.stored()["recurrence"] == {"every_days": 0}
     with pytest.raises(ValidationError):
-        VersionConfig.model_validate(config(recurrence={"every_days": 0}))
+        VersionConfig.model_validate(config(recurrence={"every_days": -1}))
 
 
 def test_whole_numbers_stay_ints_so_stored_hashes_dont_change() -> None:
