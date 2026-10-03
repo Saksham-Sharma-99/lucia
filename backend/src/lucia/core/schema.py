@@ -5,7 +5,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict
 
 Urgency = Literal["P0", "P1", "P2"]
-AlertChannel = Literal["slack_dm", "slack_thread", "email", "digest"]
+AlertChannel = Literal["slack_dm", "slack_thread", "email", "digest", "in_app"]
 HHMM = r"^([01]\d|2[0-3]):[0-5]\d$"
 
 

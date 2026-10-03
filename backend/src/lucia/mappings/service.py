@@ -16,11 +16,13 @@ from lucia.db.models import (
 )
 from lucia.db.models.mapping import ONE_ACTIVE_INDEX, MappingStatus
 from lucia.db.queries import apply_patch, get_or_404, unique_or
+from lucia.harness.control import set_kill
 from lucia.mappings import resolve
 from lucia.mappings import schemas as s
 from lucia.mappings.checklist import build_checklist
 from lucia.mappings.tighten import check_overrides
 from lucia.registry.snapshot import load_snapshot
+from lucia.worker.dispatch import send
 
 M = CompiledAgentFirmMapping
 V = AgentPrompt
@@ -135,12 +137,18 @@ async def patch(session: AsyncSession, mapping: M, body: s.MappingPatch) -> M:
         mapping.identities = body.model_dump(mode="json")["identities"]
     if body.overrides is not None:
         mapping.overrides = await _validate_overrides(session, body.overrides, version, firm)
+    resumed: list[uuid.UUID] = []
+    if body.kill_switch is not None and body.kill_switch != mapping.kill_switch:
+        runs = await set_kill(session, mapping.id, body.kill_switch)  # pause within the txn
+        resumed = [] if body.kill_switch else runs
     apply_patch(mapping, body, exclude={"identities", "overrides", "status"})
     status = body.status or mapping.status
     if status == "active":  # re-check whatever changed, before the status is flushed
         await _require_activatable(session, mapping, firm, version)
     mapping.status = status
     await _commit(session)
+    for run_id in resumed:
+        send("harness.advance_run", run_id)
     return mapping
 
 

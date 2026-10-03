@@ -5,11 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from lucia.core.errors import FieldError, conflict, invalid
 from lucia.core.pagination import Page, PageParams, paginate
-from lucia.db.models import AppUser, CompiledAgentFirmMapping, ConnectorConnection, Firm
+from lucia.db.models import CompiledAgentFirmMapping, ConnectorConnection, Firm
 from lucia.db.models.firm import FirmStatus
 from lucia.db.queries import apply_patch, like_pattern, unique_or
 from lucia.firms import schemas as s
-from lucia.mappings.orchestrator import ensure_orchestrator_mapping
 from lucia.registry.snapshot import load_snapshot
 from lucia.studio.validator import validate_policy_refs
 
@@ -51,7 +50,7 @@ async def firm_detail(session: AsyncSession, firm: Firm) -> s.FirmDetail:
     )
 
 
-async def create_firm(session: AsyncSession, body: s.FirmCreate, user: AppUser) -> Firm:
+async def create_firm(session: AsyncSession, body: s.FirmCreate) -> Firm:
     firm = Firm(
         **body.model_dump(exclude={"settings"}),
         settings=await _settings_json(session, body.settings),
@@ -59,7 +58,6 @@ async def create_firm(session: AsyncSession, body: s.FirmCreate, user: AppUser) 
     session.add(firm)
     async with unique_or(session, "firms_slug_key", SLUG_TAKEN):
         await session.flush()
-    await ensure_orchestrator_mapping(session, firm.id, user.id)
     await session.commit()
     return firm
 

@@ -14,6 +14,37 @@ Direction = Literal["inbound", "outbound"]
 RiskTier = Literal["read", "internal_write", "external_comm"]
 
 _TO = {"type": "object", "required": ["to"], "properties": {"to": {"type": "string"}}}
+_TEXT = {
+    "type": "object",
+    "required": ["text"],
+    "properties": {"text": {"type": "string", "minLength": 1, "maxLength": 3000}},
+    "additionalProperties": False,
+}
+_SENT = {"type": "object", "properties": {"ts": {"type": "string"}}}
+_CALL_IN = {
+    "type": "object",
+    "required": ["to_contact_id", "script", "first_message"],
+    "properties": {
+        "to_contact_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The subject contact to call (never a raw number)",
+        },
+        "script": {"type": "string", "minLength": 1, "maxLength": 6000},
+        "first_message": {"type": "string", "minLength": 1, "maxLength": 500},
+        "max_seconds": {"type": "integer", "minimum": 30, "maximum": 900},
+    },
+    "additionalProperties": False,
+}
+_CALL_OUT = {
+    "type": "object",
+    "properties": {
+        "call_id": {"type": "string"},
+        "ended_reason": {"type": "string"},
+        "summary": {"type": "string"},
+        "transcript": {"type": "string"},
+    },
+}
 _CHANNEL = {
     "type": "object",
     "required": ["channel"],
@@ -42,6 +73,9 @@ class Tool:
     is_async: bool = False
     available: bool = True
     params_schema: dict[str, Any] = field(default_factory=dict)  # test inputs
+    # What the runtime model sends and gets back (D27). Empty: not executable at runtime yet.
+    input_schema: dict[str, Any] = field(default_factory=dict)
+    output_schema: dict[str, Any] = field(default_factory=dict)
 
     @property
     def name(self) -> str:
@@ -108,6 +142,8 @@ TOOLS = [
         "Read the messages of a Slack thread.",
         "inbound",
         "read",
+        input_schema={"type": "object", "properties": {}, "additionalProperties": False},
+        output_schema={"type": "object", "properties": {"messages": {"type": "array"}}},
     ),
     Tool(
         "slack",
@@ -117,6 +153,8 @@ TOOLS = [
         "outbound",
         "internal_write",
         params_schema=_CHANNEL,
+        input_schema=_TEXT,
+        output_schema=_SENT,
     ),
     Tool(
         "slack",
@@ -152,6 +190,8 @@ TOOLS = [
             **_TO,
             "properties": {"to": {"type": "string", "pattern": r"^\+[1-9]\d{6,14}$"}},
         },
+        input_schema=_CALL_IN,
+        output_schema=_CALL_OUT,
     ),
     Tool(
         "vapi",
@@ -175,7 +215,7 @@ TOOLS = [
 
 _ROLES = {
     "type": "array",
-    "items": {"type": "string", "enum": ["client", "provider", "insurer", "other"]},
+    "items": {"type": "string", "enum": ["client", "provider", "insurer", "prospect", "other"]},
 }
 _TIME = {"type": "string", "pattern": r"^([01]\d|2[0-3]):[0-5]\d$"}
 

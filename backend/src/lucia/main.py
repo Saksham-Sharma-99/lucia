@@ -10,17 +10,23 @@ from lucia.auth.router import router as auth_router
 from lucia.connectors.hooks import router as hooks_router
 from lucia.connectors.oauth import router as oauth_router
 from lucia.connectors.router import router as connections_router
+from lucia.connectors.slack_interactive import router as slack_interactive_router
+from lucia.conversations.router import router as conversations_router
 from lucia.core.config import get_settings
 from lucia.core.errors import install_error_handlers
 from lucia.db.session import get_sessionmaker
 from lucia.firms.router import router as firms_router
 from lucia.mappings.router import router as mappings_router
+from lucia.notifications.router import router as notifications_router
 from lucia.platform.router import router as platform_router
 from lucia.registry.router import router as registry_router
 from lucia.registry.sync import sync_registry
+from lucia.runs.attention_router import router as attention_router
+from lucia.runs.router import router as runs_router
 from lucia.studio.agents_router import router as agents_router
 from lucia.studio.drafter.router import router as drafts_router
 from lucia.studio.versions_router import router as versions_router
+from lucia.subjects.router import router as subjects_router
 
 API_PREFIX = "/api/v1"
 
@@ -47,6 +53,12 @@ def api_router() -> APIRouter:
         hooks_router,
         mappings_router,
         platform_router,
+        subjects_router,
+        attention_router,
+        conversations_router,
+        notifications_router,
+        runs_router,
+        slack_interactive_router,
     ):
         api.include_router(r)
     return api

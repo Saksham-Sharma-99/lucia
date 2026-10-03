@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryHistory, createRouter } from "@tanstack/react-router";
 import { render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
 
 import { routeTree } from "@/routeTree.gen";
@@ -22,6 +23,15 @@ export async function renderApp(url: string) {
   );
   await router.load();
   return { ...view, router, queryClient, user: userEvent.setup() };
+}
+
+/** Render one component with a fresh query client (no router), against the MSW API. */
+export function renderWithClient(ui: ReactNode) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const view = render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  return { ...view, queryClient, user: userEvent.setup() };
 }
 
 export const path = (router: { state: { location: { pathname: string } } }) =>

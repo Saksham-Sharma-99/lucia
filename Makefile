@@ -33,7 +33,7 @@ db-reset: ## Drop volumes and start fresh
 migrate: ## Apply migrations
 	$(BE) uv run alembic upgrade head
 
-seed: ## Seed users, firms, templates and @orchestrator (idempotent)
+seed: ## Seed users, firms, templates and the runtime demo (idempotent)
 	$(BE) uv run python -m lucia.seeds
 
 migration: ## Create a migration: make migration m="add agents"
@@ -49,7 +49,7 @@ dev-api: ## FastAPI on :8000 (restarts on code or .env changes)
 WATCH := uv run watchfiles --filter default
 
 dev-worker: ## Celery worker, restarts on code or .env changes (threads pool: prefork breaks on macOS spawn)
-	$(BE) $(WATCH) "celery -A lucia.worker.celery_app worker --pool=threads --concurrency=8 --loglevel=INFO" src .env
+	$(BE) $(WATCH) "celery -A lucia.worker.celery_app worker --pool=threads --concurrency=8 -Q interactive,episodes,sched,notify,maintenance,celery --loglevel=INFO" src .env
 
 dev-beat: ## Celery beat, restarts on code or .env changes
 	$(BE) $(WATCH) "celery -A lucia.worker.celery_app beat --loglevel=INFO" src .env
@@ -78,6 +78,9 @@ e2e: ## Browser smoke test against a running `make dev` (E2E_PASSWORD=<seed pass
 
 eval-drafter: ## Drafter evals against the real model (needs OPENAI_API_KEY; costs tokens)
 	$(BE) uv run python -m evals.drafter.run
+
+eval-orchestrator: ## Orchestrator subject + routing evals against the real model (costs tokens)
+	$(BE) uv run python -m evals.orchestrator.run
 
 gen-client: ## Regenerate the TS API client (needs make dev-api running)
 	$(FE) pnpm gen:api

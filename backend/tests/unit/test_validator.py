@@ -4,7 +4,7 @@ import pytest
 
 from lucia.studio.config_schema import VersionConfig
 from lucia.studio.schemas import AgentCreate
-from lucia.studio.templates import ORCHESTRATOR, TEMPLATES
+from lucia.studio.templates import TEMPLATES
 from lucia.studio.validator import validate_config
 from tests.factories import ALLOWED, config, snapshot
 
@@ -18,7 +18,7 @@ def test_base_config_is_valid() -> None:
     assert errors(config()) == []
 
 
-@pytest.mark.parametrize("spec", [*TEMPLATES, ORCHESTRATOR], ids=lambda s: s.handle)
+@pytest.mark.parametrize("spec", TEMPLATES, ids=lambda s: s.handle)
 def test_seeded_agents_are_valid(spec: AgentCreate) -> None:
     assert errors(spec.config.stored()) == []
 

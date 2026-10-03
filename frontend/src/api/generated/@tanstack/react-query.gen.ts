@@ -3,8 +3,8 @@
 import { type DefaultError, type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { activateFirm, archiveAgent, archiveAgentVersion, createAgent, createAgentVersion, createConnection, createConsentLink, createFirm, createMapping, deactivateFirm, deleteConnection, diffAgentVersions, draftAgentSection, duplicateAgent, enableConnectionInbound, getAgent, getAgentVersion, getConnection, getFirm, getHealth, getMapping, getMappingChecklist, getMappingResolved, getMe, getPlatformStatus, gmailHook, googleOauthCallback, listAgents, listAgentVersions, listConnections, listFirms, listMappings, listRegistry, listRegistryConnectors, login, logout, type Options, slackHook, slackOauthCallback, switchMappingVersion, testConnection, unarchiveAgent, unarchiveAgentVersion, updateAgent, updateConnection, updateFirm, updateMapping, validateAgentConfig, vapiHook } from '../sdk.gen';
-import type { ActivateFirmData, ActivateFirmError, ActivateFirmResponse, ArchiveAgentData, ArchiveAgentError, ArchiveAgentResponse, ArchiveAgentVersionData, ArchiveAgentVersionError, ArchiveAgentVersionResponse, CreateAgentData, CreateAgentError, CreateAgentResponse, CreateAgentVersionData, CreateAgentVersionError, CreateAgentVersionResponse, CreateConnectionData, CreateConnectionError, CreateConnectionResponse, CreateConsentLinkData, CreateConsentLinkError, CreateConsentLinkResponse, CreateFirmData, CreateFirmError, CreateFirmResponse, CreateMappingData, CreateMappingError, CreateMappingResponse, DeactivateFirmData, DeactivateFirmError, DeactivateFirmResponse, DeleteConnectionData, DeleteConnectionError, DeleteConnectionResponse, DiffAgentVersionsData, DiffAgentVersionsError, DiffAgentVersionsResponse, DraftAgentSectionData, DraftAgentSectionError, DraftAgentSectionResponse, DuplicateAgentData, DuplicateAgentError, DuplicateAgentResponse, EnableConnectionInboundData, EnableConnectionInboundError, EnableConnectionInboundResponse, GetAgentData, GetAgentError, GetAgentResponse, GetAgentVersionData, GetAgentVersionError, GetAgentVersionResponse, GetConnectionData, GetConnectionError, GetConnectionResponse, GetFirmData, GetFirmError, GetFirmResponse, GetHealthData, GetHealthResponse, GetMappingChecklistData, GetMappingChecklistError, GetMappingChecklistResponse, GetMappingData, GetMappingError, GetMappingResolvedData, GetMappingResolvedError, GetMappingResolvedResponse, GetMappingResponse, GetMeData, GetMeError, GetMeResponse, GetPlatformStatusData, GetPlatformStatusError, GetPlatformStatusResponse, GmailHookData, GmailHookError, GmailHookResponse, GoogleOauthCallbackData, GoogleOauthCallbackError, ListAgentsData, ListAgentsError, ListAgentsResponse, ListAgentVersionsData, ListAgentVersionsError, ListAgentVersionsResponse, ListConnectionsData, ListConnectionsError, ListConnectionsResponse, ListFirmsData, ListFirmsError, ListFirmsResponse, ListMappingsData, ListMappingsError, ListMappingsResponse, ListRegistryConnectorsData, ListRegistryConnectorsError, ListRegistryConnectorsResponse, ListRegistryData, ListRegistryError, ListRegistryResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutError, LogoutResponse, SlackHookData, SlackHookError, SlackHookResponse, SlackOauthCallbackData, SlackOauthCallbackError, SwitchMappingVersionData, SwitchMappingVersionError, SwitchMappingVersionResponse, TestConnectionData, TestConnectionError, TestConnectionResponse, UnarchiveAgentData, UnarchiveAgentError, UnarchiveAgentResponse, UnarchiveAgentVersionData, UnarchiveAgentVersionError, UnarchiveAgentVersionResponse, UpdateAgentData, UpdateAgentError, UpdateAgentResponse, UpdateConnectionData, UpdateConnectionError, UpdateConnectionResponse, UpdateFirmData, UpdateFirmError, UpdateFirmResponse, UpdateMappingData, UpdateMappingError, UpdateMappingResponse, ValidateAgentConfigData, ValidateAgentConfigError, ValidateAgentConfigResponse, VapiHookData, VapiHookError, VapiHookResponse } from '../types.gen';
+import { activateFirm, answerAttention, archiveAgent, archiveAgentVersion, conversationAction, createAgent, createAgentVersion, createConnection, createConsentLink, createContactPoint, createConversation, createFirm, createMapping, createSubject, deactivateFirm, deleteConnection, diffAgentVersions, draftAgentSection, duplicateAgent, enableConnectionInbound, getAgent, getAgentVersion, getConnection, getConversation, getFirm, getHealth, getMapping, getMappingChecklist, getMappingResolved, getMe, getPlatformStatus, getRun, getStepRecording, getSubject, gmailHook, googleOauthCallback, handbackRun, linkSubjectContact, listAgents, listAgentVersions, listConnections, listContactPoints, listConversationRuns, listConversations, listFirms, listMappings, listMentionableAgents, listMessages, listNotifications, listRegistry, listRegistryConnectors, listRunAttention, listRunEpisodes, listRunJournal, listRunLogs, listRuns, listRunSteps, listRunTasks, listSubjectKinds, listSubjects, login, logout, markAllNotificationsRead, markNotificationRead, type Options, renameConversation, sendMessage, slackHook, slackInteractive, slackOauthCallback, switchMappingVersion, takeoverRun, testConnection, unarchiveAgent, unarchiveAgentVersion, unlinkSubjectContact, updateAgent, updateConnection, updateContactPoint, updateFirm, updateMapping, updateSubject, updateSubjectContact, validateAgentConfig, vapiHook } from '../sdk.gen';
+import type { ActivateFirmData, ActivateFirmError, ActivateFirmResponse, AnswerAttentionData, AnswerAttentionError, AnswerAttentionResponse, ArchiveAgentData, ArchiveAgentError, ArchiveAgentResponse, ArchiveAgentVersionData, ArchiveAgentVersionError, ArchiveAgentVersionResponse, ConversationActionData, ConversationActionError, ConversationActionResponse, CreateAgentData, CreateAgentError, CreateAgentResponse, CreateAgentVersionData, CreateAgentVersionError, CreateAgentVersionResponse, CreateConnectionData, CreateConnectionError, CreateConnectionResponse, CreateConsentLinkData, CreateConsentLinkError, CreateConsentLinkResponse, CreateContactPointData, CreateContactPointError, CreateContactPointResponse, CreateConversationData, CreateConversationError, CreateConversationResponse, CreateFirmData, CreateFirmError, CreateFirmResponse, CreateMappingData, CreateMappingError, CreateMappingResponse, CreateSubjectData, CreateSubjectError, CreateSubjectResponse, DeactivateFirmData, DeactivateFirmError, DeactivateFirmResponse, DeleteConnectionData, DeleteConnectionError, DeleteConnectionResponse, DiffAgentVersionsData, DiffAgentVersionsError, DiffAgentVersionsResponse, DraftAgentSectionData, DraftAgentSectionError, DraftAgentSectionResponse, DuplicateAgentData, DuplicateAgentError, DuplicateAgentResponse, EnableConnectionInboundData, EnableConnectionInboundError, EnableConnectionInboundResponse, GetAgentData, GetAgentError, GetAgentResponse, GetAgentVersionData, GetAgentVersionError, GetAgentVersionResponse, GetConnectionData, GetConnectionError, GetConnectionResponse, GetConversationData, GetConversationError, GetConversationResponse, GetFirmData, GetFirmError, GetFirmResponse, GetHealthData, GetHealthResponse, GetMappingChecklistData, GetMappingChecklistError, GetMappingChecklistResponse, GetMappingData, GetMappingError, GetMappingResolvedData, GetMappingResolvedError, GetMappingResolvedResponse, GetMappingResponse, GetMeData, GetMeError, GetMeResponse, GetPlatformStatusData, GetPlatformStatusError, GetPlatformStatusResponse, GetRunData, GetRunError, GetRunResponse, GetStepRecordingData, GetStepRecordingError, GetStepRecordingResponse, GetSubjectData, GetSubjectError, GetSubjectResponse, GmailHookData, GmailHookError, GmailHookResponse, GoogleOauthCallbackData, GoogleOauthCallbackError, HandbackRunData, HandbackRunError, HandbackRunResponse, LinkSubjectContactData, LinkSubjectContactError, LinkSubjectContactResponse, ListAgentsData, ListAgentsError, ListAgentsResponse, ListAgentVersionsData, ListAgentVersionsError, ListAgentVersionsResponse, ListConnectionsData, ListConnectionsError, ListConnectionsResponse, ListContactPointsData, ListContactPointsError, ListContactPointsResponse, ListConversationRunsData, ListConversationRunsError, ListConversationRunsResponse, ListConversationsData, ListConversationsError, ListConversationsResponse, ListFirmsData, ListFirmsError, ListFirmsResponse, ListMappingsData, ListMappingsError, ListMappingsResponse, ListMentionableAgentsData, ListMentionableAgentsError, ListMentionableAgentsResponse, ListMessagesData, ListMessagesError, ListMessagesResponse, ListNotificationsData, ListNotificationsError, ListNotificationsResponse, ListRegistryConnectorsData, ListRegistryConnectorsError, ListRegistryConnectorsResponse, ListRegistryData, ListRegistryError, ListRegistryResponse, ListRunAttentionData, ListRunAttentionError, ListRunAttentionResponse, ListRunEpisodesData, ListRunEpisodesError, ListRunEpisodesResponse, ListRunJournalData, ListRunJournalError, ListRunJournalResponse, ListRunLogsData, ListRunLogsError, ListRunLogsResponse, ListRunsData, ListRunsError, ListRunsResponse, ListRunStepsData, ListRunStepsError, ListRunStepsResponse, ListRunTasksData, ListRunTasksError, ListRunTasksResponse, ListSubjectKindsData, ListSubjectKindsError, ListSubjectKindsResponse, ListSubjectsData, ListSubjectsError, ListSubjectsResponse, LoginData, LoginError, LoginResponse, LogoutData, LogoutError, LogoutResponse, MarkAllNotificationsReadData, MarkAllNotificationsReadError, MarkAllNotificationsReadResponse, MarkNotificationReadData, MarkNotificationReadError, MarkNotificationReadResponse, RenameConversationData, RenameConversationError, RenameConversationResponse, SendMessageData, SendMessageError, SendMessageResponse, SlackHookData, SlackHookError, SlackHookResponse, SlackInteractiveData, SlackInteractiveError, SlackInteractiveResponse, SlackOauthCallbackData, SlackOauthCallbackError, SwitchMappingVersionData, SwitchMappingVersionError, SwitchMappingVersionResponse, TakeoverRunData, TakeoverRunError, TakeoverRunResponse, TestConnectionData, TestConnectionError, TestConnectionResponse, UnarchiveAgentData, UnarchiveAgentError, UnarchiveAgentResponse, UnarchiveAgentVersionData, UnarchiveAgentVersionError, UnarchiveAgentVersionResponse, UnlinkSubjectContactData, UnlinkSubjectContactError, UnlinkSubjectContactResponse, UpdateAgentData, UpdateAgentError, UpdateAgentResponse, UpdateConnectionData, UpdateConnectionError, UpdateConnectionResponse, UpdateContactPointData, UpdateContactPointError, UpdateContactPointResponse, UpdateFirmData, UpdateFirmError, UpdateFirmResponse, UpdateMappingData, UpdateMappingError, UpdateMappingResponse, UpdateSubjectContactData, UpdateSubjectContactError, UpdateSubjectContactResponse, UpdateSubjectData, UpdateSubjectError, UpdateSubjectResponse, ValidateAgentConfigData, ValidateAgentConfigError, ValidateAgentConfigResponse, VapiHookData, VapiHookError, VapiHookResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -187,7 +187,7 @@ export const listFirmsInfiniteOptions = (options?: Options<ListFirmsData>) => {
 };
 
 /**
- * Create a firm (and its inactive @orchestrator mapping)
+ * Create a firm
  */
 export const createFirmMutation = (options?: Partial<Options<CreateFirmData>>): UseMutationOptions<CreateFirmResponse, CreateFirmError, Options<CreateFirmData>> => {
     const mutationOptions: UseMutationOptions<CreateFirmResponse, CreateFirmError, Options<CreateFirmData>> = {
@@ -995,3 +995,784 @@ export const getPlatformStatusOptions = (options?: Options<GetPlatformStatusData
     },
     queryKey: getPlatformStatusQueryKey(options)
 });
+
+export const listSubjectsQueryKey = (options: Options<ListSubjectsData>) => createQueryKey('listSubjects', options);
+
+/**
+ * List a firm's subjects
+ */
+export const listSubjectsOptions = (options: Options<ListSubjectsData>) => queryOptions<ListSubjectsResponse, ListSubjectsError, ListSubjectsResponse, ReturnType<typeof listSubjectsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listSubjects({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listSubjectsQueryKey(options)
+});
+
+export const listSubjectsInfiniteQueryKey = (options: Options<ListSubjectsData>): QueryKey<Options<ListSubjectsData>> => createQueryKey('listSubjects', options, true);
+
+/**
+ * List a firm's subjects
+ */
+export const listSubjectsInfiniteOptions = (options: Options<ListSubjectsData>) => {
+    const opts = infiniteQueryOptions<ListSubjectsResponse, ListSubjectsError, InfiniteData<ListSubjectsResponse>, QueryKey<Options<ListSubjectsData>>, number | Pick<QueryKey<Options<ListSubjectsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListSubjectsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listSubjects({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listSubjectsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Create a subject
+ */
+export const createSubjectMutation = (options?: Partial<Options<CreateSubjectData>>): UseMutationOptions<CreateSubjectResponse, CreateSubjectError, Options<CreateSubjectData>> => {
+    const mutationOptions: UseMutationOptions<CreateSubjectResponse, CreateSubjectError, Options<CreateSubjectData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createSubject({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listSubjectKindsQueryKey = (options: Options<ListSubjectKindsData>) => createQueryKey('listSubjectKinds', options);
+
+/**
+ * The subject kinds a firm uses
+ */
+export const listSubjectKindsOptions = (options: Options<ListSubjectKindsData>) => queryOptions<ListSubjectKindsResponse, ListSubjectKindsError, ListSubjectKindsResponse, ReturnType<typeof listSubjectKindsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listSubjectKinds({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listSubjectKindsQueryKey(options)
+});
+
+export const getSubjectQueryKey = (options: Options<GetSubjectData>) => createQueryKey('getSubject', options);
+
+/**
+ * Get a subject
+ */
+export const getSubjectOptions = (options: Options<GetSubjectData>) => queryOptions<GetSubjectResponse, GetSubjectError, GetSubjectResponse, ReturnType<typeof getSubjectQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getSubject({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getSubjectQueryKey(options)
+});
+
+/**
+ * Update a subject
+ */
+export const updateSubjectMutation = (options?: Partial<Options<UpdateSubjectData>>): UseMutationOptions<UpdateSubjectResponse, UpdateSubjectError, Options<UpdateSubjectData>> => {
+    const mutationOptions: UseMutationOptions<UpdateSubjectResponse, UpdateSubjectError, Options<UpdateSubjectData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateSubject({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listContactPointsQueryKey = (options: Options<ListContactPointsData>) => createQueryKey('listContactPoints', options);
+
+/**
+ * List a firm's contact points
+ */
+export const listContactPointsOptions = (options: Options<ListContactPointsData>) => queryOptions<ListContactPointsResponse, ListContactPointsError, ListContactPointsResponse, ReturnType<typeof listContactPointsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listContactPoints({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listContactPointsQueryKey(options)
+});
+
+export const listContactPointsInfiniteQueryKey = (options: Options<ListContactPointsData>): QueryKey<Options<ListContactPointsData>> => createQueryKey('listContactPoints', options, true);
+
+/**
+ * List a firm's contact points
+ */
+export const listContactPointsInfiniteOptions = (options: Options<ListContactPointsData>) => {
+    const opts = infiniteQueryOptions<ListContactPointsResponse, ListContactPointsError, InfiniteData<ListContactPointsResponse>, QueryKey<Options<ListContactPointsData>>, number | Pick<QueryKey<Options<ListContactPointsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListContactPointsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listContactPoints({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listContactPointsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Create a contact point
+ */
+export const createContactPointMutation = (options?: Partial<Options<CreateContactPointData>>): UseMutationOptions<CreateContactPointResponse, CreateContactPointError, Options<CreateContactPointData>> => {
+    const mutationOptions: UseMutationOptions<CreateContactPointResponse, CreateContactPointError, Options<CreateContactPointData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createContactPoint({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Update a contact point (clearing an opt-out needs a reason)
+ */
+export const updateContactPointMutation = (options?: Partial<Options<UpdateContactPointData>>): UseMutationOptions<UpdateContactPointResponse, UpdateContactPointError, Options<UpdateContactPointData>> => {
+    const mutationOptions: UseMutationOptions<UpdateContactPointResponse, UpdateContactPointError, Options<UpdateContactPointData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateContactPoint({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Link a contact point to a subject with a role
+ */
+export const linkSubjectContactMutation = (options?: Partial<Options<LinkSubjectContactData>>): UseMutationOptions<LinkSubjectContactResponse, LinkSubjectContactError, Options<LinkSubjectContactData>> => {
+    const mutationOptions: UseMutationOptions<LinkSubjectContactResponse, LinkSubjectContactError, Options<LinkSubjectContactData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await linkSubjectContact({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Unlink a contact from a subject
+ */
+export const unlinkSubjectContactMutation = (options?: Partial<Options<UnlinkSubjectContactData>>): UseMutationOptions<UnlinkSubjectContactResponse, UnlinkSubjectContactError, Options<UnlinkSubjectContactData>> => {
+    const mutationOptions: UseMutationOptions<UnlinkSubjectContactResponse, UnlinkSubjectContactError, Options<UnlinkSubjectContactData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await unlinkSubjectContact({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Change a contact's role or consent on a subject
+ */
+export const updateSubjectContactMutation = (options?: Partial<Options<UpdateSubjectContactData>>): UseMutationOptions<UpdateSubjectContactResponse, UpdateSubjectContactError, Options<UpdateSubjectContactData>> => {
+    const mutationOptions: UseMutationOptions<UpdateSubjectContactResponse, UpdateSubjectContactError, Options<UpdateSubjectContactData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateSubjectContact({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Answer an attention item (first answer wins)
+ */
+export const answerAttentionMutation = (options?: Partial<Options<AnswerAttentionData>>): UseMutationOptions<AnswerAttentionResponse, AnswerAttentionError, Options<AnswerAttentionData>> => {
+    const mutationOptions: UseMutationOptions<AnswerAttentionResponse, AnswerAttentionError, Options<AnswerAttentionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await answerAttention({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listConversationsQueryKey = (options: Options<ListConversationsData>) => createQueryKey('listConversations', options);
+
+/**
+ * List a firm's playground chats
+ */
+export const listConversationsOptions = (options: Options<ListConversationsData>) => queryOptions<ListConversationsResponse, ListConversationsError, ListConversationsResponse, ReturnType<typeof listConversationsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listConversations({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listConversationsQueryKey(options)
+});
+
+export const listConversationsInfiniteQueryKey = (options: Options<ListConversationsData>): QueryKey<Options<ListConversationsData>> => createQueryKey('listConversations', options, true);
+
+/**
+ * List a firm's playground chats
+ */
+export const listConversationsInfiniteOptions = (options: Options<ListConversationsData>) => {
+    const opts = infiniteQueryOptions<ListConversationsResponse, ListConversationsError, InfiniteData<ListConversationsResponse>, QueryKey<Options<ListConversationsData>>, number | Pick<QueryKey<Options<ListConversationsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListConversationsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listConversations({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listConversationsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Start a playground chat
+ */
+export const createConversationMutation = (options?: Partial<Options<CreateConversationData>>): UseMutationOptions<CreateConversationResponse, CreateConversationError, Options<CreateConversationData>> => {
+    const mutationOptions: UseMutationOptions<CreateConversationResponse, CreateConversationError, Options<CreateConversationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createConversation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getConversationQueryKey = (options: Options<GetConversationData>) => createQueryKey('getConversation', options);
+
+/**
+ * Get a chat
+ */
+export const getConversationOptions = (options: Options<GetConversationData>) => queryOptions<GetConversationResponse, GetConversationError, GetConversationResponse, ReturnType<typeof getConversationQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getConversation({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getConversationQueryKey(options)
+});
+
+/**
+ * Rename a chat
+ */
+export const renameConversationMutation = (options?: Partial<Options<RenameConversationData>>): UseMutationOptions<RenameConversationResponse, RenameConversationError, Options<RenameConversationData>> => {
+    const mutationOptions: UseMutationOptions<RenameConversationResponse, RenameConversationError, Options<RenameConversationData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await renameConversation({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listMessagesQueryKey = (options: Options<ListMessagesData>) => createQueryKey('listMessages', options);
+
+/**
+ * A chat's messages, oldest first
+ */
+export const listMessagesOptions = (options: Options<ListMessagesData>) => queryOptions<ListMessagesResponse, ListMessagesError, ListMessagesResponse, ReturnType<typeof listMessagesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listMessages({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listMessagesQueryKey(options)
+});
+
+export const listMessagesInfiniteQueryKey = (options: Options<ListMessagesData>): QueryKey<Options<ListMessagesData>> => createQueryKey('listMessages', options, true);
+
+/**
+ * A chat's messages, oldest first
+ */
+export const listMessagesInfiniteOptions = (options: Options<ListMessagesData>) => {
+    const opts = infiniteQueryOptions<ListMessagesResponse, ListMessagesError, InfiniteData<ListMessagesResponse>, QueryKey<Options<ListMessagesData>>, number | Pick<QueryKey<Options<ListMessagesData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListMessagesData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listMessages({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listMessagesInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Send a message (the orchestrator handles it in the background)
+ */
+export const sendMessageMutation = (options?: Partial<Options<SendMessageData>>): UseMutationOptions<SendMessageResponse, SendMessageError, Options<SendMessageData>> => {
+    const mutationOptions: UseMutationOptions<SendMessageResponse, SendMessageError, Options<SendMessageData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await sendMessage({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Answer the chat's pending choice (subject, agent) or retry a message
+ */
+export const conversationActionMutation = (options?: Partial<Options<ConversationActionData>>): UseMutationOptions<ConversationActionResponse, ConversationActionError, Options<ConversationActionData>> => {
+    const mutationOptions: UseMutationOptions<ConversationActionResponse, ConversationActionError, Options<ConversationActionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await conversationAction({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listConversationRunsQueryKey = (options: Options<ListConversationRunsData>) => createQueryKey('listConversationRuns', options);
+
+/**
+ * Agent runs this chat is linked to
+ */
+export const listConversationRunsOptions = (options: Options<ListConversationRunsData>) => queryOptions<ListConversationRunsResponse, ListConversationRunsError, ListConversationRunsResponse, ReturnType<typeof listConversationRunsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listConversationRuns({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listConversationRunsQueryKey(options)
+});
+
+export const listMentionableAgentsQueryKey = (options: Options<ListMentionableAgentsData>) => createQueryKey('listMentionableAgents', options);
+
+/**
+ * Agents that can be @mentioned at a firm
+ */
+export const listMentionableAgentsOptions = (options: Options<ListMentionableAgentsData>) => queryOptions<ListMentionableAgentsResponse, ListMentionableAgentsError, ListMentionableAgentsResponse, ReturnType<typeof listMentionableAgentsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listMentionableAgents({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listMentionableAgentsQueryKey(options)
+});
+
+export const listNotificationsQueryKey = (options?: Options<ListNotificationsData>) => createQueryKey('listNotifications', options);
+
+/**
+ * My in-app notifications, newest first
+ */
+export const listNotificationsOptions = (options?: Options<ListNotificationsData>) => queryOptions<ListNotificationsResponse, ListNotificationsError, ListNotificationsResponse, ReturnType<typeof listNotificationsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listNotifications({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listNotificationsQueryKey(options)
+});
+
+/**
+ * Mark a notification read
+ */
+export const markNotificationReadMutation = (options?: Partial<Options<MarkNotificationReadData>>): UseMutationOptions<MarkNotificationReadResponse, MarkNotificationReadError, Options<MarkNotificationReadData>> => {
+    const mutationOptions: UseMutationOptions<MarkNotificationReadResponse, MarkNotificationReadError, Options<MarkNotificationReadData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await markNotificationRead({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Mark all my notifications read
+ */
+export const markAllNotificationsReadMutation = (options?: Partial<Options<MarkAllNotificationsReadData>>): UseMutationOptions<MarkAllNotificationsReadResponse, MarkAllNotificationsReadError, Options<MarkAllNotificationsReadData>> => {
+    const mutationOptions: UseMutationOptions<MarkAllNotificationsReadResponse, MarkAllNotificationsReadError, Options<MarkAllNotificationsReadData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await markAllNotificationsRead({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const listRunsQueryKey = (options: Options<ListRunsData>) => createQueryKey('listRuns', options);
+
+/**
+ * List a firm's agent runs
+ */
+export const listRunsOptions = (options: Options<ListRunsData>) => queryOptions<ListRunsResponse, ListRunsError, ListRunsResponse, ReturnType<typeof listRunsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listRuns({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listRunsQueryKey(options)
+});
+
+export const listRunsInfiniteQueryKey = (options: Options<ListRunsData>): QueryKey<Options<ListRunsData>> => createQueryKey('listRuns', options, true);
+
+/**
+ * List a firm's agent runs
+ */
+export const listRunsInfiniteOptions = (options: Options<ListRunsData>) => {
+    const opts = infiniteQueryOptions<ListRunsResponse, ListRunsError, InfiniteData<ListRunsResponse>, QueryKey<Options<ListRunsData>>, number | Pick<QueryKey<Options<ListRunsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<ListRunsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await listRuns({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: listRunsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const getRunQueryKey = (options: Options<GetRunData>) => createQueryKey('getRun', options);
+
+/**
+ * Get a run
+ */
+export const getRunOptions = (options: Options<GetRunData>) => queryOptions<GetRunResponse, GetRunError, GetRunResponse, ReturnType<typeof getRunQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRun({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRunQueryKey(options)
+});
+
+export const listRunTasksQueryKey = (options: Options<ListRunTasksData>) => createQueryKey('listRunTasks', options);
+
+/**
+ * A run's tasks with plans
+ */
+export const listRunTasksOptions = (options: Options<ListRunTasksData>) => queryOptions<ListRunTasksResponse, ListRunTasksError, ListRunTasksResponse, ReturnType<typeof listRunTasksQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listRunTasks({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listRunTasksQueryKey(options)
+});
+
+export const listRunStepsQueryKey = (options: Options<ListRunStepsData>) => createQueryKey('listRunSteps', options);
+
+/**
+ * A run's executed steps
+ */
+export const listRunStepsOptions = (options: Options<ListRunStepsData>) => queryOptions<ListRunStepsResponse, ListRunStepsError, ListRunStepsResponse, ReturnType<typeof listRunStepsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listRunSteps({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listRunStepsQueryKey(options)
+});
+
+export const getStepRecordingQueryKey = (options: Options<GetStepRecordingData>) => createQueryKey('getStepRecording', options);
+
+/**
+ * A fresh link to a call step's recording
+ */
+export const getStepRecordingOptions = (options: Options<GetStepRecordingData>) => queryOptions<GetStepRecordingResponse, GetStepRecordingError, GetStepRecordingResponse, ReturnType<typeof getStepRecordingQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getStepRecording({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getStepRecordingQueryKey(options)
+});
+
+export const listRunLogsQueryKey = (options: Options<ListRunLogsData>) => createQueryKey('listRunLogs', options);
+
+/**
+ * A run's redacted logs
+ */
+export const listRunLogsOptions = (options: Options<ListRunLogsData>) => queryOptions<ListRunLogsResponse, ListRunLogsError, ListRunLogsResponse, ReturnType<typeof listRunLogsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listRunLogs({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listRunLogsQueryKey(options)
+});
+
+export const listRunEpisodesQueryKey = (options: Options<ListRunEpisodesData>) => createQueryKey('listRunEpisodes', options);
+
+/**
+ * A run's episodes
+ */
+export const listRunEpisodesOptions = (options: Options<ListRunEpisodesData>) => queryOptions<ListRunEpisodesResponse, ListRunEpisodesError, ListRunEpisodesResponse, ReturnType<typeof listRunEpisodesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listRunEpisodes({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listRunEpisodesQueryKey(options)
+});
+
+export const listRunJournalQueryKey = (options: Options<ListRunJournalData>) => createQueryKey('listRunJournal', options);
+
+/**
+ * A run's journal
+ */
+export const listRunJournalOptions = (options: Options<ListRunJournalData>) => queryOptions<ListRunJournalResponse, ListRunJournalError, ListRunJournalResponse, ReturnType<typeof listRunJournalQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listRunJournal({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listRunJournalQueryKey(options)
+});
+
+export const listRunAttentionQueryKey = (options: Options<ListRunAttentionData>) => createQueryKey('listRunAttention', options);
+
+/**
+ * A run's attention items
+ */
+export const listRunAttentionOptions = (options: Options<ListRunAttentionData>) => queryOptions<ListRunAttentionResponse, ListRunAttentionError, ListRunAttentionResponse, ReturnType<typeof listRunAttentionQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await listRunAttention({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: listRunAttentionQueryKey(options)
+});
+
+/**
+ * Take over a run (pauses the agent)
+ */
+export const takeoverRunMutation = (options?: Partial<Options<TakeoverRunData>>): UseMutationOptions<TakeoverRunResponse, TakeoverRunError, Options<TakeoverRunData>> => {
+    const mutationOptions: UseMutationOptions<TakeoverRunResponse, TakeoverRunError, Options<TakeoverRunData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await takeoverRun({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Hand a run back to its agent
+ */
+export const handbackRunMutation = (options?: Partial<Options<HandbackRunData>>): UseMutationOptions<HandbackRunResponse, HandbackRunError, Options<HandbackRunData>> => {
+    const mutationOptions: UseMutationOptions<HandbackRunResponse, HandbackRunError, Options<HandbackRunData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await handbackRun({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Slack button clicks
+ */
+export const slackInteractiveMutation = (options?: Partial<Options<SlackInteractiveData>>): UseMutationOptions<SlackInteractiveResponse, SlackInteractiveError, Options<SlackInteractiveData>> => {
+    const mutationOptions: UseMutationOptions<SlackInteractiveResponse, SlackInteractiveError, Options<SlackInteractiveData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await slackInteractive({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};

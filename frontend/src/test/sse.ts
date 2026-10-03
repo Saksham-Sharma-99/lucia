@@ -7,17 +7,24 @@ export function hold() {
   return { held: new Promise<void>((r) => (release = r)), release: () => release() };
 }
 
-/** An SSE reply with `events` (sent after `after`), then ending, or dropping when `broken`. */
+/**
+ * An SSE reply with `events` (sent after `after`), then ending, or dropping when `broken`.
+ * `event` names them, as named SSE events (`event: progress`).
+ */
 export const sse = (
   events: object[],
-  { after, broken }: { after?: Promise<void>; broken?: boolean } = {},
+  { after, broken, event }: { after?: Promise<void>; broken?: boolean; event?: string } = {},
 ) =>
   new HttpResponse(
     new ReadableStream({
       async start(c) {
         await after;
         for (const e of events)
-          c.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(e)}\n\n`));
+          c.enqueue(
+            new TextEncoder().encode(
+              `${event ? `event: ${event}\n` : ""}data: ${JSON.stringify(e)}\n\n`,
+            ),
+          );
         if (broken) c.error(new Error("connection reset"));
         else c.close();
       },

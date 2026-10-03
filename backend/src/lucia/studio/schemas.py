@@ -2,14 +2,23 @@ import uuid
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import AfterValidator, Field
 
 from lucia.core.errors import FieldError
 from lucia.core.schema import Read, Strict
 from lucia.db.models.agent import VersionPolicy, VersionStatus
 from lucia.studio.config_schema import VersionConfig
 
-Handle = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_-]{2,31}$")]
+RESERVED_HANDLES = frozenset({"orchestrator"})  # the platform router's name in chat (D1)
+
+
+def _not_reserved(handle: str) -> str:
+    if handle in RESERVED_HANDLES:
+        raise ValueError(f"@{handle} is reserved")
+    return handle
+
+
+Handle = Annotated[str, Field(pattern=r"^[a-z][a-z0-9_-]{2,31}$"), AfterValidator(_not_reserved)]
 Name = Annotated[str, Field(min_length=1, max_length=120)]
 Text = Annotated[str, Field(max_length=2000)]
 UseCases = Annotated[list[str], Field(max_length=20)]

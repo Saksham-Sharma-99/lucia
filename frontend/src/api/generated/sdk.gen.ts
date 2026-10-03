@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, ServerSentEventsResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { ActivateFirmData, ActivateFirmErrors, ActivateFirmResponses, ArchiveAgentData, ArchiveAgentErrors, ArchiveAgentResponses, ArchiveAgentVersionData, ArchiveAgentVersionErrors, ArchiveAgentVersionResponses, CreateAgentData, CreateAgentErrors, CreateAgentResponses, CreateAgentVersionData, CreateAgentVersionErrors, CreateAgentVersionResponses, CreateConnectionData, CreateConnectionErrors, CreateConnectionResponses, CreateConsentLinkData, CreateConsentLinkErrors, CreateConsentLinkResponses, CreateFirmData, CreateFirmErrors, CreateFirmResponses, CreateMappingData, CreateMappingErrors, CreateMappingResponses, DeactivateFirmData, DeactivateFirmErrors, DeactivateFirmResponses, DeleteConnectionData, DeleteConnectionErrors, DeleteConnectionResponses, DiffAgentVersionsData, DiffAgentVersionsErrors, DiffAgentVersionsResponses, DraftAgentPromptData, DraftAgentPromptErrors, DraftAgentPromptResponses, DraftAgentSectionData, DraftAgentSectionErrors, DraftAgentSectionResponses, DuplicateAgentData, DuplicateAgentErrors, DuplicateAgentResponses, EnableConnectionInboundData, EnableConnectionInboundErrors, EnableConnectionInboundResponses, GetAgentData, GetAgentErrors, GetAgentResponses, GetAgentVersionData, GetAgentVersionErrors, GetAgentVersionResponses, GetConnectionData, GetConnectionErrors, GetConnectionResponses, GetFirmData, GetFirmErrors, GetFirmResponses, GetHealthData, GetHealthResponses, GetMappingChecklistData, GetMappingChecklistErrors, GetMappingChecklistResponses, GetMappingData, GetMappingErrors, GetMappingResolvedData, GetMappingResolvedErrors, GetMappingResolvedResponses, GetMappingResponses, GetMeData, GetMeErrors, GetMeResponses, GetPlatformStatusData, GetPlatformStatusErrors, GetPlatformStatusResponses, GmailHookData, GmailHookErrors, GmailHookResponses, GoogleOauthCallbackData, GoogleOauthCallbackErrors, GoogleOauthCallbackResponses, ListAgentsData, ListAgentsErrors, ListAgentsResponses, ListAgentVersionsData, ListAgentVersionsErrors, ListAgentVersionsResponses, ListConnectionsData, ListConnectionsErrors, ListConnectionsResponses, ListFirmsData, ListFirmsErrors, ListFirmsResponses, ListMappingsData, ListMappingsErrors, ListMappingsResponses, ListRegistryConnectorsData, ListRegistryConnectorsErrors, ListRegistryConnectorsResponses, ListRegistryData, ListRegistryErrors, ListRegistryResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutErrors, LogoutResponses, SlackHookData, SlackHookErrors, SlackHookResponses, SlackOauthCallbackData, SlackOauthCallbackErrors, SlackOauthCallbackResponses, SwitchMappingVersionData, SwitchMappingVersionErrors, SwitchMappingVersionResponses, TestConnectionData, TestConnectionErrors, TestConnectionResponses, UnarchiveAgentData, UnarchiveAgentErrors, UnarchiveAgentResponses, UnarchiveAgentVersionData, UnarchiveAgentVersionErrors, UnarchiveAgentVersionResponses, UpdateAgentData, UpdateAgentErrors, UpdateAgentResponses, UpdateConnectionData, UpdateConnectionErrors, UpdateConnectionResponses, UpdateFirmData, UpdateFirmErrors, UpdateFirmResponses, UpdateMappingData, UpdateMappingErrors, UpdateMappingResponses, ValidateAgentConfigData, ValidateAgentConfigErrors, ValidateAgentConfigResponses, VapiHookData, VapiHookErrors, VapiHookResponses } from './types.gen';
+import type { ActivateFirmData, ActivateFirmErrors, ActivateFirmResponses, AnswerAttentionData, AnswerAttentionErrors, AnswerAttentionResponses, ArchiveAgentData, ArchiveAgentErrors, ArchiveAgentResponses, ArchiveAgentVersionData, ArchiveAgentVersionErrors, ArchiveAgentVersionResponses, ConversationActionData, ConversationActionErrors, ConversationActionResponses, ConversationEventsData, ConversationEventsErrors, ConversationEventsResponses, CreateAgentData, CreateAgentErrors, CreateAgentResponses, CreateAgentVersionData, CreateAgentVersionErrors, CreateAgentVersionResponses, CreateConnectionData, CreateConnectionErrors, CreateConnectionResponses, CreateConsentLinkData, CreateConsentLinkErrors, CreateConsentLinkResponses, CreateContactPointData, CreateContactPointErrors, CreateContactPointResponses, CreateConversationData, CreateConversationErrors, CreateConversationResponses, CreateFirmData, CreateFirmErrors, CreateFirmResponses, CreateMappingData, CreateMappingErrors, CreateMappingResponses, CreateSubjectData, CreateSubjectErrors, CreateSubjectResponses, DeactivateFirmData, DeactivateFirmErrors, DeactivateFirmResponses, DeleteConnectionData, DeleteConnectionErrors, DeleteConnectionResponses, DiffAgentVersionsData, DiffAgentVersionsErrors, DiffAgentVersionsResponses, DraftAgentPromptData, DraftAgentPromptErrors, DraftAgentPromptResponses, DraftAgentSectionData, DraftAgentSectionErrors, DraftAgentSectionResponses, DuplicateAgentData, DuplicateAgentErrors, DuplicateAgentResponses, EnableConnectionInboundData, EnableConnectionInboundErrors, EnableConnectionInboundResponses, GetAgentData, GetAgentErrors, GetAgentResponses, GetAgentVersionData, GetAgentVersionErrors, GetAgentVersionResponses, GetConnectionData, GetConnectionErrors, GetConnectionResponses, GetConversationData, GetConversationErrors, GetConversationResponses, GetFirmData, GetFirmErrors, GetFirmResponses, GetHealthData, GetHealthResponses, GetMappingChecklistData, GetMappingChecklistErrors, GetMappingChecklistResponses, GetMappingData, GetMappingErrors, GetMappingResolvedData, GetMappingResolvedErrors, GetMappingResolvedResponses, GetMappingResponses, GetMeData, GetMeErrors, GetMeResponses, GetPlatformStatusData, GetPlatformStatusErrors, GetPlatformStatusResponses, GetRunData, GetRunErrors, GetRunResponses, GetStepRecordingData, GetStepRecordingErrors, GetStepRecordingResponses, GetSubjectData, GetSubjectErrors, GetSubjectResponses, GmailHookData, GmailHookErrors, GmailHookResponses, GoogleOauthCallbackData, GoogleOauthCallbackErrors, GoogleOauthCallbackResponses, HandbackRunData, HandbackRunErrors, HandbackRunResponses, LinkSubjectContactData, LinkSubjectContactErrors, LinkSubjectContactResponses, ListAgentsData, ListAgentsErrors, ListAgentsResponses, ListAgentVersionsData, ListAgentVersionsErrors, ListAgentVersionsResponses, ListConnectionsData, ListConnectionsErrors, ListConnectionsResponses, ListContactPointsData, ListContactPointsErrors, ListContactPointsResponses, ListConversationRunsData, ListConversationRunsErrors, ListConversationRunsResponses, ListConversationsData, ListConversationsErrors, ListConversationsResponses, ListFirmsData, ListFirmsErrors, ListFirmsResponses, ListMappingsData, ListMappingsErrors, ListMappingsResponses, ListMentionableAgentsData, ListMentionableAgentsErrors, ListMentionableAgentsResponses, ListMessagesData, ListMessagesErrors, ListMessagesResponses, ListNotificationsData, ListNotificationsErrors, ListNotificationsResponses, ListRegistryConnectorsData, ListRegistryConnectorsErrors, ListRegistryConnectorsResponses, ListRegistryData, ListRegistryErrors, ListRegistryResponses, ListRunAttentionData, ListRunAttentionErrors, ListRunAttentionResponses, ListRunEpisodesData, ListRunEpisodesErrors, ListRunEpisodesResponses, ListRunJournalData, ListRunJournalErrors, ListRunJournalResponses, ListRunLogsData, ListRunLogsErrors, ListRunLogsResponses, ListRunsData, ListRunsErrors, ListRunsResponses, ListRunStepsData, ListRunStepsErrors, ListRunStepsResponses, ListRunTasksData, ListRunTasksErrors, ListRunTasksResponses, ListSubjectKindsData, ListSubjectKindsErrors, ListSubjectKindsResponses, ListSubjectsData, ListSubjectsErrors, ListSubjectsResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutErrors, LogoutResponses, MarkAllNotificationsReadData, MarkAllNotificationsReadErrors, MarkAllNotificationsReadResponses, MarkNotificationReadData, MarkNotificationReadErrors, MarkNotificationReadResponses, RenameConversationData, RenameConversationErrors, RenameConversationResponses, SendMessageData, SendMessageErrors, SendMessageResponses, SlackHookData, SlackHookErrors, SlackHookResponses, SlackInteractiveData, SlackInteractiveErrors, SlackInteractiveResponses, SlackOauthCallbackData, SlackOauthCallbackErrors, SlackOauthCallbackResponses, SwitchMappingVersionData, SwitchMappingVersionErrors, SwitchMappingVersionResponses, TakeoverRunData, TakeoverRunErrors, TakeoverRunResponses, TestConnectionData, TestConnectionErrors, TestConnectionResponses, UnarchiveAgentData, UnarchiveAgentErrors, UnarchiveAgentResponses, UnarchiveAgentVersionData, UnarchiveAgentVersionErrors, UnarchiveAgentVersionResponses, UnlinkSubjectContactData, UnlinkSubjectContactErrors, UnlinkSubjectContactResponses, UpdateAgentData, UpdateAgentErrors, UpdateAgentResponses, UpdateConnectionData, UpdateConnectionErrors, UpdateConnectionResponses, UpdateContactPointData, UpdateContactPointErrors, UpdateContactPointResponses, UpdateFirmData, UpdateFirmErrors, UpdateFirmResponses, UpdateMappingData, UpdateMappingErrors, UpdateMappingResponses, UpdateSubjectContactData, UpdateSubjectContactErrors, UpdateSubjectContactResponses, UpdateSubjectData, UpdateSubjectErrors, UpdateSubjectResponses, ValidateAgentConfigData, ValidateAgentConfigErrors, ValidateAgentConfigResponses, VapiHookData, VapiHookErrors, VapiHookResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -51,7 +51,7 @@ export const getMe = <ThrowOnError extends boolean = false>(options?: Options<Ge
 export const listFirms = <ThrowOnError extends boolean = false>(options?: Options<ListFirmsData, ThrowOnError>): RequestResult<ListFirmsResponses, ListFirmsErrors, ThrowOnError> => (options?.client ?? client).get<ListFirmsResponses, ListFirmsErrors, ThrowOnError>({ url: '/api/v1/firms', ...options });
 
 /**
- * Create a firm (and its inactive @orchestrator mapping)
+ * Create a firm
  */
 export const createFirm = <ThrowOnError extends boolean = false>(options: Options<CreateFirmData, ThrowOnError>): RequestResult<CreateFirmResponses, CreateFirmErrors, ThrowOnError> => (options.client ?? client).post<CreateFirmResponses, CreateFirmErrors, ThrowOnError>({
     url: '/api/v1/firms',
@@ -376,3 +376,279 @@ export const switchMappingVersion = <ThrowOnError extends boolean = false>(optio
  * Which platform app registrations are set
  */
 export const getPlatformStatus = <ThrowOnError extends boolean = false>(options?: Options<GetPlatformStatusData, ThrowOnError>): RequestResult<GetPlatformStatusResponses, GetPlatformStatusErrors, ThrowOnError> => (options?.client ?? client).get<GetPlatformStatusResponses, GetPlatformStatusErrors, ThrowOnError>({ url: '/api/v1/platform/status', ...options });
+
+/**
+ * List a firm's subjects
+ */
+export const listSubjects = <ThrowOnError extends boolean = false>(options: Options<ListSubjectsData, ThrowOnError>): RequestResult<ListSubjectsResponses, ListSubjectsErrors, ThrowOnError> => (options.client ?? client).get<ListSubjectsResponses, ListSubjectsErrors, ThrowOnError>({ url: '/api/v1/firms/{firm_id}/subjects', ...options });
+
+/**
+ * Create a subject
+ */
+export const createSubject = <ThrowOnError extends boolean = false>(options: Options<CreateSubjectData, ThrowOnError>): RequestResult<CreateSubjectResponses, CreateSubjectErrors, ThrowOnError> => (options.client ?? client).post<CreateSubjectResponses, CreateSubjectErrors, ThrowOnError>({
+    url: '/api/v1/firms/{firm_id}/subjects',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * The subject kinds a firm uses
+ */
+export const listSubjectKinds = <ThrowOnError extends boolean = false>(options: Options<ListSubjectKindsData, ThrowOnError>): RequestResult<ListSubjectKindsResponses, ListSubjectKindsErrors, ThrowOnError> => (options.client ?? client).get<ListSubjectKindsResponses, ListSubjectKindsErrors, ThrowOnError>({ url: '/api/v1/firms/{firm_id}/subject-kinds', ...options });
+
+/**
+ * Get a subject
+ */
+export const getSubject = <ThrowOnError extends boolean = false>(options: Options<GetSubjectData, ThrowOnError>): RequestResult<GetSubjectResponses, GetSubjectErrors, ThrowOnError> => (options.client ?? client).get<GetSubjectResponses, GetSubjectErrors, ThrowOnError>({ url: '/api/v1/subjects/{subject_id}', ...options });
+
+/**
+ * Update a subject
+ */
+export const updateSubject = <ThrowOnError extends boolean = false>(options: Options<UpdateSubjectData, ThrowOnError>): RequestResult<UpdateSubjectResponses, UpdateSubjectErrors, ThrowOnError> => (options.client ?? client).patch<UpdateSubjectResponses, UpdateSubjectErrors, ThrowOnError>({
+    url: '/api/v1/subjects/{subject_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List a firm's contact points
+ */
+export const listContactPoints = <ThrowOnError extends boolean = false>(options: Options<ListContactPointsData, ThrowOnError>): RequestResult<ListContactPointsResponses, ListContactPointsErrors, ThrowOnError> => (options.client ?? client).get<ListContactPointsResponses, ListContactPointsErrors, ThrowOnError>({ url: '/api/v1/firms/{firm_id}/contact-points', ...options });
+
+/**
+ * Create a contact point
+ */
+export const createContactPoint = <ThrowOnError extends boolean = false>(options: Options<CreateContactPointData, ThrowOnError>): RequestResult<CreateContactPointResponses, CreateContactPointErrors, ThrowOnError> => (options.client ?? client).post<CreateContactPointResponses, CreateContactPointErrors, ThrowOnError>({
+    url: '/api/v1/firms/{firm_id}/contact-points',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Update a contact point (clearing an opt-out needs a reason)
+ */
+export const updateContactPoint = <ThrowOnError extends boolean = false>(options: Options<UpdateContactPointData, ThrowOnError>): RequestResult<UpdateContactPointResponses, UpdateContactPointErrors, ThrowOnError> => (options.client ?? client).patch<UpdateContactPointResponses, UpdateContactPointErrors, ThrowOnError>({
+    url: '/api/v1/contact-points/{contact_point_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Link a contact point to a subject with a role
+ */
+export const linkSubjectContact = <ThrowOnError extends boolean = false>(options: Options<LinkSubjectContactData, ThrowOnError>): RequestResult<LinkSubjectContactResponses, LinkSubjectContactErrors, ThrowOnError> => (options.client ?? client).post<LinkSubjectContactResponses, LinkSubjectContactErrors, ThrowOnError>({
+    url: '/api/v1/subjects/{subject_id}/contacts',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Unlink a contact from a subject
+ */
+export const unlinkSubjectContact = <ThrowOnError extends boolean = false>(options: Options<UnlinkSubjectContactData, ThrowOnError>): RequestResult<UnlinkSubjectContactResponses, UnlinkSubjectContactErrors, ThrowOnError> => (options.client ?? client).delete<UnlinkSubjectContactResponses, UnlinkSubjectContactErrors, ThrowOnError>({ url: '/api/v1/subject-contacts/{link_id}', ...options });
+
+/**
+ * Change a contact's role or consent on a subject
+ */
+export const updateSubjectContact = <ThrowOnError extends boolean = false>(options: Options<UpdateSubjectContactData, ThrowOnError>): RequestResult<UpdateSubjectContactResponses, UpdateSubjectContactErrors, ThrowOnError> => (options.client ?? client).patch<UpdateSubjectContactResponses, UpdateSubjectContactErrors, ThrowOnError>({
+    url: '/api/v1/subject-contacts/{link_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Answer an attention item (first answer wins)
+ */
+export const answerAttention = <ThrowOnError extends boolean = false>(options: Options<AnswerAttentionData, ThrowOnError>): RequestResult<AnswerAttentionResponses, AnswerAttentionErrors, ThrowOnError> => (options.client ?? client).post<AnswerAttentionResponses, AnswerAttentionErrors, ThrowOnError>({
+    url: '/api/v1/attention/{item_id}/answer',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List a firm's playground chats
+ */
+export const listConversations = <ThrowOnError extends boolean = false>(options: Options<ListConversationsData, ThrowOnError>): RequestResult<ListConversationsResponses, ListConversationsErrors, ThrowOnError> => (options.client ?? client).get<ListConversationsResponses, ListConversationsErrors, ThrowOnError>({ url: '/api/v1/firms/{firm_id}/conversations', ...options });
+
+/**
+ * Start a playground chat
+ */
+export const createConversation = <ThrowOnError extends boolean = false>(options: Options<CreateConversationData, ThrowOnError>): RequestResult<CreateConversationResponses, CreateConversationErrors, ThrowOnError> => (options.client ?? client).post<CreateConversationResponses, CreateConversationErrors, ThrowOnError>({
+    url: '/api/v1/firms/{firm_id}/conversations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get a chat
+ */
+export const getConversation = <ThrowOnError extends boolean = false>(options: Options<GetConversationData, ThrowOnError>): RequestResult<GetConversationResponses, GetConversationErrors, ThrowOnError> => (options.client ?? client).get<GetConversationResponses, GetConversationErrors, ThrowOnError>({ url: '/api/v1/conversations/{conversation_id}', ...options });
+
+/**
+ * Rename a chat
+ */
+export const renameConversation = <ThrowOnError extends boolean = false>(options: Options<RenameConversationData, ThrowOnError>): RequestResult<RenameConversationResponses, RenameConversationErrors, ThrowOnError> => (options.client ?? client).patch<RenameConversationResponses, RenameConversationErrors, ThrowOnError>({
+    url: '/api/v1/conversations/{conversation_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * A chat's messages, oldest first
+ */
+export const listMessages = <ThrowOnError extends boolean = false>(options: Options<ListMessagesData, ThrowOnError>): RequestResult<ListMessagesResponses, ListMessagesErrors, ThrowOnError> => (options.client ?? client).get<ListMessagesResponses, ListMessagesErrors, ThrowOnError>({ url: '/api/v1/conversations/{conversation_id}/messages', ...options });
+
+/**
+ * Send a message (the orchestrator handles it in the background)
+ */
+export const sendMessage = <ThrowOnError extends boolean = false>(options: Options<SendMessageData, ThrowOnError>): RequestResult<SendMessageResponses, SendMessageErrors, ThrowOnError> => (options.client ?? client).post<SendMessageResponses, SendMessageErrors, ThrowOnError>({
+    url: '/api/v1/conversations/{conversation_id}/messages',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Answer the chat's pending choice (subject, agent) or retry a message
+ */
+export const conversationAction = <ThrowOnError extends boolean = false>(options: Options<ConversationActionData, ThrowOnError>): RequestResult<ConversationActionResponses, ConversationActionErrors, ThrowOnError> => (options.client ?? client).post<ConversationActionResponses, ConversationActionErrors, ThrowOnError>({
+    url: '/api/v1/conversations/{conversation_id}/actions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Agent runs this chat is linked to
+ */
+export const listConversationRuns = <ThrowOnError extends boolean = false>(options: Options<ListConversationRunsData, ThrowOnError>): RequestResult<ListConversationRunsResponses, ListConversationRunsErrors, ThrowOnError> => (options.client ?? client).get<ListConversationRunsResponses, ListConversationRunsErrors, ThrowOnError>({ url: '/api/v1/conversations/{conversation_id}/runs', ...options });
+
+/**
+ * Live chat events (SSE)
+ */
+export const conversationEvents = <ThrowOnError extends boolean = false>(options: Options<ConversationEventsData, ThrowOnError, unknown>): Promise<ServerSentEventsResult<ConversationEventsResponses>> => (options.client ?? client).sse.get<ConversationEventsResponses, ConversationEventsErrors, ThrowOnError>({ url: '/api/v1/conversations/{conversation_id}/events', ...options });
+
+/**
+ * Agents that can be @mentioned at a firm
+ */
+export const listMentionableAgents = <ThrowOnError extends boolean = false>(options: Options<ListMentionableAgentsData, ThrowOnError>): RequestResult<ListMentionableAgentsResponses, ListMentionableAgentsErrors, ThrowOnError> => (options.client ?? client).get<ListMentionableAgentsResponses, ListMentionableAgentsErrors, ThrowOnError>({ url: '/api/v1/firms/{firm_id}/mentionable-agents', ...options });
+
+/**
+ * My in-app notifications, newest first
+ */
+export const listNotifications = <ThrowOnError extends boolean = false>(options?: Options<ListNotificationsData, ThrowOnError>): RequestResult<ListNotificationsResponses, ListNotificationsErrors, ThrowOnError> => (options?.client ?? client).get<ListNotificationsResponses, ListNotificationsErrors, ThrowOnError>({ url: '/api/v1/notifications', ...options });
+
+/**
+ * Mark a notification read
+ */
+export const markNotificationRead = <ThrowOnError extends boolean = false>(options: Options<MarkNotificationReadData, ThrowOnError>): RequestResult<MarkNotificationReadResponses, MarkNotificationReadErrors, ThrowOnError> => (options.client ?? client).post<MarkNotificationReadResponses, MarkNotificationReadErrors, ThrowOnError>({ url: '/api/v1/notifications/{notification_id}/read', ...options });
+
+/**
+ * Mark all my notifications read
+ */
+export const markAllNotificationsRead = <ThrowOnError extends boolean = false>(options?: Options<MarkAllNotificationsReadData, ThrowOnError>): RequestResult<MarkAllNotificationsReadResponses, MarkAllNotificationsReadErrors, ThrowOnError> => (options?.client ?? client).post<MarkAllNotificationsReadResponses, MarkAllNotificationsReadErrors, ThrowOnError>({ url: '/api/v1/notifications/read-all', ...options });
+
+/**
+ * List a firm's agent runs
+ */
+export const listRuns = <ThrowOnError extends boolean = false>(options: Options<ListRunsData, ThrowOnError>): RequestResult<ListRunsResponses, ListRunsErrors, ThrowOnError> => (options.client ?? client).get<ListRunsResponses, ListRunsErrors, ThrowOnError>({ url: '/api/v1/firms/{firm_id}/runs', ...options });
+
+/**
+ * Get a run
+ */
+export const getRun = <ThrowOnError extends boolean = false>(options: Options<GetRunData, ThrowOnError>): RequestResult<GetRunResponses, GetRunErrors, ThrowOnError> => (options.client ?? client).get<GetRunResponses, GetRunErrors, ThrowOnError>({ url: '/api/v1/runs/{run_id}', ...options });
+
+/**
+ * A run's tasks with plans
+ */
+export const listRunTasks = <ThrowOnError extends boolean = false>(options: Options<ListRunTasksData, ThrowOnError>): RequestResult<ListRunTasksResponses, ListRunTasksErrors, ThrowOnError> => (options.client ?? client).get<ListRunTasksResponses, ListRunTasksErrors, ThrowOnError>({ url: '/api/v1/runs/{run_id}/tasks', ...options });
+
+/**
+ * A run's executed steps
+ */
+export const listRunSteps = <ThrowOnError extends boolean = false>(options: Options<ListRunStepsData, ThrowOnError>): RequestResult<ListRunStepsResponses, ListRunStepsErrors, ThrowOnError> => (options.client ?? client).get<ListRunStepsResponses, ListRunStepsErrors, ThrowOnError>({ url: '/api/v1/runs/{run_id}/steps', ...options });
+
+/**
+ * A fresh link to a call step's recording
+ */
+export const getStepRecording = <ThrowOnError extends boolean = false>(options: Options<GetStepRecordingData, ThrowOnError>): RequestResult<GetStepRecordingResponses, GetStepRecordingErrors, ThrowOnError> => (options.client ?? client).get<GetStepRecordingResponses, GetStepRecordingErrors, ThrowOnError>({ url: '/api/v1/runs/{run_id}/steps/{step_id}/recording', ...options });
+
+/**
+ * A run's redacted logs
+ */
+export const listRunLogs = <ThrowOnError extends boolean = false>(options: Options<ListRunLogsData, ThrowOnError>): RequestResult<ListRunLogsResponses, ListRunLogsErrors, ThrowOnError> => (options.client ?? client).get<ListRunLogsResponses, ListRunLogsErrors, ThrowOnError>({ url: '/api/v1/runs/{run_id}/logs', ...options });
+
+/**
+ * A run's episodes
+ */
+export const listRunEpisodes = <ThrowOnError extends boolean = false>(options: Options<ListRunEpisodesData, ThrowOnError>): RequestResult<ListRunEpisodesResponses, ListRunEpisodesErrors, ThrowOnError> => (options.client ?? client).get<ListRunEpisodesResponses, ListRunEpisodesErrors, ThrowOnError>({ url: '/api/v1/runs/{run_id}/episodes', ...options });
+
+/**
+ * A run's journal
+ */
+export const listRunJournal = <ThrowOnError extends boolean = false>(options: Options<ListRunJournalData, ThrowOnError>): RequestResult<ListRunJournalResponses, ListRunJournalErrors, ThrowOnError> => (options.client ?? client).get<ListRunJournalResponses, ListRunJournalErrors, ThrowOnError>({ url: '/api/v1/runs/{run_id}/journal', ...options });
+
+/**
+ * A run's attention items
+ */
+export const listRunAttention = <ThrowOnError extends boolean = false>(options: Options<ListRunAttentionData, ThrowOnError>): RequestResult<ListRunAttentionResponses, ListRunAttentionErrors, ThrowOnError> => (options.client ?? client).get<ListRunAttentionResponses, ListRunAttentionErrors, ThrowOnError>({ url: '/api/v1/runs/{run_id}/attention', ...options });
+
+/**
+ * Take over a run (pauses the agent)
+ */
+export const takeoverRun = <ThrowOnError extends boolean = false>(options: Options<TakeoverRunData, ThrowOnError>): RequestResult<TakeoverRunResponses, TakeoverRunErrors, ThrowOnError> => (options.client ?? client).post<TakeoverRunResponses, TakeoverRunErrors, ThrowOnError>({
+    url: '/api/v1/runs/{run_id}/takeover',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Hand a run back to its agent
+ */
+export const handbackRun = <ThrowOnError extends boolean = false>(options: Options<HandbackRunData, ThrowOnError>): RequestResult<HandbackRunResponses, HandbackRunErrors, ThrowOnError> => (options.client ?? client).post<HandbackRunResponses, HandbackRunErrors, ThrowOnError>({
+    url: '/api/v1/runs/{run_id}/handback',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Slack button clicks
+ */
+export const slackInteractive = <ThrowOnError extends boolean = false>(options?: Options<SlackInteractiveData, ThrowOnError>): RequestResult<SlackInteractiveResponses, SlackInteractiveErrors, ThrowOnError> => (options?.client ?? client).post<SlackInteractiveResponses, SlackInteractiveErrors, ThrowOnError>({ url: '/api/v1/hooks/slack/interactive', ...options });

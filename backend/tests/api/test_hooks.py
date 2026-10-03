@@ -157,14 +157,15 @@ async def test_vapi_records_by_phone_number(authed: AsyncClient, db: AsyncSessio
     assert got["last_inbound_type"] == "vapi.end-of-call-report"
 
 
-async def test_vapi_without_a_platform_secret_accepts_any(
+async def test_vapi_without_a_platform_secret_accepts_any_request(
     authed: AsyncClient, db: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Dev without a secret: calls send none, so the hook can't require one. Production
+    refuses to start with Vapi configured and no secret (config guard)."""
     monkeypatch.setattr(get_settings(), "vapi_webhook_secret", "")
-    firm = await create_firm(authed)
-    await connected(db, firm["id"], "vapi", {"phone_number_id": "pn_1"})
     message = {"type": "status-update", "call": {"phoneNumberId": "pn_1"}}
-    assert (await _vapi(authed, message, secret="")).json()["recorded"] == 1
+    assert (await _vapi(authed, message, secret="")).status_code == 200
+    assert (await _vapi(authed, message, secret="anything")).status_code == 200
 
 
 @pytest.mark.parametrize("secret", ["wrong", "ü".encode(), ""])

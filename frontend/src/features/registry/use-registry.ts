@@ -50,4 +50,5 @@ export const ALERT_CHANNELS = [
   { value: "slack_thread", label: "Slack thread" },
   { value: "email", label: "Email" },
   { value: "digest", label: "Daily digest" },
+  { value: "in_app", label: "In-app bell" },
 ] as const;

@@ -5,6 +5,20 @@ import { API, HttpResponse, fail, http, server } from "@/test/api";
 import { path, renderApp, screen } from "@/test/app";
 
 describe("app shell", () => {
+  it("lists Playground and Agent runs first in the nav", async () => {
+    await renderApp("/agents");
+    await screen.findByRole("link", { name: "Agents" });
+    const names = screen
+      .getAllByRole("link")
+      .map((l) => l.textContent?.trim())
+      .filter((t) => ["Playground", "Agent runs", "Agents", "Firms"].includes(t ?? ""));
+    expect(names).toEqual(["Playground", "Agent runs", "Agents", "Firms"]);
+    expect(screen.getByRole("link", { name: "Playground" }).getAttribute("href")).toBe(
+      "/playground",
+    );
+    expect(screen.getByRole("link", { name: "Agent runs" }).getAttribute("href")).toBe("/runs");
+  });
+
   it("highlights the section you're in, including nested pages", async () => {
     await renderApp("/agents/new");
     const agents = await screen.findByRole("link", { name: "Agents" });

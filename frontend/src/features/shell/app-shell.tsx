@@ -1,10 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useMatches, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   BotIcon,
   Building2Icon,
   LibraryIcon,
+  ListChecksIcon,
   LogOutIcon,
+  MessagesSquareIcon,
   MoonIcon,
   SunIcon,
   WorkflowIcon,
@@ -33,10 +35,13 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { NotificationBell } from "@/features/notifications/bell";
 import { toastError } from "@/lib/problem";
 import { useTheme } from "@/lib/theme";
 
 const NAV = [
+  { to: "/playground", label: "Playground", icon: MessagesSquareIcon },
+  { to: "/runs", label: "Agent runs", icon: ListChecksIcon },
   { to: "/agents", label: "Agents", icon: BotIcon },
   { to: "/firm-mappings", label: "Firm mappings", icon: WorkflowIcon },
   { to: "/firms", label: "Firms", icon: Building2Icon },
@@ -45,6 +50,7 @@ const NAV = [
 
 export function AppShell({ user }: { user: UserOut }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const fullBleed = useMatches({ select: (ms) => ms.some((m) => m.staticData.fullBleed) });
   return (
     // Collapses to an icon rail (the button, the rail edge or ⌘B); the sidebar keeps the choice
     // in a cookie, read back here.
@@ -76,6 +82,11 @@ export function AppShell({ user }: { user: UserOut }) {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="p-2">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <NotificationBell />
+            </SidebarMenuItem>
+          </SidebarMenu>
           <UserMenu user={user} />
         </SidebarFooter>
         <SidebarRail />
@@ -84,7 +95,11 @@ export function AppShell({ user }: { user: UserOut }) {
         <div className="flex h-12 items-center px-4 md:hidden">
           <SidebarTrigger />
         </div>
-        <main className="mx-auto w-full max-w-[1180px] px-6 py-8 md:px-10">
+        <main
+          className={
+            fullBleed ? "h-svh w-full" : "mx-auto w-full max-w-[1180px] px-6 py-8 md:px-10"
+          }
+        >
           <Outlet />
         </main>
       </SidebarInset>

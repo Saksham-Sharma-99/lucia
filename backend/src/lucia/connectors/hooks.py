@@ -1,5 +1,5 @@
-"""Public inbound webhooks. They verify the sender and record the last event; no runs yet.
-Bodies are never logged (they can carry client data)."""
+"""Public inbound webhooks. They verify the sender and record the last event; a Vapi
+end-of-call report also resumes the task that placed the call. Bodies are never logged."""
 
 import base64
 import binascii
@@ -13,9 +13,11 @@ from lucia.api.tags import api_router
 from lucia.auth.deps import DbSession
 from lucia.connectors import slack
 from lucia.connectors.service import record_inbound
+from lucia.connectors.slack_ingest import ingest_event
 from lucia.core.config import get_settings
 from lucia.core.errors import ProblemError
 from lucia.core.schema import Read
+from lucia.harness.tools.vapi_tool import ingest_report
 
 router = api_router("hooks", "/hooks", public=True)
 
@@ -63,8 +65,10 @@ async def slack_hook(
         return HookAck(challenge=str(body.get("challenge", "")))
     if body.get("type") != "event_callback":
         return HookAck()
-    kind = f"slack.{_obj(body.get('event')).get('type', 'unknown')}"
+    event = _obj(body.get("event"))
     team = str(body.get("team_id", ""))
+    await ingest_event(session, team, event)
+    kind = f"slack.{event.get('type', 'unknown')}"
     return HookAck(recorded=await record_inbound(session, "slack", "team_id", team, kind))
 
 
@@ -86,9 +90,13 @@ async def gmail_hook(
 async def vapi_hook(
     request: Request, session: DbSession, x_vapi_secret: str = Header(default="")
 ) -> HookAck:
-    if secret := get_settings().vapi_webhook_secret:  # optional while unset in Vapi
+    # No secret configured (dev): calls are placed without one, so none is required. Production
+    # refuses to start with Vapi and no secret (core/config.py).
+    if secret := get_settings().vapi_webhook_secret:
         _require_secret(x_vapi_secret, secret)
     message = _obj((await _json(request)).get("message"))
+    if message.get("type") == "end-of-call-report":
+        await ingest_report(session, message, source="webhook")
     call = _obj(message.get("call"))
     number = call.get("phoneNumberId")
     if not number:

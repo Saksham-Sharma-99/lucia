@@ -2,7 +2,17 @@ import uuid
 from datetime import datetime
 from typing import Any, Literal
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, Text, func
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -20,6 +30,7 @@ class CompiledAgentFirmMapping(IdMixin, TimestampMixin, Base):
     __table_args__ = (
         CheckConstraint("status IN ('active','inactive')", name="status"),
         CheckConstraint("ab_weight BETWEEN 0 AND 100", name="ab_weight"),
+        UniqueConstraint("id", "firm_id"),  # target of runs' composite FK
         Index(
             ONE_ACTIVE_INDEX,
             "firm_id",

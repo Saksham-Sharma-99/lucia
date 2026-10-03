@@ -4,7 +4,9 @@ stored: each call carries a transient one that reports back to our webhook."""
 
 from typing import Any
 
-from lucia.connectors.base import ConnectorError, Outcome, hook_url, http, need
+import httpx
+
+from lucia.connectors.base import ConnectorError, MaybeSent, Outcome, hook_url, http, need
 from lucia.core.config import get_settings
 from lucia.core.errors import FieldError, conflict, invalid
 from lucia.core.time import utcnow
@@ -31,16 +33,27 @@ def configured() -> bool:
     return bool(get_settings().vapi_api_key)
 
 
-async def _api(method: str, path: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
-    async with http() as client:
-        resp = await client.request(
-            method,
-            f"{API}{path}",
-            json=body,
-            headers={"Authorization": f"Bearer {get_settings().vapi_api_key}"},
-        )
-    data: dict[str, Any] = resp.json() if resp.content else {}
+async def _api(
+    method: str, path: str, body: dict[str, Any] | None = None, params: dict[str, str] | None = None
+) -> Any:
+    try:
+        async with http() as client:
+            resp = await client.request(
+                method,
+                f"{API}{path}",
+                json=body,
+                params=params,
+                headers={"Authorization": f"Bearer {get_settings().vapi_api_key}"},
+            )
+    except (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout) as e:  # never left
+        raise ConnectorError(f"Vapi unreachable: {type(e).__name__}") from e
+    except httpx.HTTPError as e:  # sent, but no answer came back
+        raise MaybeSent(f"Vapi didn't answer: {type(e).__name__}") from e
+    if resp.status_code >= 500:
+        raise MaybeSent(f"Vapi error {resp.status_code}")
+    data: Any = resp.json() if resp.content else {}
     if resp.status_code >= 400:
+        data = data if isinstance(data, dict) else {}
         message = f"Vapi error {resp.status_code}: {data.get('message', '')}".strip(": ")
         if resp.status_code == 401:
             message += " Check VAPI_API_KEY: it must be the private key."
@@ -119,6 +132,35 @@ async def place_call(conn: ConnectorConnection, to: str, spec: dict[str, Any]) -
         },
     )
     return str(call.get("id", ""))
+
+
+async def get_call(call_id: str) -> dict[str, Any]:
+    return await _api("GET", f"/call/{call_id}")
+
+
+async def recording_url(call_id: str) -> str:
+    """A short-lived signed link to the call's mono recording: Vapi answers 302 (recordings
+    are access-controlled, so the link is fetched when someone wants to listen)."""
+    try:
+        async with http() as client:
+            resp = await client.get(
+                f"{API}/call/{call_id}/mono-recording",
+                headers={"Authorization": f"Bearer {get_settings().vapi_api_key}"},
+            )
+    except httpx.HTTPError as e:
+        raise ConnectorError(f"Vapi unreachable: {type(e).__name__}") from e
+    if resp.status_code >= 500 or resp.status_code in (401, 403):
+        raise ConnectorError(f"Vapi error {resp.status_code}")
+    if not resp.is_redirect or not resp.headers.get("location"):
+        raise UnknownId(f"No recording for call {call_id}")
+    return resp.headers["location"]
+
+
+async def list_calls(phone_number_id: str, created_after: str) -> list[dict[str, Any]]:
+    calls = await _api(
+        "GET", "/call", params={"phoneNumberId": phone_number_id, "createdAtGt": created_after}
+    )
+    return calls if isinstance(calls, list) else []
 
 
 async def auth_test(conn: ConnectorConnection, secrets: dict[str, str]) -> Outcome:

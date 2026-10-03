@@ -2,7 +2,7 @@ import json
 from functools import lru_cache
 from typing import Annotated, Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -41,6 +41,29 @@ class Settings(BaseSettings):
 
     allowed_models: Annotated[list[str], NoDecode] = ["gpt-5.6", "gpt-5.6-sol", "gpt-5.6-luna"]
     seed_password: str = ""
+    seed_test_phone: str = "+15555550100"
+
+    # Runtime (DATA_MODEL §5). Costs are USD per 1M input / output tokens.
+    llm_costs: dict[str, tuple[float, float]] = {
+        "gpt-5.6": (1.25, 10.0),
+        "gpt-5.6-sol": (1.25, 10.0),
+        "gpt-5.6-luna": (0.25, 2.0),
+    }
+    orchestrator_model: str = "gpt-5.6-luna"
+    orchestrator_summary_model: str = "gpt-5.6-luna"
+    orchestrator_phase: int = 2
+    route_threshold: float = 0.75
+    route_margin: float = 0.15
+    clarify_floor: float = 0.40
+    precheck_threshold: float = 0.60
+    subject_auto_threshold: float = 0.85
+    subject_pick_floor: float = 0.40
+    schedule_time_unit: Literal["real", "seconds"] = "real"
+    beat_arm_interval_s: float = 60
+    beat_reaper_interval_s: float = 60
+    task_llm_call_cap: int = 40
+    plan_item_cap: int = 20
+    plan_append_cap: int = 5
 
     @field_validator("allowed_models", mode="before")
     @classmethod
@@ -48,6 +71,15 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return json.loads(value) if value.strip().startswith("[") else value.split(",")
         return value
+
+    @model_validator(mode="after")
+    def _production_guards(self) -> "Settings":
+        if self.env == "production":
+            if self.schedule_time_unit == "seconds":
+                raise ValueError("schedule_time_unit=seconds is for dev and tests only")
+            if self.vapi_api_key and not self.vapi_webhook_secret:
+                raise ValueError("VAPI_WEBHOOK_SECRET is required when Vapi is configured")
+        return self
 
 
 @lru_cache

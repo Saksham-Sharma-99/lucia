@@ -1,16 +1,9 @@
 import pytest
 from httpx import AsyncClient
 
-from lucia.studio.templates import ORCHESTRATOR
 from tests.factories import ZERO, Json, create_firm
 
 BAD = {"name": "X", "slug": "acme-law", "timezone": "UTC", "color": "#000000"}
-
-
-@pytest.fixture
-async def orchestrator(authed: AsyncClient) -> None:
-    resp = await authed.post("/api/v1/agents", json=ORCHESTRATOR.model_dump(mode="json"))
-    assert resp.status_code == 201
 
 
 @pytest.fixture
@@ -24,19 +17,7 @@ async def test_create_returns_defaults(firm: Json) -> None:
     assert firm["settings"]["quiet_hours"] == {"start": "20:00", "end": "08:00"}
 
 
-@pytest.mark.usefixtures("orchestrator")
-async def test_create_adds_inactive_orchestrator_mapping(authed: AsyncClient) -> None:
-    firm = await create_firm(authed)
-    assert firm["mapping_counts"] == {"active": 0, "inactive": 1}
-    (m,) = (await authed.get("/api/v1/mappings", params={"firm_id": firm["id"]})).json()["items"]
-    assert (m["agent_handle"], m["status"], m["checklist_ok"]) == (
-        "orchestrator",
-        "inactive",
-        False,
-    )
-
-
-async def test_without_orchestrator_agent_no_mapping_is_made(firm: Json) -> None:
+async def test_create_makes_no_mappings(firm: Json) -> None:
     assert firm["mapping_counts"] == {"active": 0, "inactive": 0}
 
 
@@ -130,14 +111,6 @@ async def test_repeated_status_change_is_409(
         await authed.post(f"/api/v1/firms/{firm['id']}/{action}")
     resp = await authed.post(f"/api/v1/firms/{firm['id']}/{action}")
     assert resp.status_code == 409 and "already" in resp.json()["detail"]
-
-
-@pytest.mark.usefixtures("orchestrator")
-async def test_reactivating_firm_keeps_mappings_inactive(authed: AsyncClient) -> None:
-    firm = await create_firm(authed)
-    await authed.post(f"/api/v1/firms/{firm['id']}/deactivate")
-    resp = (await authed.post(f"/api/v1/firms/{firm['id']}/activate")).json()
-    assert resp["mapping_counts"] == {"active": 0, "inactive": 1}
 
 
 @pytest.mark.parametrize("q", ["%", "_"])

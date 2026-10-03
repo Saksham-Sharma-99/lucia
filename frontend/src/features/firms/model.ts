@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import type { ConnectionOut, PlatformStatus } from "@/api/generated/types.gen";
 
-export const FIRM_TABS = ["overview", "settings", "connections"] as const;
+export const FIRM_TABS = ["overview", "settings", "connections", "subjects", "contacts"] as const;
 export type FirmTab = (typeof FIRM_TABS)[number];
 
 export const DAYS = [
@@ -52,7 +52,7 @@ const windowSchema = z.object({
   start: z.string().regex(HHMM, "Use HH:MM"),
   end: z.string().regex(HHMM, "Use HH:MM"),
 });
-const channels = z.array(z.enum(["slack_dm", "slack_thread", "email", "digest"]));
+const channels = z.array(z.enum(["slack_dm", "slack_thread", "email", "digest", "in_app"]));
 
 /** Firm settings as the form edits them. Business hours must open before they close;
  *  quiet hours may wrap past midnight (20:00–08:00). */

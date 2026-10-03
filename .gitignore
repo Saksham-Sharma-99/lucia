@@ -33,3 +33,6 @@ dist/
 # Playwright
 frontend/test-results/
 frontend/playwright-report/
+
+# Database
+backend/celerybeat-schedule.db

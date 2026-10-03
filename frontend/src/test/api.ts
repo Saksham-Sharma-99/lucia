@@ -227,6 +227,7 @@ export const defaults = [
   http.get(`${API}/firms`, () => HttpResponse.json(page([]))),
   http.get(`${API}/mappings`, () => HttpResponse.json(page([]))),
   http.post(`${API}/agents/validate`, () => HttpResponse.json({ errors: [] })),
+  http.get(`${API}/notifications`, () => HttpResponse.json([])),
 ];
 
 export const server = setupServer(...defaults);
