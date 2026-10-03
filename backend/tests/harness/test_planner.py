@@ -71,6 +71,7 @@ async def test_plan_is_stored_with_ids_in_order(
         ({"title": "Wait", "kind": "wait", "wait_until": "2027-10-01T09:00:00-04:00"}, "within"),
         ({"title": "Tool-less", "kind": "tool"}, "needs a tool"),
         ({"title": "Bad ref", "kind": "subagent", "uses": ["i9"]}, "uses i9"),
+        ({"title": "Zero ref", "kind": "subagent", "uses": ["i0"]}, "uses i0"),  # ids start at i1
     ],
 )
 async def test_validation_errors(

@@ -71,7 +71,7 @@ def validate(draft: PlanDraft, view: AgentView, existing: int) -> list[str]:
         errors += [
             f"{where} uses {u}, which is not an earlier item"
             for u in it.uses
-            if not u.startswith("i") or not u[1:].isdigit() or int(u[1:]) >= n
+            if not u.startswith("i") or not u[1:].isdigit() or not 1 <= int(u[1:]) < n
         ]
     return errors
 
