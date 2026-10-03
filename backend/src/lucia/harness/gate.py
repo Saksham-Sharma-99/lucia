@@ -1,6 +1,7 @@
 """The deterministic gate before any work on a run (RUNTIME_SPEC §8.1): kill switch and end
 conditions. Connector health is checked per send by the ToolExecutor."""
 
+from datetime import timedelta
 from typing import Literal
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +10,6 @@ from lucia.core.clock import get_clock
 from lucia.db.models import AgentPrompt, AgentRun, CompiledAgentFirmMapping, Subject
 from lucia.db.models.run import CLAIMABLE
 from lucia.harness.control import end_run, pause_for_subject, set_kill
-from lucia.scheduling.durations import duration
 from lucia.studio.config_schema import VersionConfig
 
 
@@ -26,7 +26,8 @@ async def gate(session: AsyncSession, run: AgentRun) -> Literal["ok", "paused", 
     if run.step_count >= limits.max_steps:
         await end_run(session, run, "max_steps")
         return "ended"
-    if get_clock().now() >= started + duration(limits.max_duration_days, "days"):
+    # Real days even in seconds mode: the dev scale compresses waits, not a run's lifetime.
+    if get_clock().now() >= started + timedelta(days=limits.max_duration_days):
         await end_run(session, run, "max_duration")
         return "ended"
     subject = await session.get_one(Subject, run.subject_id)

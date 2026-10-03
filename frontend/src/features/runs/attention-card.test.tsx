@@ -39,6 +39,24 @@ describe("AttentionCard", () => {
     await waitFor(() => expect(sent).toEqual([{ choice: null, text: "Her mobile, ends 4567" }]));
   });
 
+  it("a goal that can't be met offers ending the run, or telling the agent what to do", async () => {
+    const sent: unknown[] = [];
+    server.use(
+      http.post(`${API}/attention/sr1/answer`, async ({ request }) => {
+        sent.push(await request.json());
+        return HttpResponse.json(stepResult({ status: "answered" }));
+      }),
+    );
+    const item = stepResult({
+      summary: "Goal not met and no next step: Saksham declined",
+      options: [{ value: "end_run", label: "End the run" }],
+    });
+    const app = renderWithClient(<AttentionCard item={item} />);
+    screen.getByLabelText("Your answer");
+    await app.user.click(screen.getByRole("button", { name: "End the run" }));
+    await waitFor(() => expect(sent).toEqual([{ choice: "end_run", text: null }]));
+  });
+
   it("reopening a finished run needs a note", async () => {
     const item = stepResult({
       kind: "confirm_completion",

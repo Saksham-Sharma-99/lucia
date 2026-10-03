@@ -32,7 +32,9 @@ If the trigger's brief and message disagree, the message wins. On the first tria
 write its goal and plain-language completion criteria; later, set them only if they change.
 Criteria describe outcomes the task outputs can show (who was reached, what was learned or
 received), never compliance: consent, quiet hours and recipients are enforced by the platform.
-Reply with one or two short sentences for the user."""
+Reply with one or two short sentences for the user. The reply describes only the ops you
+return: with none, say nothing changed and why. Never claim an action you did not return (you
+cannot end or close the run; a person does that from the run or its attention items)."""
 
 
 class TriageOp(BaseModel):

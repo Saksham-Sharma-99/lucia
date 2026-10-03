@@ -3,6 +3,7 @@ that prove it; the harness checks the citations; a judge model confirms; then a 
 Recurring runs ask about the whole goal each cycle; an unmet goal just closes the cycle."""
 
 import uuid
+from collections.abc import Sequence
 from typing import Literal
 
 from pydantic import BaseModel
@@ -110,7 +111,13 @@ async def check_run(session: AsyncSession, run: AgentRun, epoch: int, key: str) 
             return "continued"
         if view.config.recurrence is not None:
             return await _close_cycle(session, view)
-        return await _ask(session, run, key, f"Goal not met and no next step: {verdict.reason}")
+        return await _ask(
+            session,
+            run,
+            key,
+            f"Goal not met and no next step: {verdict.reason}",
+            options=[{"value": "end_run", "label": "End the run"}],  # or say what to do next
+        )
     judge = await call_llm(
         session,
         run,
@@ -192,13 +199,20 @@ async def _decide(
     )
 
 
-async def _ask(session: AsyncSession, run: AgentRun, key: str, question: str) -> Outcome:
+async def _ask(
+    session: AsyncSession,
+    run: AgentRun,
+    key: str,
+    question: str,
+    options: Sequence[dict[str, str]] = (),
+) -> Outcome:
     await raise_attention(
         session,
         run,
         kind="question",
         summary=question,
         dedup_key=f"sr:{run.id}:completion:{key}",
+        options=options,
     )
     await session.commit()
     return "asked"

@@ -15,6 +15,7 @@ from lucia.db.models import (
     StepResult,
 )
 from lucia.harness import worker
+from lucia.harness.answers import answer
 from lucia.harness.completion import CompletionVerdict, JudgeVerdict, NextTask, check_run, confirm
 from lucia.harness.keys import TargetRef
 from lucia.harness.steps import add_step
@@ -206,12 +207,35 @@ async def test_a_next_step_that_is_an_existing_task_reopens_it(
     assert (note.trigger_type, note.metadata_["note"]) == ("user_input", again.goal)
 
 
-async def test_not_met_and_nothing_next_asks(
-    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
+async def test_not_met_and_nothing_next_asks_with_a_way_to_end(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, sent: list[Any]
 ) -> None:
     _, run, _ = await _done(db)
     fake_llm.on("completion", _met(met=False))
     assert await check_run(db, run, 1, "t") == "asked"
+    item = await db.scalar(select(StepResult))
+    assert item is not None and item.kind == "question"
+    assert item.options == [{"value": "end_run", "label": "End the run"}]
+    await answer(db, item.id, choice="end_run", text=None, answered_by={"user_id": "u"})
+    await db.refresh(run)
+    assert (run.status, run.ended_reason) == ("ENDED", "closed_by_person")
+    assert await db.scalar(select(Episode).where(Episode.trigger_type == "user_response")) is None
+    assert not [t for t, args in sent if t == "harness.advance_run" and args == (str(run.id),)]
+
+
+async def test_not_met_and_nothing_next_takes_instructions_instead(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, sent: list[Any]
+) -> None:
+    _, run, _ = await _done(db)
+    fake_llm.on("completion", _met(met=False))
+    await check_run(db, run, 1, "t")
+    item = await db.scalar(select(StepResult))
+    assert item is not None
+    await answer(db, item.id, choice=None, text="Try his email", answered_by={"user_id": "u"})
+    await db.refresh(run)
+    assert run.status == "ACTIVE"
+    told = await db.scalar(select(Episode).where(Episode.trigger_type == "user_response"))
+    assert told is not None and told.metadata_["answer"]["text"] == "Try his email"
 
 
 async def test_recurring_cycle_closes_silently_and_schedules_the_next(

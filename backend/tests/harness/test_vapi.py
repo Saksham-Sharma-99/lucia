@@ -186,6 +186,20 @@ async def test_report_resumes_the_task(
 
 
 @respx.mock
+async def test_a_report_after_the_run_ended_still_settles_its_call(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, sent: list[Any]
+) -> None:
+    _, run, _, step, _ = await _place(db, fake_llm)
+    run.status, run.substatus = "ENDED", None
+    await db.commit()
+    assert await ingest_report(db, _report(step), source="webhook") is None
+    await db.refresh(step)
+    assert step.status == "SUCCEEDED"
+    assert step.output["transcript"] == "AI: Hi Jane..."
+    assert ("harness.advance_run", (str(run.id),)) not in sent
+
+
+@respx.mock
 async def test_a_report_without_a_call_id_is_keyed_by_its_step(
     db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
 ) -> None:

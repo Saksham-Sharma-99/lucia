@@ -206,3 +206,17 @@ async def call_llm(
     if fenced:
         await ensure_lease(session, run.id, epoch)
     return out
+
+
+async def settle_callback(session: AsyncSession, report: dict[str, Any]) -> None:
+    """An async tool's step finishes when its report arrives (late reports included)."""
+    if step_id := report.get("step_id"):
+        step = await session.get_one(AgentRunStep, uuid.UUID(step_id))
+        if step.status in ("AWAITING_CALLBACK", "FAILED"):
+            step.status, step.ended_at = "SUCCEEDED", get_clock().now()
+            step.output = {
+                **step.output,
+                "summary": report.get("summary"),
+                "ended_reason": report.get("ended_reason"),
+                "transcript": report.get("transcript"),
+            }

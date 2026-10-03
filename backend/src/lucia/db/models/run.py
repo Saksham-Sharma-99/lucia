@@ -32,6 +32,7 @@ RunStatus = Literal[
 ]
 LIVE = ("CREATED", "ACTIVE", "TAKEN_OVER", "PAUSED", "AWAITING_CONFIRMATION")
 CLAIMABLE = ("CREATED", "ACTIVE", "AWAITING_CONFIRMATION")
+FINISHED = ("COMPLETED", "ENDED", "FAILED")
 TaskStatus = Literal["TODO", "IN_PROGRESS", "WAITING", "BLOCKED", "DONE", "SKIPPED", "FAILED"]
 TERMINAL_TASK = ("DONE", "SKIPPED", "FAILED")
 EpisodeStatus = Literal[
@@ -51,7 +52,7 @@ class AgentRun(IdMixin, TimestampMixin, Base):
     """One agent working on one subject (DATA_MODEL §3.6)."""
 
     __table_args__ = (
-        CheckConstraint(_in("status", (*LIVE, "COMPLETED", "ENDED", "FAILED")), name="status"),
+        CheckConstraint(_in("status", (*LIVE, *FINISHED)), name="status"),
         CheckConstraint(
             "(status = 'ACTIVE' AND coalesce(substatus IN ('RUNNING','WAITING','ATTENTION'), true))"
             " OR (status = 'PAUSED'"

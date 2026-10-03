@@ -6,24 +6,37 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from lucia.core.clock import FrozenClock
+from lucia.core.config import get_settings
 from lucia.db.models import (
     AgentRun,
     AuditLog,
     CompiledAgentFirmMapping,
+    Conversation,
     Episode,
     JournalEntry,
+    Message,
+    RunTask,
     Subject,
 )
 from lucia.harness import control, worker
 from lucia.harness.gate import gate
 from lucia.harness.intake import EpisodeSpec, create_or_fold
 from lucia.harness.lease import LeaseLost, claim, fence
+from lucia.harness.steps import add_step
 from lucia.harness.tasks import sweep_end_conditions
 from lucia.mappings.schemas import MappingPatch
 from lucia.mappings.service import patch
 from lucia.subjects.schemas import SubjectPatch
 from lucia.subjects.service import patch_subject
-from tests.world import VOICE_CONFIG, World, make_leased_run, make_run, make_world
+from tests.world import (
+    VOICE_CONFIG,
+    World,
+    item,
+    make_leased_run,
+    make_run,
+    make_task,
+    make_world,
+)
 
 
 def _ep(w: World, run: AgentRun, key: str, **kw: Any) -> Episode:
@@ -201,6 +214,72 @@ async def test_gate_ends_after_max_duration(db: AsyncSession, clock: FrozenClock
     run = await make_run(db, w, status="ACTIVE", started_at=clock.now())
     clock.advance(timedelta(days=121))
     assert await gate(db, run) == "ended"
+
+
+async def test_seconds_mode_keeps_the_run_lifetime_in_real_days(
+    db: AsyncSession, clock: FrozenClock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Seconds mode compresses waits, not how long a run may live: a call outlasts 30 "days"."""
+    monkeypatch.setattr(get_settings(), "schedule_time_unit", "seconds")
+    w = await make_world(db)
+    run = await make_run(db, w, status="ACTIVE", started_at=clock.now())
+    clock.advance(timedelta(hours=1))
+    assert await gate(db, run) == "ok"
+    clock.advance(timedelta(days=121))
+    assert await gate(db, run) == "ended"
+
+
+async def test_ending_a_run_closes_its_open_work(db: AsyncSession, clock: FrozenClock) -> None:
+    w = await make_world(db)
+    run = await make_run(db, w, status="ACTIVE", started_at=clock.now())
+    conv = Conversation(firm_id=w.firm.id, channel="playground")
+    db.add(conv)
+    await db.flush()
+    db.add(_ep(w, run, "msg:1", status="completed", metadata_={"conversation_id": str(conv.id)}))
+    plan = [item(1, "tool", status="WAITING"), item(2), item(3, status="DONE")]
+    task = await make_task(db, w, run, status="WAITING", plan=plan)
+    done = await make_task(db, w, run, key="other:run", status="DONE")
+    call = await add_step(
+        db,
+        run,
+        kind="tool",
+        tool="vapi.place_call",
+        status="AWAITING_CALLBACK",
+        idempotency_key="call",
+        epoch=1,
+        task_id=task.id,
+        plan_item_id="i1",
+    )
+    report = {
+        "step_id": str(call.id),
+        "summary": "Reached",
+        "transcript": "AI: Hi",
+        "ended_reason": "x",
+    }
+    db.add(
+        _ep(w, run, "vapi:1", trigger_type="external_response", task_id=task.id, metadata_=report)
+    )
+    await db.commit()
+
+    await control.end_run(db, run, "max_duration")
+
+    await db.refresh(task)
+    assert task.status == "SKIPPED" and task.ended_at is not None
+    assert [(i["status"], i["reason"]) for i in task.plan] == [
+        ("SKIPPED", "Run ended (max_duration)"),
+        ("SKIPPED", "Run ended (max_duration)"),
+        ("DONE", None),
+    ]
+    assert (await db.get_one(RunTask, done.id)).status == "DONE"
+    await db.refresh(call)
+    assert (call.status, call.output["transcript"]) == ("SUCCEEDED", "AI: Hi")
+    assert await db.scalar(select(Episode.status).where(Episode.dedup_key == "vapi:1")) == (
+        "superseded"
+    )
+    posted = await db.scalar(select(Message.body).where(Message.conversation_id == conv.id))
+    assert posted is not None and "ended" in posted and "maximum duration" in posted
+    await db.refresh(run)
+    assert (run.status, run.ended_reason) == ("ENDED", "max_duration")
 
 
 @pytest.mark.parametrize(

@@ -10,6 +10,7 @@ from lucia.core.errors import FieldError, ProblemError, conflict, invalid, not_f
 from lucia.db.models import AgentRun, StepResult
 from lucia.harness.attention import RESUMES_TASK
 from lucia.harness.completion import confirm
+from lucia.harness.control import end_run
 from lucia.harness.intake import EpisodeSpec, insert_episode
 from lucia.worker.dispatch import send
 
@@ -42,7 +43,9 @@ async def answer(
     item.answered_by, item.answered_at = answered_by, get_clock().now()
     run = await session.get_one(AgentRun, item.run_id) if item.run_id else None
     wake = False  # the run has new work once this commits
-    if run is not None and item.kind == "confirm_completion":
+    if run is not None and choice == "end_run":  # offered only where ending is the answer
+        await end_run(session, run, "closed_by_person")
+    elif run is not None and item.kind == "confirm_completion":
         await confirm(session, run, item, choice=choice or "confirm", text=text)
         wake = choice == "reopen"
     elif run is not None and item.kind in RESUMES_TASK:

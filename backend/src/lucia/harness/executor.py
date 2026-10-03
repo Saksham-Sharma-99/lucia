@@ -22,7 +22,7 @@ from lucia.harness.journal import append as journal
 from lucia.harness.lease import ensure_lease
 from lucia.harness.plan import item, set_item
 from lucia.harness.planner import CapHit, append, plan_task
-from lucia.harness.steps import call_llm
+from lucia.harness.steps import call_llm, settle_callback
 from lucia.harness.subagent import run_subagent
 from lucia.harness.tools.base import ToolContext, ToolResult
 from lucia.notifications.updates import post_run_update
@@ -421,7 +421,7 @@ async def resume_task(
         ):
             return  # a late report or a stale wake for an item that moved on (skipped, superseded)
         case ("external_response", _):
-            await _settle_callback(session, meta)
+            await settle_callback(session, meta)
             it = item(task, item_id)
             await post_run_update(
                 session,
@@ -469,20 +469,6 @@ async def resume_task(
     await session.commit()
     if task.status not in ("DONE", "SKIPPED", "FAILED"):
         await execute_task(session, run, task, epoch)
-
-
-async def _settle_callback(session: AsyncSession, meta: dict[str, Any]) -> None:
-    """The async tool's step finishes when its report arrives (late reports included)."""
-    if step_id := meta.get("step_id"):
-        step = await session.get_one(AgentRunStep, uuid.UUID(step_id))
-        if step.status in ("AWAITING_CALLBACK", "FAILED"):
-            step.status, step.ended_at = "SUCCEEDED", get_clock().now()
-            step.output = {
-                **step.output,
-                "summary": meta.get("summary"),
-                "ended_reason": meta.get("ended_reason"),
-                "transcript": meta.get("transcript"),
-            }
 
 
 async def _settle_uncertain(

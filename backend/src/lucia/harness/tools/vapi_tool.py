@@ -18,11 +18,12 @@ from lucia.db.models import (
     ConnectorConnection,
     Episode,
 )
-from lucia.db.models.run import CLAIMABLE
+from lucia.db.models.run import CLAIMABLE, FINISHED
 from lucia.harness.attention import raise_attention
 from lucia.harness.exec.policy import Recipient
 from lucia.harness.exec.recipients import contact_recipient
 from lucia.harness.intake import EpisodeSpec, insert_episode
+from lucia.harness.steps import settle_callback
 from lucia.harness.tools.base import ToolContext, ToolResult
 from lucia.worker.dispatch import send
 
@@ -141,6 +142,22 @@ async def ingest_report(
         return None
     run = await session.get_one(AgentRun, step.run_id)
     ended = str(message.get("endedReason") or call.get("endedReason") or "")
+    report = {
+        "vapi_call_id": call_id,
+        "step_id": str(step.id),
+        "plan_item_id": step.plan_item_id,
+        "ended_reason": ended,
+        "reached": ended not in NOT_REACHED and "error" not in ended,
+        "summary": message.get("summary") or (message.get("analysis") or {}).get("summary") or "",
+        "transcript": message.get("transcript")
+        or (message.get("artifact") or {}).get("transcript")
+        or "",
+        "source": source,
+    }
+    if run.status in FINISHED:  # nothing will resume: keep the call's outcome on its step
+        await settle_callback(session, report)
+        await session.commit()
+        return None
     episode_id = await insert_episode(
         session,
         run,
@@ -148,20 +165,7 @@ async def ingest_report(
             trigger_type="external_response",
             dedup_key=f"vapi:{call_id or step.external_ref or step.id}",
             task_id=step.task_id,
-            metadata={
-                "vapi_call_id": call_id,
-                "step_id": str(step.id),
-                "plan_item_id": step.plan_item_id,
-                "ended_reason": ended,
-                "reached": ended not in NOT_REACHED and "error" not in ended,
-                "summary": message.get("summary")
-                or (message.get("analysis") or {}).get("summary")
-                or "",
-                "transcript": message.get("transcript")
-                or (message.get("artifact") or {}).get("transcript")
-                or "",
-                "source": source,
-            },
+            metadata=report,
         ),
     )
     await session.commit()
