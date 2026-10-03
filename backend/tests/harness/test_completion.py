@@ -335,3 +335,16 @@ async def test_the_last_round_asks_to_confirm_instead_of_starting_another(
     assert run.status == "AWAITING_CONFIRMATION"
     assert item is not None and item.kind == "confirm_completion"
     assert item.summary.startswith("All 2 rounds are done.")
+
+
+async def test_a_recurring_round_judged_met_closes_the_round_instead_of_completing(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM
+) -> None:
+    """The model reads a finished round as the goal met; the round limit decides instead."""
+    _, run, step = await _done(db, recurring=True, max_cycles=2)
+    fake_llm.on("completion", _met(str(step.id)))
+    assert await check_run(db, run, 1, "t") == "cycle_closed"
+    wake = await db.scalar(select(Episode).where(Episode.source == "recurrence"))
+    assert wake is not None and wake.metadata_["cycle"] == 2
+    assert await db.scalar(select(StepResult)) is None
+    assert [role for role, *_ in fake_llm.calls] == ["completion"]  # no judge needed

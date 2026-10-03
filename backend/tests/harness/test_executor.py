@@ -734,3 +734,30 @@ async def test_the_executor_sees_what_earlier_calls_learned(
     packet = next(msg for role, msg, *_ in fake_llm.calls if role == "executor")
     assert "back pain, MRI on Oct 20" in packet  # journal
     assert "Jane has an MRI on Oct 20" in packet  # timeline
+    assert "episodes" in packet  # e.g. what the firm said when it reopened the run
+
+
+@pytest.mark.parametrize("needed", [True, False])
+async def test_a_human_item_asks_what_its_inputs_call_for(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, needed: bool
+) -> None:
+    """Planned before the call as 'only if the review finds something, ask the firm'."""
+    from lucia.harness.executor import HumanQuestion
+
+    review = item(
+        1,
+        "subagent",
+        status="DONE",
+        output={"summary": "Doe asked if changing doctors is a concern"},
+    )
+    asks = item(2, "human", uses=["i1"], input_hint="Only if needed, ask the firm")
+    _, run, task = await _setup(db, [review, asks])
+    question = "Doe asked whether changing doctors could hurt the case. What should we tell Doe?"
+    fake_llm.on("asker", HumanQuestion(needed=needed, question=question if needed else ""))
+    outcome = await execute_task(db, run, task, 1)
+    await db.refresh(task)
+    asked = await db.scalar(select(StepResult))
+    if needed:
+        assert outcome == "blocked" and asked is not None and asked.summary == question
+    else:
+        assert asked is None and task.plan[1]["status"] == "SKIPPED"

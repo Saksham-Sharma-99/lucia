@@ -41,3 +41,13 @@ def test_an_answer_episode_shows_what_the_person_said() -> None:
     assert _episode_line(answered) == (
         'user_response completed (person answered: "Not SOC 2 yet; call him back") -> task_resumed'
     )
+
+
+def test_a_reopen_instruction_shows_what_the_person_said() -> None:
+    reopened = Episode(
+        trigger_type="user_input",
+        status="completed",
+        outcome="triaged",
+        metadata_={"instruction": "Tell Doe the doctor change is fine"},
+    )
+    assert '(person said: "Tell Doe the doctor change is fine")' in _episode_line(reopened)

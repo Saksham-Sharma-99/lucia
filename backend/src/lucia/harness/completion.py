@@ -104,6 +104,10 @@ async def check_run(session: AsyncSession, run: AgentRun, epoch: int, key: str) 
     view = await load(session, run)
     message = await _packet(session, view)
     verdict = await _decide(session, view, epoch, message)
+    if view.config.recurrence is not None and (verdict.met or not verdict.next):
+        # A recurring run ends by its round limit, its end conditions or a person, never by a
+        # verdict: a finished round reads as "met" to the model, so it just closes the round.
+        return await _close_cycle(session, view, epoch, key, verdict.reason)
     if verdict.met and not await _cited_ok(session, run, verdict.evidence_step_ids):
         retry = message + "\n\n## your evidence ids were not steps of this run that succeeded"
         verdict = await _decide(session, view, epoch, retry)
@@ -122,8 +126,6 @@ async def check_run(session: AsyncSession, run: AgentRun, epoch: int, key: str) 
         if nxt:
             await session.commit()
             return "continued"
-        if view.config.recurrence is not None:
-            return await _close_cycle(session, view, epoch, key, verdict.reason)
         return await _ask(
             session,
             run,

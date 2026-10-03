@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -40,7 +41,18 @@ has confirmed who they are: a check-in may recap what the client told us last ti
 you mentioned you had changed doctors; how is that going?"). To anyone else, share only what
 the task needs (a records request names the patient and dates of service) and ask open
 questions. A first message names no case, reference number or clinical detail: only the firm,
-until the person has confirmed who they are."""
+until the person has confirmed who they are. When the contact asked the firm something and a
+person at the firm has since answered (journal, episodes), tell the contact that answer."""
+
+ASKER = """A plan item asks a person at the firm for something, written before its inputs
+existed. From the inputs, decide whether a person is actually needed. If so, write the one
+specific question they must answer, with the facts they need (who said what), in two or three
+sentences. If the inputs don't call for a person, set needed to false."""
+
+
+class HumanQuestion(BaseModel):
+    needed: bool
+    question: str
 
 
 async def _end_item(
@@ -173,11 +185,36 @@ async def _run_item(
         )
         return _wait(task, it)
     if it["kind"] == "human":
+        question = it["input_hint"] or it["title"]
+        if it["uses"]:  # planned before its inputs existed: ask what they actually call for
+            asked = await call_llm(
+                session,
+                view.run,
+                role="asker",
+                model=view.config.models.guardrail,
+                instructions=ASKER,
+                message=context.packet(
+                    "asker",
+                    {
+                        "task": {"title": task.title, "goal": task.goal},
+                        "item": {k: it[k] for k in ("title", "input_hint")},
+                        "inputs": _inputs(task, it),
+                    },
+                ),
+                output_type=HumanQuestion,
+                epoch=epoch,
+                task_id=task.id,
+                plan_item_id=it["id"],
+            )
+            if not asked.needed:
+                await _end_item(session, view, task, it, "SKIPPED", "nothing for a person")
+                return "next"
+            question = asked.question
         await raise_attention(
             session,
             view.run,
             kind="question",
-            summary=it["input_hint"] or it["title"],
+            summary=question,
             dedup_key=f"sr:{task.id}:{it['id']}:question:{it['attempts']}",
             task_id=task.id,
             data={"item_id": it["id"]},
@@ -237,6 +274,10 @@ def _wait_due(wait: dict[str, Any]) -> datetime:
     return get_clock().now() + duration(wait["seconds"], "seconds")
 
 
+def _inputs(task: RunTask, it: dict[str, Any]) -> dict[str, Any]:
+    return {u: (item(task, u)["output"] or {}).get("summary") for u in it["uses"]}
+
+
 async def _executor_packet(
     session: AsyncSession, view: AgentView, task: RunTask, it: dict[str, Any]
 ) -> str:
@@ -251,9 +292,10 @@ async def _executor_packet(
             # what earlier calls and cycles learned, so a call can pick up from last time
             "timeline": await context.timeline(session, view.subject.id),
             "journal": {"summary": summary, "recent": entries},
+            "episodes": await context.episodes_timeline(session, view.run.id),
             "task": {"title": task.title, "goal": task.goal, "input": task.input},
             "item": {k: it[k] for k in ("title", "input_hint", "expected_output", "tool")},
-            "inputs": {u: (item(task, u)["output"] or {}).get("summary") for u in it["uses"]},
+            "inputs": _inputs(task, it),
             "policies": [p.rule for p in view.policies],
         },
     )
