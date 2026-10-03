@@ -1,3 +1,5 @@
+from zoneinfo import available_timezones
+
 from pydantic import BaseModel
 
 from lucia.api.tags import api_router
@@ -29,3 +31,22 @@ async def platform_status() -> PlatformStatus:
         allowed_models=s.allowed_models,
         drafter_enabled=bool(s.openai_api_key),
     )
+
+
+# Region/City zones only: legacy aliases (US/Eastern, Etc/GMT+5, ...) stay valid but aren't offered.
+_REGIONS = (
+    "Africa/",
+    "America/",
+    "Antarctica/",
+    "Asia/",
+    "Atlantic/",
+    "Australia/",
+    "Europe/",
+    "Indian/",
+    "Pacific/",
+)
+
+
+@router.get("/timezones", summary="IANA timezones to pick from", operation_id="listTimezones")
+async def timezones() -> list[str]:
+    return [*sorted(z for z in available_timezones() if z.startswith(_REGIONS)), "UTC"]

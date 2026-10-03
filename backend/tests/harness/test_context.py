@@ -1,6 +1,7 @@
 import pytest
 
-from lucia.harness.context import BUDGET_CHARS, ROLE_SECTIONS, packet
+from lucia.db.models import Episode
+from lucia.harness.context import BUDGET_CHARS, ROLE_SECTIONS, _episode_line, packet
 
 
 def test_triage_sees_the_conversation_and_the_planner_does_not() -> None:
@@ -28,3 +29,15 @@ def test_budget_trims_journal_then_episodes_first() -> None:
 def test_unknown_role_is_an_error() -> None:
     with pytest.raises(KeyError):
         packet("nobody", {})
+
+
+def test_an_answer_episode_shows_what_the_person_said() -> None:
+    answered = Episode(
+        trigger_type="user_response",
+        status="completed",
+        outcome="task_resumed",
+        metadata_={"answer": {"text": "Not SOC 2 yet; call him back", "choice": None}},
+    )
+    assert _episode_line(answered) == (
+        'user_response completed (person answered: "Not SOC 2 yet; call him back") -> task_resumed'
+    )

@@ -113,13 +113,24 @@ describe("run tabs", () => {
             text: "Call Jane: reached",
             created_at: "2026-10-01T12:00:00Z",
           },
+          {
+            id: "j2",
+            task_id: "t1",
+            episode_id: null,
+            source: "harness",
+            text: "## Confirmed findings\n\n- **Role:** clerk",
+            created_at: "2026-10-01T12:01:00Z",
+          },
         ],
       }),
     });
     await renderApp("/runs/r1?tab=journal");
     await screen.findByText("Jane was reached twice.");
     screen.getByText("Call Jane: reached");
-    screen.getByText("harness");
+    screen.getAllByText("harness");
+    // entries are markdown: a heading and bold text, not literal ## and **
+    screen.getByRole("heading", { name: "Confirmed findings" });
+    expect(screen.getByText("Role:").tagName).toBe("STRONG");
   });
 
   it("attention: open items first, answerable", async () => {

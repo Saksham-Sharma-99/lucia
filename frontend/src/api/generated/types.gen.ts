@@ -5338,6 +5338,45 @@ export type GetPlatformStatusResponses = {
 
 export type GetPlatformStatusResponse = GetPlatformStatusResponses[keyof GetPlatformStatusResponses];
 
+export type ListTimezonesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/platform/timezones';
+};
+
+export type ListTimezonesErrors = {
+    /**
+     * Not authenticated
+     */
+    401: Problem;
+    /**
+     * Not found
+     */
+    404: Problem;
+    /**
+     * Conflict
+     */
+    409: Problem;
+    /**
+     * Validation failed
+     */
+    422: Problem;
+};
+
+export type ListTimezonesError = ListTimezonesErrors[keyof ListTimezonesErrors];
+
+export type ListTimezonesResponses = {
+    /**
+     * Response Listtimezones
+     *
+     * Successful Response
+     */
+    200: Array<string>;
+};
+
+export type ListTimezonesResponse = ListTimezonesResponses[keyof ListTimezonesResponses];
+
 export type ListSubjectsData = {
     body?: never;
     path: {

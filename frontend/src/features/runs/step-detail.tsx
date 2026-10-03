@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 
 import { getStepRecordingOptions } from "@/api/generated/@tanstack/react-query.gen";
 import type { StepOut } from "@/api/generated/types.gen";
+import { Markdown } from "@/components/shared/markdown";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +43,13 @@ export function StepDetail({
       </Labeled>
       {step.tool === "vapi.place_call" && <CallArtifacts runId={runId} step={step} />}
       <Labeled label={step.kind === "llm" ? "Answered" : "Output"}>
-        {typeof text === "string" ? <Text>{text}</Text> : <Json value={step.output ?? {}} />}
+        {typeof text === "string" ? (
+          <Markdown className="bg-muted/50 max-h-[50vh] overflow-auto rounded-xl border p-4">
+            {text}
+          </Markdown>
+        ) : (
+          <Json value={step.output ?? {}} />
+        )}
       </Labeled>
       {step.error && (
         <Labeled label="Error">

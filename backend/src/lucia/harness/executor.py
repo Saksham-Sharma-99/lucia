@@ -61,10 +61,11 @@ async def _end_item(
         reason=None if status == "DONE" else summary,
         ended_at=get_clock().now().isoformat(),
     )
+    sep = "\n\n" if "\n" in summary else " "  # a markdown block starts its own paragraph
     await journal(
         session,
         view.run,
-        text=f"{it['title']}: {summary}",
+        text=f"{it['title']}:{sep}{summary}",
         source="harness",
         key=f"{task.id}:{it['id']}:{it['attempts']}:{status}",
         task_id=task.id,

@@ -21,6 +21,7 @@ import { MessageList } from "./message-list";
 import type { PlaygroundSearch } from "./playground";
 import { useConversationEvents } from "./use-conversation-events";
 import { useMessages } from "./use-messages";
+import { useOpenAttention } from "./use-open-attention";
 
 /** One chat (or a new one): greeting and header chips, messages, composer, drawers. */
 export function Conversation({
@@ -43,6 +44,7 @@ export function Conversation({
   });
   const { messages } = useMessages(conversationId);
   const { stage } = useConversationEvents(conversationId);
+  const awaitingAnswer = useOpenAttention(messages);
   const [text, setText] = useState("");
   const create = useApiMutation(createConversationMutation(), { stale: STALE.conversation });
   const sendMessage = useApiMutation(sendMessageMutation(), { stale: STALE.conversation });
@@ -80,13 +82,20 @@ export function Conversation({
             {c && <MessageList conversation={c} messages={messages} stage={stage} />}
           </div>
           <div className="mx-auto w-full max-w-3xl px-6 pb-5">
-            <Composer
-              firmId={firmId}
-              disabled={busy}
-              value={text}
-              onChange={setText}
-              onSend={(b) => void send(b).catch(() => {})}
-            />
+            {awaitingAnswer ? (
+              // a question is answered on its card, not by a chat message
+              <p className="text-muted-foreground rounded-2xl border border-dashed px-4 py-3 text-center text-sm">
+                Answer the open question above to continue
+              </p>
+            ) : (
+              <Composer
+                firmId={firmId}
+                disabled={busy}
+                value={text}
+                onChange={setText}
+                onSend={(b) => void send(b).catch(() => {})}
+              />
+            )}
           </div>
         </>
       ) : (

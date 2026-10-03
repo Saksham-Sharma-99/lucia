@@ -2,16 +2,9 @@ import { Controller, useFormContext } from "react-hook-form";
 
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { TimezoneSelect } from "@/components/shared/timezone-select";
 
 import { FIRM_COLORS, type FirmDetails } from "./model";
-
-const ZONES: string[] = (() => {
-  try {
-    return Intl.supportedValuesOf("timeZone");
-  } catch {
-    return ["America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "UTC"];
-  }
-})();
 
 /** Name, timezone and colour: shared by the new-firm dialog and the firm's Overview. */
 export function FirmFields({ onNameChange }: { onNameChange?: (name: string) => void }) {
@@ -34,12 +27,18 @@ export function FirmFields({ onNameChange }: { onNameChange?: (name: string) => 
       </Field>
       <Field className="max-w-md" data-invalid={!!errors.timezone}>
         <FieldLabel htmlFor="firm-tz">Timezone</FieldLabel>
-        <Input id="firm-tz" list="lucia-timezones" autoComplete="off" {...register("timezone")} />
-        <datalist id="lucia-timezones">
-          {ZONES.map((z) => (
-            <option key={z} value={z} />
-          ))}
-        </datalist>
+        <Controller
+          control={control}
+          name="timezone"
+          render={({ field }) => (
+            <TimezoneSelect
+              id="firm-tz"
+              value={field.value}
+              onChange={field.onChange}
+              invalid={!!errors.timezone}
+            />
+          )}
+        />
         <FieldError errors={[errors.timezone]} />
       </Field>
       <Field>

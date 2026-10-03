@@ -1,4 +1,6 @@
-import { useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
+
+import { TimezoneSelect } from "@/components/shared/timezone-select";
 
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -7,7 +9,7 @@ import type { ContactForm } from "./contact-form";
 
 /** Name, organisation, phone, email, timezone: shared by every contact form. */
 export function ContactFields() {
-  const { register, formState } = useFormContext<ContactForm>();
+  const { register, control, formState } = useFormContext<ContactForm>();
   const { errors } = formState;
   return (
     <div className="space-y-3">
@@ -40,7 +42,19 @@ export function ContactFields() {
       </Field>
       <Field data-invalid={!!errors.tz}>
         <FieldLabel htmlFor="contact-tz">Timezone</FieldLabel>
-        <Input id="contact-tz" placeholder="America/New_York" {...register("tz")} />
+        <Controller
+          control={control}
+          name="tz"
+          render={({ field }) => (
+            <TimezoneSelect
+              id="contact-tz"
+              value={field.value}
+              onChange={field.onChange}
+              clearable
+              invalid={!!errors.tz}
+            />
+          )}
+        />
         <FieldError errors={[errors.tz]} />
       </Field>
       {errors.root && (

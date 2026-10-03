@@ -102,6 +102,37 @@ async def test_plans_then_runs_items_to_done(
     assert await db.scalar(select(JournalEntry.text)) == "Call Jane: Called Jane"
 
 
+async def test_a_markdown_summary_starts_its_own_journal_paragraph(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, tool: FakeTool
+) -> None:
+    w, run, task = await _setup(db, [])
+    fake_llm.on(
+        "planner",
+        PlanDraft(
+            items=[
+                PlanItemDraft(
+                    title="Call Jane",
+                    kind="tool",
+                    tool="vapi.place_call",
+                    input_hint="",
+                    expected_output="",
+                    uses=[],
+                    wait_seconds=None,
+                    wait_until=None,
+                )
+            ]
+        ),
+    )
+    fake_llm.on(
+        "executor", {"to_contact_id": str(w.jane_link.id), "script": "s", "first_message": "hi"}
+    )
+    tool.results.append(_ok("## Reached\n- **Mood:** good"))
+    assert await execute_task(db, run, task, 1) == "done"
+    assert await db.scalar(select(JournalEntry.text)) == (
+        "Call Jane:\n\n## Reached\n- **Mood:** good"
+    )
+
+
 async def test_async_tool_waits_then_the_callback_finishes_it(
     db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, tool: FakeTool
 ) -> None:
