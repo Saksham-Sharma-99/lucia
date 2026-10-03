@@ -32,7 +32,10 @@ none if nothing more can be done. Judge by what the agent can do and observe (`g
 what a contact confirmed and what a person told the agent (human steps) is proof. Never require
 work no listed tool can do, like opening, reviewing or inventorying documents or checking an
 inbox; the person who confirms completion checks those. Every next task must be doable with
-the listed tools."""
+the listed tools. When `goal.recurs_every_days` is set the run repeats: a finished cycle is not
+the goal met. It is met only when its ongoing purpose has ended (the matter closed, the contact
+opted out, the firm said to stop); otherwise answer not met with no next tasks, which closes
+this cycle and schedules the next."""
 JUDGE = """Independently check this claim that the run's goal is met. Agree only if the task
 outputs support it. A contact's or a person's confirmation is evidence; the agent can't open
 documents, so don't require it to have reviewed them. Consent, quiet hours and recipient rules
@@ -68,6 +71,7 @@ async def _packet(session: AsyncSession, view: AgentView) -> str:
                 "goal": view.run.goal,
                 "criteria": view.run.completion_criteria,
                 "agent_tools": sorted(view.tools),
+                "recurs_every_days": view.config.recurrence and view.config.recurrence.every_days,
             },
             "timeline": await context.timeline(session, view.subject.id),
             "tasks": await context.tasks_overview(session, view.run.id),

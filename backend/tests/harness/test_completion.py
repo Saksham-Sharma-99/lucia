@@ -247,6 +247,8 @@ async def test_recurring_cycle_closes_silently_and_schedules_the_next(
     wake = await db.scalar(select(Episode).where(Episode.source == "recurrence"))
     assert wake is not None and wake.metadata_["cycle"] == 2
     assert await db.scalar(select(StepResult)) is None
+    # the check is told the run repeats, so a finished cycle isn't read as the goal met
+    assert '"recurs_every_days": 14' in fake_llm.calls[0][1]
 
 
 async def test_confirm_completes_and_reopen_resumes(
