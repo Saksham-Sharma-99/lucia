@@ -16,6 +16,7 @@ os.environ["PUBLIC_BASE_URL"] = "https://lucia.test"
 os.environ["FRONTEND_BASE_URL"] = "https://app.lucia.test"
 os.environ["OPENAI_API_KEY"] = ""  # the drafter stays off; tests fake it
 os.environ["VAPI_PHONE_NUMBER_ID"] = ""  # no default number unless a test sets one
+os.environ["SCHEDULE_TIME_UNIT"] = "real"  # a dev .env in seconds mode must not leak in
 for key in (
     "SLACK_CLIENT_ID",
     "SLACK_CLIENT_SECRET",

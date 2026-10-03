@@ -1,5 +1,7 @@
 import type { EpisodeOut, StepOut, TaskOut } from "@/api/generated/types.gen";
 
+import { statusLabel } from "./model";
+
 /** A plan item as stored in `run_tasks.plan` (DATA_MODEL §4.3); every field may be missing. */
 export type PlanItem = {
   id: string;
@@ -11,6 +13,7 @@ export type PlanItem = {
   status?: string;
   reason?: string | null;
   superseded_by?: string[];
+  added_in?: number;
   attempts?: number;
   output?: { summary?: string; data?: Record<string, unknown> } | null;
   started_at?: string | null;
@@ -67,6 +70,156 @@ export function connectorsOf(task: TaskOut, steps: StepOut[]) {
     name,
     calls: steps.filter((s) => s.kind === "tool" && s.tool?.startsWith(`${name}.`)).length,
   }));
+}
+
+/** Something that happened, shown beside the node it concerns. */
+export type Note = {
+  id: string;
+  at: string;
+  label: string;
+  detail?: string | null;
+  status?: string;
+  trigger?: string;
+};
+/** One node of the downstream flow: a round's header (Plan, Added) or one of its items. */
+export type FlowRow = { key: string; title?: string; item?: PlanItem; notes: Note[] };
+type Entry = {
+  id: string;
+  task_id: string | null;
+  episode_id: string | null;
+  text: string;
+  created_at: string;
+};
+
+const STEP_EVENT: Record<string, string> = {
+  "vapi.place_call": "Call placed",
+  "harness.emit_finding": "Finding reported",
+  "harness.ask_human": "Asked a person",
+  subagent: "Subagent wrote a draft",
+  policy: "Policy check",
+  guardrail: "Guardrail check",
+};
+
+/** When an episode reached the run: a scheduled one is created early and fires at `due_at`. */
+const arrived = (e: EpisodeOut) => e.started_at ?? e.due_at ?? e.created_at;
+
+/** A step as a note, or null for internal calls (executor, guardrail model, summaries). */
+function stepNote(s: StepOut, firstPlanner?: string): Note | null {
+  const note = { id: s.id, at: s.started_at ?? "", status: s.status };
+  if (s.kind === "llm") {
+    if (s.role === "planner")
+      return { ...note, label: s.id === firstPlanner ? "Plan written" : "Plan revised" };
+    return s.role === "relevance" ? { ...note, label: "Checked what's still needed" } : null;
+  }
+  if (s.parent_step_id || s.tool === "harness.journal_append") return null; // its entry shows
+  const label = STEP_EVENT[s.kind] ?? STEP_EVENT[s.tool ?? ""] ?? s.tool ?? statusLabel(s.kind);
+  return { ...note, label, detail: s.summary === label ? null : s.summary };
+}
+
+/**
+ * The task as a downstream flow: each plan round (the first plan, then each append, by
+ * `added_in`) as a header followed by its items. What happened sits beside the node it
+ * concerns: plan writes beside their round; an episode beside the round it appended, else the
+ * item running when it arrived (else the next one due); step events beside their item; a
+ * relevance check where its episode is; journal entries beside the item running then.
+ */
+export function flowRows(
+  task: TaskOut,
+  steps: StepOut[],
+  episodes: EpisodeOut[],
+  journal: Entry[] = [],
+): FlowRow[] {
+  const plan = [...(task.plan as PlanItem[])].sort((a, b) => (a.ordinal ?? 0) - (b.ordinal ?? 0));
+  const ordered = [...steps].sort((a, b) => a.seq - b.seq);
+  const rounds = [...new Set(plan.map((i) => i.added_in ?? 0))].sort((a, b) => a - b);
+  const rows: FlowRow[] = [];
+  for (const n of rounds) {
+    rows.push({ key: `round-${n}`, title: n === 0 ? "Plan" : "Added", notes: [] });
+    for (const item of plan.filter((i) => (i.added_in ?? 0) === n))
+      rows.push({ key: item.id, item, notes: [] });
+  }
+  const headers = rows.filter((r) => r.title);
+  // Consecutive planner calls are one round's plan (a write and its validation retries):
+  // burst 0 is the first plan, burst k the k-th append.
+  const burstHeader = new Map<string, FlowRow>();
+  const burstStart: string[] = [];
+  let burst = -1;
+  ordered.forEach((s, i) => {
+    if (s.role !== "planner") return;
+    if (ordered[i - 1]?.role !== "planner") burstStart[++burst] = s.started_at ?? "";
+    burstHeader.set(s.id, headers[Math.min(burst, headers.length - 1)]);
+  });
+  // An append's episode: the task's latest one to arrive before that round was planned.
+  const taskEpisodes = episodes
+    .filter((e) => e.task_id === task.id)
+    .sort((a, b) => arrived(a).localeCompare(arrived(b)));
+  const appendedBy = new Map<string, FlowRow>();
+  headers.slice(1).forEach((header, k) => {
+    const start = burstStart[k + 1];
+    const cause = start ? taskEpisodes.findLast((e) => arrived(e) <= start) : undefined;
+    if (cause && !appendedBy.has(cause.id)) appendedBy.set(cause.id, header);
+  });
+  const span = (item: PlanItem) => {
+    const tries = ordered.filter((s) => s.plan_item_id === item.id && s.kind !== "llm");
+    const last = tries.at(-1);
+    if (!last) return null;
+    // still open only while its last try is: some finished steps don't record an end time
+    const open = ["PENDING", "RUNNING", "AWAITING_CALLBACK"].includes(last.status);
+    return {
+      start: tries[0].started_at ?? "",
+      end: last.ended_at ?? (open ? null : last.started_at),
+    };
+  };
+  const runningAt = (t: string) => {
+    const items = rows.filter(
+      (r) => r.item && !["SKIPPED", "SUPERSEDED"].includes(r.item.status ?? ""),
+    );
+    return (
+      items.findLast((r) => {
+        const sp = span(r.item!);
+        return sp && sp.start <= t && (!sp.end || sp.end >= t);
+      }) ??
+      items.find((r) => {
+        const sp = span(r.item!);
+        return !sp || sp.start > t;
+      }) ??
+      rows.at(-1)
+    );
+  };
+
+  const episodeRow = new Map<string, FlowRow | undefined>();
+  for (const e of taskEpisodes) {
+    const row = appendedBy.get(e.id) ?? runningAt(arrived(e));
+    episodeRow.set(e.id, row);
+    row?.notes.push({
+      id: e.id,
+      at: arrived(e),
+      label: ["scheduled", "armed"].includes(e.status) ? "Wake-up scheduled" : "Episode arrived",
+      detail: statusLabel(e.trigger_type),
+      trigger: e.trigger_type,
+    });
+  }
+  const firstPlanner = ordered.find((s) => s.role === "planner")?.id;
+  for (const s of ordered) {
+    const note = stepNote(s, firstPlanner);
+    if (!note) continue;
+    const row =
+      s.role === "planner"
+        ? burstHeader.get(s.id)
+        : (rows.find((r) => r.item?.id === s.plan_item_id) ??
+          (s.episode_id ? episodeRow.get(s.episode_id) : undefined) ??
+          runningAt(note.at));
+    row?.notes.push(note);
+  }
+  for (const j of journal.filter((j) => j.task_id === task.id))
+    runningAt(j.created_at)?.notes.push({
+      id: j.id,
+      at: j.created_at,
+      label: "Journal entry created",
+      detail: j.text,
+    });
+  for (const r of rows) r.notes.sort((a, b) => a.at.localeCompare(b.at));
+  return rows;
 }
 
 /** The episode that brought the task in: the last run-wide one at or before its creation. */

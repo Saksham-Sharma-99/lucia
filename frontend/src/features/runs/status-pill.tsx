@@ -5,8 +5,13 @@ import {
   CircleIcon,
   CirclePauseIcon,
   CircleXIcon,
+  ClockIcon,
   HandIcon,
   HourglassIcon,
+  MessageSquareIcon,
+  PhoneIncomingIcon,
+  RotateCwIcon,
+  UserCheckIcon,
   type LucideIcon,
 } from "lucide-react";
 
@@ -82,4 +87,19 @@ export function StatusIcon({ status, className }: { status: string; className?: 
       <Icon className="size-3.5" />
     </span>
   );
+}
+
+const TRIGGER_ICON: Record<string, LucideIcon> = {
+  user_input: MessageSquareIcon,
+  external_response: PhoneIncomingIcon,
+  scheduled: ClockIcon,
+  user_response: UserCheckIcon,
+  handback: HandIcon,
+  retry: RotateCwIcon,
+};
+
+/** What woke the run, as an icon (a message, a call report, a timer…). */
+export function TriggerIcon({ trigger, className }: { trigger: string; className?: string }) {
+  const Icon = TRIGGER_ICON[trigger] ?? ClockIcon;
+  return <Icon className={className} />;
 }

@@ -1,14 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  ClockIcon,
-  HandIcon,
-  LinkIcon,
-  MessageSquareIcon,
-  PhoneIncomingIcon,
-  RotateCwIcon,
-  UserCheckIcon,
-  type LucideIcon,
-} from "lucide-react";
+import { LinkIcon } from "lucide-react";
 
 import {
   listRunAttentionOptions,
@@ -34,7 +25,7 @@ import { cn } from "@/lib/utils";
 
 import { AttentionCard } from "./attention-card";
 import { KANBAN, duration, itemProgress, pollEvery, statusLabel, taskTarget } from "./model";
-import { StatusIcon, StatusPill } from "./status-pill";
+import { StatusIcon, StatusPill, TriggerIcon } from "./status-pill";
 
 /** The run's four views, each polling while the run can still change. */
 export function RunTabs({ run, onTask }: { run: RunOut; onTask: (taskId: string) => void }) {
@@ -171,15 +162,6 @@ export function TasksBoard({ tasks, onOpen }: { tasks: TaskOut[]; onOpen: (id: s
   );
 }
 
-const TRIGGER_ICON: Record<string, LucideIcon> = {
-  user_input: MessageSquareIcon,
-  external_response: PhoneIncomingIcon,
-  scheduled: ClockIcon,
-  user_response: UserCheckIcon,
-  handback: HandIcon,
-  retry: RotateCwIcon,
-};
-
 export function EpisodesTimeline({
   episodes,
   tasks,
@@ -193,12 +175,11 @@ export function EpisodesTimeline({
   return (
     <ol aria-label="Episodes" className="relative ml-3 space-y-3 border-l pl-6">
       {newest.map((e) => {
-        const Icon = TRIGGER_ICON[e.trigger_type] ?? ClockIcon;
         const taskTitle = tasks.find((t) => t.id === e.task_id)?.title;
         return (
           <li key={e.id} className="relative">
             <span className="bg-background absolute top-0.5 -left-[2.1rem] flex size-6 items-center justify-center rounded-full border">
-              <Icon className="text-muted-foreground size-3.5" />
+              <TriggerIcon trigger={e.trigger_type} className="text-muted-foreground size-3.5" />
             </span>
             <div className="bg-card space-y-1 rounded-lg border p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">

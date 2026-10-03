@@ -1147,6 +1147,14 @@ export type JournalEntryOut = {
      */
     id: string;
     /**
+     * Task Id
+     */
+    task_id: string | null;
+    /**
+     * Episode Id
+     */
+    episode_id: string | null;
+    /**
      * Source
      */
     source: string;

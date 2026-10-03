@@ -123,6 +123,8 @@ class EpisodeOut(Read):
 
 class JournalEntryOut(Read):
     id: uuid.UUID
+    task_id: uuid.UUID | None
+    episode_id: uuid.UUID | None
     source: str
     text: str
     created_at: datetime

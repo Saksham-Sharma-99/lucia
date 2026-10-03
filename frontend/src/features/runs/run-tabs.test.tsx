@@ -107,6 +107,8 @@ describe("run tabs", () => {
         entries: [
           {
             id: "j1",
+            task_id: "t1",
+            episode_id: null,
             source: "harness",
             text: "Call Jane: reached",
             created_at: "2026-10-01T12:00:00Z",

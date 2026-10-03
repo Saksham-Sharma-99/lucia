@@ -103,6 +103,99 @@ describe("task drawer", () => {
     rail.getByText("2/2");
   });
 
+  it("overview: each round and its items in the flow; what happened beside them", async () => {
+    runWith([
+      task({
+        plan: [
+          planItem(1, { title: "Call Jane", status: "DONE" }),
+          planItem(2, { title: "Send the summary", status: "PENDING", added_in: 1, tool: null }),
+        ],
+      }),
+    ]);
+    server.use(
+      http.get(`${API}/runs/r1/episodes`, () =>
+        HttpResponse.json([
+          episode({
+            id: "e1",
+            created_at: "2026-10-01T11:00:00Z",
+            started_at: "2026-10-01T11:00:00Z",
+          }),
+          episode({
+            id: "e2",
+            task_id: "t1",
+            trigger_type: "external_response",
+            outcome: "reached",
+            created_at: "2026-10-01T12:10:00Z",
+            started_at: "2026-10-01T12:10:00Z",
+          }),
+        ]),
+      ),
+      http.get(`${API}/runs/r1/steps`, () =>
+        HttpResponse.json([
+          step({
+            id: "p1",
+            seq: 0,
+            kind: "llm",
+            role: "planner",
+            tool: null,
+            plan_item_id: null,
+            started_at: "2026-10-01T11:00:30Z",
+          }),
+          step({ id: "c1", episode_id: "e1", started_at: "2026-10-01T11:01:00Z" }),
+          step({
+            id: "p2",
+            seq: 2,
+            kind: "llm",
+            role: "planner",
+            tool: null,
+            plan_item_id: null,
+            started_at: "2026-10-01T12:10:40Z",
+          }),
+          step({
+            id: "s2",
+            seq: 3,
+            kind: "subagent",
+            tool: "harness.subagent",
+            plan_item_id: "i2",
+            episode_id: "e2",
+            started_at: "2026-10-01T12:11:00Z",
+          }),
+        ]),
+      ),
+      http.get(`${API}/runs/r1/journal`, () =>
+        HttpResponse.json(
+          journal({
+            entries: [
+              {
+                id: "j1",
+                task_id: "t1",
+                episode_id: "e2",
+                source: "harness",
+                text: "Jane is better",
+                created_at: "2026-10-01T12:10:30Z",
+              },
+            ],
+          }),
+        ),
+      ),
+    );
+    await renderApp("/runs/r1?task=t1");
+    const flow = within(
+      await within(await drawer()).findByRole("region", { name: "How this task ran" }),
+    );
+    await flow.findByText("Added");
+    expect(flow.getAllByText("1 item")).toHaveLength(2); // the first plan and the append
+    await flow.findByText("Jane is better"); // the journal entry, beside the item running then
+    const notes = flow.getAllByRole("list", { name: "What happened" }).map((n) => n.textContent);
+    expect(notes).toEqual([
+      expect.stringContaining("Plan written"),
+      expect.stringContaining("Call placed"),
+      expect.stringMatching(/Episode arrived.*External response.*Plan revised/),
+      expect.stringMatching(/Journal entry created.*Jane is better.*Subagent wrote a draft/),
+    ]);
+    flow.getByText("Send the summary");
+  });
+
   it("View output opens the final output", async () => {
     runWith();
     const app = await renderApp("/runs/r1?task=t1");

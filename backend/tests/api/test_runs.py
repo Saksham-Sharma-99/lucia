@@ -139,7 +139,7 @@ async def test_tasks_steps_logs_episodes_journal_attention(
             dedup_key="msg:r",
         )
     )
-    await append(db, run, text="note", source="agent", key="n")
+    await append(db, run, text="note", source="agent", key="n", task_id=task.id)
     await db.flush()
     db.add(
         StepResult(
@@ -176,6 +176,10 @@ async def test_tasks_steps_logs_episodes_journal_attention(
     assert [e["dedup_key"] for e in (await authed.get(f"{base}/episodes")).json()] == ["msg:r"]
     journal = (await authed.get(f"{base}/journal")).json()
     assert journal["summary"] == "So far" and journal["entries"][0]["text"] == "note"
+    assert (journal["entries"][0]["task_id"], journal["entries"][0]["episode_id"]) == (
+        str(task.id),
+        None,
+    )
     assert [a["summary"] for a in (await authed.get(f"{base}/attention")).json()] == ["q?"]
 
 

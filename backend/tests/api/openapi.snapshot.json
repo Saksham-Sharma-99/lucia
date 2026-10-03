@@ -2282,6 +2282,18 @@
             "title": "Created At",
             "type": "string"
           },
+          "episode_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Episode Id"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -2291,6 +2303,18 @@
             "title": "Source",
             "type": "string"
           },
+          "task_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
           "text": {
             "title": "Text",
             "type": "string"
@@ -2298,6 +2322,8 @@
         },
         "required": [
           "id",
+          "task_id",
+          "episode_id",
           "source",
           "text",
           "created_at"
