@@ -9,7 +9,10 @@ describe("hours", () => {
     [24, "1d"],
     [49, "2d 1h"],
     [168, "7d"],
-  ])("%i -> %s", (h, text) => expect(hours(h)).toBe(text));
+    [1.5, "1h 30m"],
+    [0.1, "6m"],
+    [0.12, "7m"],
+  ])("%d -> %s", (h, text) => expect(hours(h)).toBe(text));
 });
 
 describe("relativeTime", () => {

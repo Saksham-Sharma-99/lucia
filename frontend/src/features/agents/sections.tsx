@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ALERT_CHANNELS, type Registry } from "@/features/registry/use-registry";
+import { hours } from "@/lib/format";
 
 import { selectedTools, type ConfigForm } from "./config";
 import { LadderEditor } from "./ladder-editor";
@@ -441,11 +442,13 @@ export function SchedulesSection({ registry, disabled }: SectionProps) {
               <NumberFieldRow
                 name="config.follow_up.dynamic.min_hours"
                 label="Wait at least (hours)"
+                decimal
                 disabled={disabled}
               />
               <NumberFieldRow
                 name="config.follow_up.dynamic.max_hours"
                 label="Wait at most (hours)"
+                decimal
                 disabled={disabled}
               />
               <label className="flex items-center gap-2 pb-1.5 text-sm">
@@ -530,7 +533,8 @@ export function SchedulesSection({ registry, disabled }: SectionProps) {
                   <NumberInput
                     aria-label="Repeat every N days"
                     className="w-20"
-                    min={1}
+                    step="any"
+                    inputMode="decimal"
                     value={field.value}
                     onChange={field.onChange}
                     disabled={disabled}
@@ -538,6 +542,9 @@ export function SchedulesSection({ registry, disabled }: SectionProps) {
                 )}
               />
               days
+              {!Number.isInteger(recurrence.every_days) && recurrence.every_days > 0 && (
+                <span className="text-muted-foreground">≈ {hours(recurrence.every_days * 24)}</span>
+              )}
             </>
           ) : (
             <span className="text-muted-foreground">Runs once per matter</span>
@@ -594,11 +601,14 @@ function NumberFieldRow({
   label,
   min = 0,
   disabled,
+  decimal,
 }: {
   name: FieldPathByValue<AgentForm, number>;
   label: string;
   min?: number;
   disabled?: boolean;
+  /** Accept fractions (0.1 h = 6 min). */
+  decimal?: boolean;
 }) {
   const { control } = useFormContext<AgentForm>();
   const error = useError(name);
@@ -613,6 +623,8 @@ function NumberFieldRow({
             value={field.value}
             onChange={field.onChange}
             min={min}
+            step={decimal ? "any" : undefined}
+            inputMode={decimal ? "decimal" : undefined}
             disabled={disabled}
             aria-invalid={!!error}
           />

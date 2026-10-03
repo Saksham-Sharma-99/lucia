@@ -15,14 +15,16 @@ export const handleSchema = z
  * always controlled. Field paths match the API's JSON pointers (`config.follow_up.ladder.0`).
  */
 const urgency = z.enum(["P0", "P1", "P2"]);
-const nonNegInt = (max: number) => z.number().int().min(0).max(max);
 
 export const rungSchema = z
   .object({
     kind: z.enum(["channel", "action"]),
     channel: z.string().nullable(),
     action: z.enum(["escalate", "flag"]).nullable(),
-    wait_hours: nonNegInt(24 * 60),
+    wait_hours: z
+      .number()
+      .min(0)
+      .max(24 * 60), // decimals allowed: 0.1 h = 6 min
     attempts: z.number().int().min(1).max(10),
     urgency: urgency.nullable(),
   })
@@ -47,20 +49,18 @@ export const configSchema = z.object({
     dynamic: z.object({
       min_hours: z
         .number()
-        .int()
-        .min(1)
+        .positive()
         .max(24 * 60),
       max_hours: z
         .number()
-        .int()
-        .min(1)
+        .positive()
         .max(24 * 60),
       business_hours: z.boolean(),
       channels: z.array(z.string()),
       escalate_after: z.object({ attempts: z.number().int().min(1).max(20), urgency }),
     }),
   }),
-  recurrence: z.object({ every_days: z.number().int().min(1).max(365) }).nullable(),
+  recurrence: z.object({ every_days: z.number().positive().max(365) }).nullable(),
   end_conditions: z.object({
     max_duration_days: z.number().int().min(1).max(730),
     max_steps: z.number().int().min(10).max(5000),

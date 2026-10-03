@@ -782,11 +782,11 @@ export type Dynamic = {
     /**
      * Min Hours
      */
-    min_hours: number;
+    min_hours: number | number;
     /**
      * Max Hours
      */
-    max_hours: number;
+    max_hours: number | number;
     /**
      * Business Hours
      */
@@ -1197,7 +1197,7 @@ export type LadderRung = {
     /**
      * Wait Hours
      */
-    wait_hours: number;
+    wait_hours: number | number;
     /**
      * Attempts
      */
@@ -2029,7 +2029,7 @@ export type Recurrence = {
     /**
      * Every Days
      */
-    every_days: number;
+    every_days: number | number;
 };
 
 /**

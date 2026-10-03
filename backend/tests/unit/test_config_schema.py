@@ -38,3 +38,20 @@ def test_rung_needs_exactly_one_of_channel_or_action() -> None:
     }
     with pytest.raises(ValidationError):
         VersionConfig.model_validate(config(follow_up=bad))
+
+
+def test_waits_and_recurrence_take_decimals_for_minute_scale_schedules() -> None:
+    follow_up = {"mode": "fixed_ladder", "ladder": [{"channel": "voice", "wait_hours": 0.1}]}
+    cfg = VersionConfig.model_validate(
+        config(follow_up=follow_up, recurrence={"every_days": 0.005})
+    ).stored()
+    assert cfg["follow_up"]["ladder"][0]["wait_hours"] == 0.1  # 6 minutes
+    assert cfg["recurrence"] == {"every_days": 0.005}  # ~7 minutes
+    with pytest.raises(ValidationError):
+        VersionConfig.model_validate(config(recurrence={"every_days": 0}))
+
+
+def test_whole_numbers_stay_ints_so_stored_hashes_dont_change() -> None:
+    stored = VersionConfig.model_validate(config(recurrence={"every_days": 14})).stored()
+    assert stored["recurrence"]["every_days"] == 14
+    assert isinstance(stored["recurrence"]["every_days"], int)
