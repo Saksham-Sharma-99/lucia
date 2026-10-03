@@ -4,7 +4,9 @@ patterns first, then a small model. A block is never retried automatically (HLD 
 import re
 
 from pydantic import BaseModel
+from sqlalchemy import select
 
+from lucia.db.models import AgentRunStep
 from lucia.harness.steps import call_llm
 from lucia.harness.tools.base import ToolContext
 
@@ -16,12 +18,24 @@ INSTRUCTIONS = """You check a message or call script before an AI agent sends it
 law firm. Fail it if it gives legal or medical advice, shares clinical details the task
 doesn't need, is addressed to the wrong person, or tells the callee anything against the
 firm's policies. Recapping to a client, after they confirm who they are, what they told the
-firm themselves is needed for a check-in. Otherwise pass it."""
+firm themselves is needed for a check-in. Passing on, as the firm's answer, what a person at the
+firm said (listed under firm answers) is not advice from the agent. Otherwise pass it."""
 
 
 class GuardrailVerdict(BaseModel):
     ok: bool
     reasons: list[str]
+
+
+async def _firm_answers(ctx: ToolContext) -> list[str]:
+    """What people at the firm told this run (its human steps), newest last."""
+    rows = await ctx.session.scalars(
+        select(AgentRunStep.summary)
+        .where(AgentRunStep.run_id == ctx.view.run.id, AgentRunStep.kind == "human")
+        .order_by(AgentRunStep.seq.desc())
+        .limit(5)
+    )
+    return [r for r in reversed(list(rows)) if r]
 
 
 async def check(ctx: ToolContext, text: str, recipient_role: str) -> GuardrailVerdict:
@@ -34,7 +48,8 @@ async def check(ctx: ToolContext, text: str, recipient_role: str) -> GuardrailVe
         role="guardrail",
         model=ctx.view.config.models.guardrail,
         instructions=INSTRUCTIONS,
-        message=f"## recipient role\n{recipient_role}\n\n## text\n{text}",
+        message=f"## recipient role\n{recipient_role}\n\n## firm answers\n"
+        f"{await _firm_answers(ctx)}\n\n## text\n{text}",
         output_type=GuardrailVerdict,
         epoch=ctx.epoch,
         task_id=ctx.task.id,
