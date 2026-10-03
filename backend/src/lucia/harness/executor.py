@@ -22,7 +22,7 @@ from lucia.harness.journal import append as journal
 from lucia.harness.lease import ensure_lease
 from lucia.harness.plan import item, set_item
 from lucia.harness.planner import CapHit, append, plan_task
-from lucia.harness.steps import call_llm, settle_callback
+from lucia.harness.steps import add_step, call_llm, settle_callback
 from lucia.harness.subagent import run_subagent
 from lucia.harness.tools.base import ToolContext, ToolResult
 from lucia.notifications.updates import post_run_update
@@ -416,7 +416,10 @@ async def resume_task(
     item_id: str = meta.get("plan_item_id") or ""
     match (episode.trigger_type, episode.source):
         case ("user_input" | "handback", _):
-            await relevance.check(session, view, task, episode, epoch)
+            try:
+                await relevance.check(session, view, task, episode, epoch)
+            except CapHit:  # the task is BLOCKED with a plan_cap item for a person
+                return
         case ("external_response" | "scheduled", _) if (
             item_id and item(task, item_id)["status"] != "WAITING"
         ):
@@ -442,7 +445,14 @@ async def resume_task(
             if any(i["status"] == "PENDING" for i in task.plan):
                 await relevance.check(session, view, task, episode, epoch)
         case ("user_response", _):
-            await _answer(session, view, task, meta)
+            await _answer(session, view, task, meta, epoch)
+            # what a person said can make the planned items moot, like a call report can
+            said = (meta.get("answer") or {}).get("text")
+            if said and any(i["status"] == "PENDING" for i in task.plan):
+                try:
+                    await relevance.check(session, view, task, episode, epoch)
+                except CapHit:
+                    return
         case ("scheduled", "plan_wait"):
             await _end_item(session, view, task, item(task, item_id), "DONE", "waited")
         case ("scheduled", "reconcile"):
@@ -496,7 +506,7 @@ async def _settle_uncertain(
 
 
 async def _answer(
-    session: AsyncSession, view: AgentView, task: RunTask, meta: dict[str, Any]
+    session: AsyncSession, view: AgentView, task: RunTask, meta: dict[str, Any], epoch: int
 ) -> None:
     asked = await session.get_one(StepResult, uuid.UUID(meta["step_result_id"]))
     answer = meta.get("answer") or {}
@@ -518,7 +528,23 @@ async def _answer(
     if asked.kind == "uncertain_send":
         await _settle_uncertain(session, view, task, it, asked, choice)
     elif asked.kind == "question":
-        await _end_item(session, view, task, it, "DONE", text or choice or "")
+        said = text or choice or ""
+        # a human step, so what the person told us is evidence the run can cite (like a call)
+        step = await add_step(
+            session,
+            view.run,
+            kind="human",
+            status="SUCCEEDED",
+            idempotency_key=f"human:{asked.id}",
+            epoch=epoch,
+            task_id=task.id,
+            plan_item_id=item_id,
+            actor="human",
+            input={"question": asked.summary},
+            output={"answer": answer},
+            summary=said,
+        )
+        await _end_item(session, view, task, it, "DONE", said, step_id=step.id)
     elif choice == "skip":
         await _end_item(session, view, task, it, "SKIPPED", "skipped by a person")
     elif choice == "accept":

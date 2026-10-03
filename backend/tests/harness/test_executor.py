@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from lucia.core.clock import FrozenClock
-from lucia.db.models import AgentRun, Episode, JournalEntry, RunTask, StepResult
+from lucia.db.models import AgentRun, AgentRunStep, Episode, JournalEntry, RunTask, StepResult
 from lucia.harness.exec import tool_executor
 from lucia.harness.executor import execute_task, resume_task
 from lucia.harness.planner import PlanDraft, PlanItemDraft
@@ -442,6 +442,14 @@ async def test_human_item_asks_and_the_answer_completes_it(
     await resume_task(db, run, task, ep, 1)
     await db.refresh(task)
     assert task.status == "DONE" and task.plan[0]["output"]["summary"] == "Her mobile"
+    # the answer is a human step on the item: evidence the completion check can cite
+    step = await db.scalar(select(AgentRunStep).where(AgentRunStep.kind == "human"))
+    assert step is not None and (step.status, step.actor, step.summary) == (
+        "SUCCEEDED",
+        "human",
+        "Her mobile",
+    )
+    assert task.plan[0]["step_ids"] == [str(step.id)]
 
 
 async def test_an_answer_for_a_superseded_item_changes_nothing(
@@ -642,3 +650,55 @@ async def test_a_callback_for_an_item_that_isnt_waiting_is_ignored(
     await resume_task(db, run, task, ep, 1)
     await db.refresh(task)
     assert (task.status, task.plan[0]["status"]) == ("BLOCKED", "FAILED")
+
+
+async def test_an_answer_rechecks_the_items_it_makes_moot(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, tool: FakeTool
+) -> None:
+    """Staff said the packet arrived: the planned 'call to confirm receipt' is skipped."""
+    from lucia.harness.relevance import ItemVerdict, Relevance
+
+    w, run, task = await _setup(
+        db, [item(1, "human", status="WAITING"), item(2, "tool", status="PENDING")]
+    )
+    asked = StepResult(
+        firm_id=w.firm.id,
+        run_id=run.id,
+        task_id=task.id,
+        type="attention",
+        kind="question",
+        urgency="P1",
+        summary="Did the records arrive?",
+        summary_public="x",
+        status="answered",
+        dedup_key="sr:moot",
+        data={"item_id": "i1"},
+    )
+    db.add(asked)
+    await db.commit()
+    fake_llm.on(
+        "relevance",
+        Relevance(
+            verdicts=[ItemVerdict(item_id="i2", verdict="skip", reason="already received")],
+            append_needed=False,
+            append_reason="",
+        ),
+    )
+    meta = {"step_result_id": str(asked.id), "answer": {"text": "Yes, all 212 pages arrived"}}
+    ep = await _episode(db, w, run, task, trigger_type="user_response", metadata_=meta)
+    await resume_task(db, run, task, ep, 1)
+    await db.refresh(task)
+    assert [i["status"] for i in task.plan] == ["DONE", "SKIPPED"]
+    assert tool.calls == []
+
+
+async def test_a_note_at_the_plan_cap_blocks_the_task_instead_of_failing(
+    db: AsyncSession, clock: FrozenClock, fake_llm: FakeLLM, tool: FakeTool
+) -> None:
+    w, run, task = await _setup(db, [item(1, "tool", status="DONE")], plan_appends=5)
+    ep = await _episode(db, w, run, task, metadata_={"note": "try their fax line"})
+    await resume_task(db, run, task, ep, 1)  # no CapHit escapes: the episode completes
+    await db.refresh(task)
+    assert task.status == "BLOCKED"
+    kinds = await db.scalars(select(StepResult.kind).where(StepResult.task_id == task.id))
+    assert list(kinds) == ["plan_cap"]

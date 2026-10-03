@@ -28,10 +28,15 @@ from lucia.scheduling.durations import duration
 Outcome = Literal["continued", "awaiting_confirmation", "asked", "cycle_closed", "superseded"]
 DECIDE = """Decide whether this run's whole goal is met, from the task outputs, journal and
 episodes. If it is, cite the step ids that prove it. If not, list the next tasks it needs, or
-none if nothing more can be done."""
+none if nothing more can be done. Judge by what the agent can do and observe (`goal.agent_tools`):
+what a contact confirmed and what a person told the agent (human steps) is proof. Never require
+work no listed tool can do, like opening, reviewing or inventorying documents or checking an
+inbox; the person who confirms completion checks those. Every next task must be doable with
+the listed tools."""
 JUDGE = """Independently check this claim that the run's goal is met. Agree only if the task
-outputs support it. Consent, quiet hours and recipient rules are enforced by the platform on
-every send, so don't require evidence of them."""
+outputs support it. A contact's or a person's confirmation is evidence; the agent can't open
+documents, so don't require it to have reviewed them. Consent, quiet hours and recipient rules
+are enforced by the platform on every send, so don't require evidence of them."""
 
 
 class NextTask(BaseModel):
@@ -59,7 +64,11 @@ async def _packet(session: AsyncSession, view: AgentView) -> str:
         "completion",
         {
             "system_prompt": view.config.system_prompt,
-            "goal": {"goal": view.run.goal, "criteria": view.run.completion_criteria},
+            "goal": {
+                "goal": view.run.goal,
+                "criteria": view.run.completion_criteria,
+                "agent_tools": sorted(view.tools),
+            },
             "timeline": await context.timeline(session, view.subject.id),
             "tasks": await context.tasks_overview(session, view.run.id),
             "episodes": await context.episodes_timeline(session, view.run.id),

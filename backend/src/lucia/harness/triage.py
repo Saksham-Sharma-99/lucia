@@ -30,8 +30,11 @@ and a target: a contact (ref = contact_id from the subject), a document, a perio
 record, or the run itself. List parts of the request this agent cannot do in out_of_scope.
 If the trigger's brief and message disagree, the message wins. On the first triage of a run,
 write its goal and plain-language completion criteria; later, set them only if they change.
-Criteria describe outcomes the task outputs can show (who was reached, what was learned or
-received), never compliance: consent, quiet hours and recipients are enforced by the platform.
+Criteria describe outcomes the task outputs can show (who was reached, what they confirmed or
+told us), never what only the firm can check (a document arriving in its inbox, a payment
+clearing), and never compliance: consent, quiet hours and recipients are enforced by the platform.
+A blocker is never done: a fee, a missing form or anything handed to a person only pauses the work
+until it is resolved, so it never appears in the criteria as an alternative to the goal.
 When the goal shows `recurs_every_days`, the run repeats: its goal is the ongoing purpose across
 all cycles (e.g. keep the firm informed of the client's wellbeing while the matter is open),
 never one occurrence; each cycle's task does one round.
