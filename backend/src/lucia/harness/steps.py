@@ -2,6 +2,7 @@
 (RUNTIME_SPEC §10.2). Logs are redacted before they are stored."""
 
 import uuid
+from datetime import timedelta
 from typing import Any, overload
 
 from pydantic import BaseModel
@@ -11,8 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from lucia.core.clock import get_clock
 from lucia.core.redact import redact
 from lucia.db.models import AgentRun, AgentRunStep, RunStepLog
-from lucia.harness.lease import ensure_lease
+from lucia.harness.lease import RENEW_BELOW, ensure_lease
 from lucia.llm.client import LLMError, get_llm
+
+# Planner calls on the flagship model take up to ~30 s, so the 30 s default timed out. Each call
+# starts with about RENEW_BELOW of lease left (claim, then ensure_lease after every call); the
+# margin covers the work between calls, so a call never outlives the lease.
+MODEL_SECONDS = (RENEW_BELOW - timedelta(seconds=5)).total_seconds()
 
 
 async def add_step(
@@ -140,6 +146,7 @@ async def call_llm(
                 instructions=instructions,
                 message=message,
                 output_type=output_type,
+                seconds=MODEL_SECONDS,
             )
             recorded: dict[str, Any] = out.model_dump(mode="json")
         elif tool is not None:
@@ -150,11 +157,16 @@ async def call_llm(
                 message=message,
                 tool_name=tool[0],
                 tool_schema=tool[1],
+                seconds=MODEL_SECONDS,
             )
             recorded = out
         else:
             out, usage = await llm.text(
-                role=role, model=model, instructions=instructions, message=message
+                role=role,
+                model=model,
+                instructions=instructions,
+                message=message,
+                seconds=MODEL_SECONDS,
             )
             recorded = {"text": out}
     except LLMError as e:

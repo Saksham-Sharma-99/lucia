@@ -240,7 +240,7 @@ async def _executor_packet(
     return context.packet(
         "executor",
         {
-            "system_prompt": view.config.system_prompt,
+            "system_prompt": view.instructions,
             "now": context.clock(subject),
             "subject": subject,
             "task": {"title": task.title, "goal": task.goal, "input": task.input},

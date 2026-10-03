@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from lucia.harness.agent_view import load
-from tests.world import make_run, make_world
+from tests.world import VOICE_CONFIG, make_run, make_world
 
 
 async def test_view_combines_version_registry_and_mapping(db: AsyncSession) -> None:
@@ -15,3 +15,19 @@ async def test_view_combines_version_registry_and_mapping(db: AsyncSession) -> N
     assert {p.rule for p in view.policies} >= {"recipient_must_be_contact", "quiet_hours"}
     assert view.connection_id("vapi") == w.vapi.id
     assert view.agent.handle == "checkin" and view.subject.id == w.subject.id
+
+
+async def test_instructions_carry_the_hitl_triggers(db: AsyncSession) -> None:
+    cfg = {**VOICE_CONFIG, "hitl": {"ask_on": ["legal_question", "client_distressed"]}}
+    w = await make_world(db, config=cfg)
+    view = await load(db, await make_run(db, w))
+    assert view.instructions.startswith(view.config.system_prompt)
+    assert "Ask a person (a human item) when: legal question, client distressed." in (
+        view.instructions
+    )
+
+
+async def test_instructions_are_the_prompt_without_triggers(db: AsyncSession) -> None:
+    w = await make_world(db)
+    view = await load(db, await make_run(db, w))
+    assert view.instructions == view.config.system_prompt

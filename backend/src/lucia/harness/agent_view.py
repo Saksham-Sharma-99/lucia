@@ -46,6 +46,14 @@ class AgentView:
     policies: list[ResolvedPolicy]
     alert_routes: list[ResolvedRoute]
 
+    @property
+    def instructions(self) -> str:
+        """The builder's system prompt plus its human-in-the-loop triggers (`hitl.ask_on`)."""
+        asks = ", ".join(a.replace("_", " ") for a in self.config.hitl.ask_on)
+        if not asks:
+            return self.config.system_prompt
+        return f"{self.config.system_prompt}\n\nAsk a person (a human item) when: {asks}."
+
     def connection_id(self, connector: str) -> uuid.UUID:
         return uuid.UUID(self.mapping.identities[connector])
 

@@ -32,6 +32,9 @@ If the trigger's brief and message disagree, the message wins. On the first tria
 write its goal and plain-language completion criteria; later, set them only if they change.
 Criteria describe outcomes the task outputs can show (who was reached, what was learned or
 received), never compliance: consent, quiet hours and recipients are enforced by the platform.
+When the goal shows `recurs_every_days`, the run repeats: its goal is the ongoing purpose across
+all cycles (e.g. keep the firm informed of the client's wellbeing while the matter is open),
+never one occurrence; each cycle's task does one round.
 Reply with one or two short sentences for the user. The reply describes only the ops you
 return: with none, say nothing changed and why. Never claim an action you did not return (you
 cannot end or close the run; a person does that from the run or its attention items)."""
@@ -86,8 +89,12 @@ async def _packet(session: AsyncSession, view: AgentView, episode: Episode) -> s
     return context.packet(
         "triage",
         {
-            "system_prompt": view.config.system_prompt,
-            "goal": {"goal": view.run.goal, "criteria": view.run.completion_criteria},
+            "system_prompt": view.instructions,
+            "goal": {
+                "goal": view.run.goal,
+                "criteria": view.run.completion_criteria,
+                "recurs_every_days": view.config.recurrence and view.config.recurrence.every_days,
+            },
             "subject": await context.subject_snapshot(session, view.subject),
             "timeline": await context.timeline(session, view.subject.id),
             "tasks": await context.tasks_overview(session, view.run.id),

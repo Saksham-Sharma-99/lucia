@@ -29,7 +29,9 @@ Item kinds:
   and contact caps are enforced when something is sent, so never plan around them.
 - human: ask a person for something only they can give.
 `uses` lists the ids of earlier items whose output this item needs. New items get ids after
-the existing ones. Respect the policies, consent and opt-outs shown. Keep plans short."""
+the existing ones. Respect the policies, consent and opt-outs shown. Keep plans short.
+Whatever the firm should hear about (a status, a change, a commitment, a concern) is reported
+with harness.emit_finding; the journal is only the agent's own memory."""
 
 
 class PlanItemDraft(BaseModel):
@@ -146,7 +148,7 @@ async def _packet(
     return context.packet(
         "planner",
         {
-            "system_prompt": view.config.system_prompt,
+            "system_prompt": view.instructions,
             "now": context.clock(subject),
             "goal": {"goal": view.run.goal, "criteria": view.run.completion_criteria},
             "subject": subject,

@@ -74,7 +74,9 @@ export function Conversation({
       </header>
       {conversationId ? (
         <>
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          {/* relative: absolutely positioned descendants (sr-only labels) stay clipped here
+              instead of stretching the page, which made the whole layout scroll */}
+          <div className="relative min-h-0 flex-1 overflow-y-auto">
             {c && <MessageList conversation={c} messages={messages} stage={stage} />}
           </div>
           <div className="mx-auto w-full max-w-3xl px-6 pb-5">
