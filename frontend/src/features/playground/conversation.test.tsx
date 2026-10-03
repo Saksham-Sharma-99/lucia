@@ -111,6 +111,31 @@ describe("conversation", () => {
     await within(await pane()).findByText("Answer the open question above to continue");
   });
 
+  it("a reported finding is read-only and leaves the message box usable", async () => {
+    chat([
+      message({
+        id: "m1",
+        actor: "agent",
+        body: "No additional callback is authorized",
+        run_id: "r1",
+        blocks: [{ type: "finding", step_result_id: "f1", urgency: "P1" }],
+      }),
+      message({
+        id: "m2",
+        actor: "agent",
+        body: "Older finding",
+        run_id: "r1",
+        blocks: [{ type: "attention", step_result_id: "f2", kind: "finding", free_text: true }],
+      }),
+    ]);
+    server.use(http.get(`${API}/runs/r1/attention`, () => HttpResponse.json([])));
+    await renderApp("/playground/c1");
+    const p = within(await pane());
+    expect(await p.findAllByText(/Reported to the firm/)).toHaveLength(2);
+    expect(p.queryByRole("textbox", { name: "Your answer" })).toBeNull();
+    await p.findByRole("textbox", { name: "Message" });
+  });
+
   it("@ suggests the firm's agents and inserts the mention", async () => {
     chat();
     const app = await renderApp("/playground/c1");

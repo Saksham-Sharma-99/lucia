@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRightIcon, RotateCwIcon } from "lucide-react";
+import { ArrowRightIcon, FlagIcon, RotateCwIcon } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -107,9 +107,16 @@ function OneBlock({
         </Card>
       );
     }
+    case "finding":
+      return <FindingTag urgency={block.urgency} />;
     case "attention":
     case "run_confirm":
-      return <AttentionBlock block={block} message={message} />;
+      // findings were once posted as attention blocks: they are read, not answered
+      return block.kind === "finding" ? (
+        <FindingTag urgency={block.urgency} />
+      ) : (
+        <AttentionBlock block={block} message={message} />
+      );
     case "run_link":
       return (
         <button
@@ -146,6 +153,16 @@ function OneBlock({
     default:
       return null;
   }
+}
+
+/** A finding the agent reported to the firm: its text is the message; nothing to answer. */
+function FindingTag({ urgency }: { urgency: unknown }) {
+  return (
+    <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+      <FlagIcon className="size-3.5" /> Reported to the firm
+      {typeof urgency === "string" && ` · ${urgency}`}
+    </p>
+  );
 }
 
 /** Attention cards know their state only through the run (R3). */

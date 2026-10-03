@@ -12,7 +12,7 @@ export function useOpenAttention(messages: MessageOut[]): boolean {
   const asks = messages.flatMap((m) =>
     m.run_id
       ? m.blocks
-          .filter((b) => ASKS.has(b.type as string) && b.step_result_id)
+          .filter((b) => ASKS.has(b.type as string) && b.kind !== "finding" && b.step_result_id)
           .map((b) => ({ runId: m.run_id as string, itemId: b.step_result_id as string }))
       : [],
   );

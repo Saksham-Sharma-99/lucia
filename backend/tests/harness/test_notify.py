@@ -3,8 +3,17 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from lucia.core.clock import FrozenClock
-from lucia.db.models import AgentRun, AppUser, Conversation, Episode, Message, Notification
+from lucia.db.models import (
+    AgentRun,
+    AppUser,
+    Conversation,
+    Episode,
+    Message,
+    Notification,
+    StepResult,
+)
 from lucia.harness.attention import raise_attention
+from lucia.notifications.plan import notify
 from lucia.notifications.render import check_public, public_text
 from tests.world import World, make_leased_run, make_world
 
@@ -70,6 +79,35 @@ async def test_attention_is_posted_to_the_chat_and_rings_the_bell(
     ]
     bell = await db.scalar(select(Notification))
     assert bell is not None and (bell.channel, bell.target) == ("in_app", str(user.id))
+
+
+async def test_an_urgent_finding_is_posted_to_read_not_to_answer(
+    db: AsyncSession, clock: FrozenClock, user: AppUser
+) -> None:
+    w = await make_world(db)
+    run, conv = await _linked(db, w, user)
+    finding = StepResult(
+        firm_id=w.firm.id,
+        run_id=run.id,
+        type="finding",
+        kind="new_treatment",
+        urgency="P1",
+        summary="Jane has an MRI",
+        summary_public="New treatment update",
+        status="open",
+        dedup_key="sr:f",
+    )
+    db.add(finding)
+    await db.flush()
+    await notify(
+        db, run, finding.id, kind="finding", summary=finding.summary, urgency="P1", options=[]
+    )
+    await db.commit()
+    msg = await db.scalar(
+        select(Message).where(Message.conversation_id == conv.id, Message.actor == "agent")
+    )
+    assert msg is not None
+    assert msg.blocks == [{"type": "finding", "step_result_id": str(finding.id), "urgency": "P1"}]
 
 
 async def test_a_duplicate_item_notifies_once(

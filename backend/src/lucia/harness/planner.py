@@ -32,7 +32,10 @@ Item kinds:
 new items are numbered from `plan.new_items_start_at`, in order. A wait has no output: never
 use one. An item that reports or summarizes uses every earlier item whose results it covers. A
 follow-up contact uses what earlier contacts learned, and continues from it instead of asking
-again. Respect the policies, consent and opt-outs shown. Keep plans short.
+again. Respect the policies, consent and opt-outs shown. A person can't waive a policy: never
+ask anyone to approve or override consent, quiet hours, contact caps or opt-outs; plan the
+contact and the platform defers it until it is allowed (a capped call goes out the next day).
+Keep plans short.
 Whatever the firm should hear about (a status, a change, a commitment, a concern) is reported
 with harness.emit_finding; the journal is only the agent's own memory."""
 
